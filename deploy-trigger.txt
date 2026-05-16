@@ -1,0 +1,1 @@
+Trigger a fresh Vercel production deployment after switching project settings to Next.js and Node.js 20.x.
