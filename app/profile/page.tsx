@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createClient, Session, User } from "@supabase/supabase-js";
 import { ArrowLeft, CalendarCheck2, Loader2, LogOut, ShieldCheck, UserRound } from "lucide-react";
 
@@ -26,10 +26,17 @@ function getSupabase() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   if (!url || !key) return null;
-  return createClient(url, key);
+  return createClient(url, key, {
+    auth: {
+      persistSession: true,
+      autoRefreshToken: true,
+      detectSessionInUrl: false
+    }
+  });
 }
 
 export default function ProfilePage() {
+  const hasLoaded = useRef(false);
   const [loading, setLoading] = useState(true);
   const [bookingsLoading, setBookingsLoading] = useState(false);
   const [session, setSession] = useState<Session | null>(null);
@@ -50,34 +57,46 @@ export default function ProfilePage() {
     if (error) {
       setMessage(`Kunde inte hämta bokningar: ${error.message}`);
     } else {
+      setMessage("");
       setBookings((data ?? []) as Booking[]);
     }
     setBookingsLoading(false);
   }
 
   useEffect(() => {
-    const supabase = getSupabase();
-    if (!supabase) {
-      setMessage("Supabase environment variables saknas i Vercel.");
-      setLoading(false);
-      return;
-    }
+    if (hasLoaded.current) return;
+    hasLoaded.current = true;
 
-    supabase.auth.getSession().then(({ data }) => {
+    let cancelled = false;
+
+    async function initProfile() {
+      const supabase = getSupabase();
+      if (!supabase) {
+        if (!cancelled) {
+          setMessage("Supabase environment variables saknas i Vercel.");
+          setLoading(false);
+        }
+        return;
+      }
+
+      const { data } = await supabase.auth.getSession();
+      if (cancelled) return;
+
       setSession(data.session);
       setUser(data.session?.user ?? null);
-      if (data.session?.user) void loadBookings(data.session.user);
-      setLoading(false);
-    });
 
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, newSession) => {
-      setSession(newSession);
-      setUser(newSession?.user ?? null);
-      if (newSession?.user) void loadBookings(newSession.user);
-      else setBookings([]);
-    });
+      if (data.session?.user) {
+        await loadBookings(data.session.user);
+      }
 
-    return () => listener.subscription.unsubscribe();
+      if (!cancelled) setLoading(false);
+    }
+
+    void initProfile();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   async function signOut() {
