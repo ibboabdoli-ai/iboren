@@ -13,7 +13,7 @@ const providers = [
 
 function getSupabase() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   if (!url || !key) return null;
   return createClient(url, key);
 }
@@ -25,7 +25,7 @@ export default function LoginPage() {
   async function signIn(provider: "google" | "linkedin_oidc" | "azure") {
     const supabase = getSupabase();
     if (!supabase) {
-      setMessage("Supabase saknas. Lägg till NEXT_PUBLIC_SUPABASE_URL och NEXT_PUBLIC_SUPABASE_ANON_KEY i Vercel.");
+      setMessage("Supabase saknas. Lägg till NEXT_PUBLIC_SUPABASE_URL och NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY i Vercel.");
       return;
     }
     setLoading(provider);
