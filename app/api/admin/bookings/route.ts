@@ -58,7 +58,7 @@ export async function GET(request: Request) {
 
   const { data, error } = await admin.supabase
     .from("bookings")
-    .select("id, user_id, service, area, address, size_sqm, frequency, preferred_date, time_window, customer_name, customer_email, customer_phone, notes, status, created_at")
+    .select("id, user_id, service, area, address, size_sqm, frequency, preferred_date, time_window, customer_name, customer_email, customer_phone, notes, admin_notes, status, created_at")
     .order("created_at", { ascending: false });
 
   if (error) {
