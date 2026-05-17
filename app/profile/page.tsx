@@ -5,6 +5,23 @@ import { useEffect, useState } from "react";
 import { createClient, Session, User } from "@supabase/supabase-js";
 import { ArrowLeft, CalendarCheck2, Loader2, LogOut, ShieldCheck, UserRound } from "lucide-react";
 
+type Booking = {
+  id: string;
+  service: string;
+  area: string;
+  address: string | null;
+  size_sqm: number | null;
+  frequency: string | null;
+  preferred_date: string | null;
+  time_window: string | null;
+  customer_name: string;
+  customer_email: string;
+  customer_phone: string | null;
+  notes: string | null;
+  status: string | null;
+  created_at: string;
+};
+
 function getSupabase() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -14,9 +31,29 @@ function getSupabase() {
 
 export default function ProfilePage() {
   const [loading, setLoading] = useState(true);
+  const [bookingsLoading, setBookingsLoading] = useState(false);
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
+  const [bookings, setBookings] = useState<Booking[]>([]);
   const [message, setMessage] = useState("");
+
+  async function loadBookings(currentUser: User) {
+    const supabase = getSupabase();
+    if (!supabase) return;
+    setBookingsLoading(true);
+    const { data, error } = await supabase
+      .from("bookings")
+      .select("id, service, area, address, size_sqm, frequency, preferred_date, time_window, customer_name, customer_email, customer_phone, notes, status, created_at")
+      .eq("user_id", currentUser.id)
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      setMessage(`Kunde inte hämta bokningar: ${error.message}`);
+    } else {
+      setBookings((data ?? []) as Booking[]);
+    }
+    setBookingsLoading(false);
+  }
 
   useEffect(() => {
     const supabase = getSupabase();
@@ -29,12 +66,15 @@ export default function ProfilePage() {
     supabase.auth.getSession().then(({ data }) => {
       setSession(data.session);
       setUser(data.session?.user ?? null);
+      if (data.session?.user) void loadBookings(data.session.user);
       setLoading(false);
     });
 
     const { data: listener } = supabase.auth.onAuthStateChange((_event, newSession) => {
       setSession(newSession);
       setUser(newSession?.user ?? null);
+      if (newSession?.user) void loadBookings(newSession.user);
+      else setBookings([]);
     });
 
     return () => listener.subscription.unsubscribe();
@@ -92,14 +132,51 @@ export default function ProfilePage() {
           </aside>
           <div className="grid gap-5">
             <article className="rounded-[2.5rem] bg-porcelain p-8 shadow-soft">
-              <div className="mb-6 grid h-14 w-14 place-items-center rounded-full bg-burgundy text-porcelain"><CalendarCheck2 size={25} /></div>
-              <h2 className="display text-4xl font-bold text-burgundy">Mina bokningar</h2>
-              <p className="mt-4 leading-8 text-ink/65">Nästa steg är att spara bokningsförfrågningar i Supabase database och visa dem här per inloggad användare.</p>
+              <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                <div>
+                  <div className="mb-5 grid h-14 w-14 place-items-center rounded-full bg-burgundy text-porcelain"><CalendarCheck2 size={25} /></div>
+                  <h2 className="display text-4xl font-bold text-burgundy">Mina bokningar</h2>
+                  <p className="mt-3 leading-8 text-ink/65">Här visas bokningsförfrågningar som sparats på ditt konto.</p>
+                </div>
+                <Link href="/#booking" className="btn-secondary">Ny bokning</Link>
+              </div>
+
+              {message && <p className="mb-5 rounded-2xl bg-burgundy/10 p-4 text-sm text-burgundy">{message}</p>}
+
+              {bookingsLoading ? (
+                <div className="grid min-h-32 place-items-center text-burgundy"><Loader2 className="h-7 w-7 animate-spin" /></div>
+              ) : bookings.length === 0 ? (
+                <div className="rounded-[2rem] border border-dashed border-burgundy/20 bg-cream p-6 text-ink/65">
+                  <p>Du har inga sparade bokningar ännu.</p>
+                  <Link href="/#booking" className="mt-4 inline-flex font-bold text-burgundy">Skapa första bokningen →</Link>
+                </div>
+              ) : (
+                <div className="grid gap-4">
+                  {bookings.map((booking) => (
+                    <article key={booking.id} className="rounded-[2rem] border border-burgundy/10 bg-cream p-5">
+                      <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                        <div>
+                          <p className="text-xs font-bold uppercase tracking-[.24em] text-burgundy/60">{booking.status || "new"}</p>
+                          <h3 className="display mt-1 text-3xl font-bold text-burgundy">{booking.service}</h3>
+                          <p className="mt-2 leading-7 text-ink/70">{booking.area}{booking.address ? ` · ${booking.address}` : ""}</p>
+                        </div>
+                        <span className="rounded-full bg-burgundy px-4 py-2 text-xs font-bold uppercase tracking-[.18em] text-porcelain">{booking.preferred_date || "Datum saknas"}</span>
+                      </div>
+                      <div className="mt-5 grid gap-3 text-sm text-ink/62 md:grid-cols-3">
+                        <p><strong>Storlek:</strong> {booking.size_sqm ? `${booking.size_sqm} kvm` : "—"}</p>
+                        <p><strong>Frekvens:</strong> {booking.frequency || "—"}</p>
+                        <p><strong>Tid:</strong> {booking.time_window || "—"}</p>
+                      </div>
+                      {booking.notes && <p className="mt-4 rounded-2xl bg-porcelain p-4 text-sm leading-7 text-ink/62">{booking.notes}</p>}
+                    </article>
+                  ))}
+                </div>
+              )}
             </article>
             <article className="rounded-[2.5rem] bg-porcelain p-8 shadow-soft">
               <div className="mb-6 grid h-14 w-14 place-items-center rounded-full bg-gold text-ink"><ShieldCheck size={25} /></div>
               <h2 className="display text-4xl font-bold text-burgundy">Profiluppgifter</h2>
-              <p className="mt-4 leading-8 text-ink/65">Här kan kunden senare spara standardadress, telefonnummer, preferenser och fakturaunderlag.</p>
+              <p className="mt-4 leading-8 text-ink/65">Nästa steg blir att låta kunden spara standardadress, telefonnummer och preferenser.</p>
             </article>
           </div>
         </div>
