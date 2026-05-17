@@ -216,10 +216,13 @@ export default function AdminPage() {
               <h1 className="display mt-3 text-5xl font-bold leading-[.9] md:text-7xl">Booking dashboard</h1>
               <p className="mt-5 max-w-2xl leading-8 text-porcelain/70">Hantera inkommande bokningar, följ status och uppdatera orderflödet.</p>
             </div>
-            <button onClick={loadBookings} className="inline-flex items-center justify-center gap-2 rounded-full bg-porcelain px-5 py-3 text-sm font-bold text-burgundy">
-              {bookingsLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
-              Uppdatera
-            </button>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+              <AdminCsvExport bookings={filteredBookings} />
+              <button onClick={loadBookings} className="inline-flex items-center justify-center gap-2 rounded-full bg-porcelain px-5 py-3 text-sm font-bold text-burgundy">
+                {bookingsLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+                Uppdatera
+              </button>
+            </div>
           </div>
         </div>
 
@@ -233,10 +236,7 @@ export default function AdminPage() {
                   </button>
                 ))}
               </div>
-              <div className="flex flex-wrap items-center gap-3">
-                <p className="text-sm font-bold text-ink/55">{filteredBookings.length} av {bookings.length} bokningar</p>
-                <AdminCsvExport bookings={filteredBookings} />
-              </div>
+              <p className="text-sm font-bold text-ink/55">{filteredBookings.length} av {bookings.length} bokningar</p>
             </div>
 
             <div className="grid gap-3 lg:grid-cols-[1fr_260px]">
