@@ -18,6 +18,7 @@ type BookingRow = {
   customer_email: string;
   customer_phone: string | null;
   notes: string | null;
+  admin_notes: string | null;
   status: string | null;
   created_at: string;
 };
@@ -135,10 +136,7 @@ async function sendStatusEmail(status: string, booking: BookingRow) {
     })
   });
 
-  if (!response.ok) {
-    return { sent: false, skipped: false };
-  }
-
+  if (!response.ok) return { sent: false, skipped: false };
   return { sent: true, skipped: false };
 }
 
@@ -151,20 +149,13 @@ async function verifyAdmin(request: Request) {
   const authHeader = request.headers.get("authorization") || "";
   const token = authHeader.replace(/^Bearer\s+/i, "").trim();
 
-  if (!token) {
-    return { ok: false as const, status: 401, message: "Missing access token." };
-  }
+  if (!token) return { ok: false as const, status: 401, message: "Missing access token." };
 
   const { data, error } = await supabase.auth.getUser(token);
   const email = data.user?.email?.toLowerCase();
 
-  if (error || !email) {
-    return { ok: false as const, status: 401, message: "Invalid session." };
-  }
-
-  if (!getAdminEmails().includes(email)) {
-    return { ok: false as const, status: 403, message: "Admin access required." };
-  }
+  if (error || !email) return { ok: false as const, status: 401, message: "Invalid session." };
+  if (!getAdminEmails().includes(email)) return { ok: false as const, status: 403, message: "Admin access required." };
 
   return { ok: true as const, supabase, user: data.user };
 }
@@ -175,25 +166,38 @@ export async function PATCH(request: Request, { params }: { params: { id: string
     return NextResponse.json({ ok: false, message: admin.message }, { status: admin.status });
   }
 
-  const body = await request.json().catch(() => null) as { status?: string } | null;
-  const status = body?.status;
+  const body = await request.json().catch(() => null) as { status?: string; admin_notes?: string } | null;
+  const update: { status?: string; admin_notes?: string | null } = {};
+  let shouldSendStatusEmail = false;
 
-  if (!status || !allowedStatuses.includes(status)) {
-    return NextResponse.json({ ok: false, message: "Invalid status." }, { status: 400 });
+  if (typeof body?.status === "string") {
+    if (!allowedStatuses.includes(body.status)) {
+      return NextResponse.json({ ok: false, message: "Invalid status." }, { status: 400 });
+    }
+    update.status = body.status;
+    shouldSendStatusEmail = body.status !== "new";
+  }
+
+  if (typeof body?.admin_notes === "string") {
+    update.admin_notes = sanitize(body.admin_notes) || null;
+  }
+
+  if (!Object.keys(update).length) {
+    return NextResponse.json({ ok: false, message: "No valid update fields." }, { status: 400 });
   }
 
   const { data, error } = await admin.supabase
     .from("bookings")
-    .update({ status })
+    .update(update)
     .eq("id", params.id)
-    .select("id, service, area, address, size_sqm, frequency, preferred_date, time_window, customer_name, customer_email, customer_phone, notes, status, created_at")
+    .select("id, service, area, address, size_sqm, frequency, preferred_date, time_window, customer_name, customer_email, customer_phone, notes, admin_notes, status, created_at")
     .single<BookingRow>();
 
   if (error) {
     return NextResponse.json({ ok: false, message: error.message }, { status: 500 });
   }
 
-  const email = await sendStatusEmail(status, data);
+  const email = shouldSendStatusEmail && update.status ? await sendStatusEmail(update.status, data) : { sent: false, skipped: true };
 
   return NextResponse.json({ ok: true, booking: data, email });
 }
