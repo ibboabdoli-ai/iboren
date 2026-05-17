@@ -33,42 +33,8 @@ function csvEscape(value: unknown) {
 }
 
 function buildCsv(bookings: CsvBooking[]) {
-  const headers = [
-    "ID",
-    "Status",
-    "Service",
-    "Area",
-    "Address",
-    "Size sqm",
-    "Frequency",
-    "Preferred date",
-    "Time window",
-    "Customer name",
-    "Customer email",
-    "Customer phone",
-    "Customer notes",
-    "Admin notes",
-    "Created at"
-  ];
-
-  const rows = bookings.map((booking) => [
-    booking.id,
-    statusLabel(booking.status),
-    booking.service,
-    booking.area,
-    booking.address,
-    booking.size_sqm,
-    booking.frequency,
-    booking.preferred_date,
-    booking.time_window,
-    booking.customer_name,
-    booking.customer_email,
-    booking.customer_phone,
-    booking.notes,
-    booking.admin_notes,
-    booking.created_at
-  ]);
-
+  const headers = ["ID", "Status", "Service", "Area", "Address", "Size sqm", "Frequency", "Preferred date", "Time window", "Customer name", "Customer email", "Customer phone", "Customer notes", "Admin notes", "Created at"];
+  const rows = bookings.map((booking) => [booking.id, statusLabel(booking.status), booking.service, booking.area, booking.address, booking.size_sqm, booking.frequency, booking.preferred_date, booking.time_window, booking.customer_name, booking.customer_email, booking.customer_phone, booking.notes, booking.admin_notes, booking.created_at]);
   return [headers, ...rows].map((row) => row.map(csvEscape).join(",")).join("\n");
 }
 
@@ -92,7 +58,8 @@ export default function AdminCsvExport({ bookings }: { bookings: CsvBooking[] })
       type="button"
       onClick={exportCsv}
       disabled={!bookings.length}
-      className="inline-flex items-center justify-center gap-2 rounded-full bg-burgundy px-4 py-2 text-sm font-bold text-porcelain disabled:opacity-40"
+      className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-full border border-gold/40 bg-gold px-5 py-3 text-sm font-black uppercase tracking-[.12em] text-ink shadow-lg transition hover:bg-porcelain disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
+      aria-label="Exportera bokningar som CSV"
     >
       <Download className="h-4 w-4" />
       Exportera CSV
