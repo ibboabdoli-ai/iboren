@@ -32,7 +32,7 @@ export default function LoginPage() {
     const origin = window.location.origin;
     const { error } = await supabase.auth.signInWithOAuth({
       provider,
-      options: { redirectTo: `${origin}/auth/callback?next=/profile` }
+      options: { redirectTo: `${origin}/profile` }
     });
     if (error) {
       setMessage(error.message);
