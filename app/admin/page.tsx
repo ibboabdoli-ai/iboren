@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { createClient, User } from "@supabase/supabase-js";
 import { ArrowDownUp, ArrowLeft, CheckCircle2, LayoutDashboard, Loader2, RefreshCw, Search, ShieldCheck, XCircle } from "lucide-react";
+import AdminCsvExport from "./AdminCsvExport";
 import AdminNoteBox from "./AdminNoteBox";
 
 type AdminBooking = {
@@ -232,7 +233,10 @@ export default function AdminPage() {
                   </button>
                 ))}
               </div>
-              <p className="text-sm font-bold text-ink/55">{filteredBookings.length} av {bookings.length} bokningar</p>
+              <div className="flex flex-wrap items-center gap-3">
+                <p className="text-sm font-bold text-ink/55">{filteredBookings.length} av {bookings.length} bokningar</p>
+                <AdminCsvExport bookings={filteredBookings} />
+              </div>
             </div>
 
             <div className="grid gap-3 lg:grid-cols-[1fr_260px]">
