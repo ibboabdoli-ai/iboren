@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { createClient, User } from "@supabase/supabase-js";
-import { ArrowLeft, LayoutDashboard, Loader2, RefreshCw, ShieldCheck } from "lucide-react";
+import { ArrowLeft, CheckCircle2, LayoutDashboard, Loader2, RefreshCw, ShieldCheck, XCircle } from "lucide-react";
 
 type AdminBooking = {
   id: string;
@@ -44,6 +44,13 @@ function statusLabel(status: string | null) {
   if (status === "confirmed") return "Bekräftad";
   if (status === "completed") return "Klar";
   return "Ny";
+}
+
+function statusPillClass(status: string | null) {
+  if (status === "cancelled") return "bg-red-100 text-red-800";
+  if (status === "confirmed") return "bg-green-100 text-green-800";
+  if (status === "completed") return "bg-ink text-porcelain";
+  return "bg-burgundy text-porcelain";
 }
 
 export default function AdminPage() {
@@ -201,36 +208,48 @@ export default function AdminPage() {
             ) : filteredBookings.length === 0 ? (
               <div className="rounded-[2rem] border border-dashed border-burgundy/20 bg-cream p-6 text-ink/65">Inga bokningar i detta filter.</div>
             ) : (
-              filteredBookings.map((booking) => (
-                <article key={booking.id} className="rounded-[2rem] border border-burgundy/10 bg-cream p-5">
-                  <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
-                    <div>
-                      <p className="inline-flex items-center gap-2 rounded-full bg-burgundy px-3 py-1 text-xs font-bold uppercase tracking-[.18em] text-porcelain"><ShieldCheck className="h-3.5 w-3.5" /> {statusLabel(booking.status)}</p>
-                      <h2 className="display mt-3 text-3xl font-bold text-burgundy">{booking.service}</h2>
-                      <p className="mt-2 leading-7 text-ink/70">{booking.area}{booking.address ? ` · ${booking.address}` : ""}</p>
+              filteredBookings.map((booking) => {
+                const currentStatus = booking.status || "new";
+                const isUpdating = updatingId === booking.id;
+
+                return (
+                  <article key={booking.id} className="rounded-[2rem] border border-burgundy/10 bg-cream p-5">
+                    <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+                      <div>
+                        <p className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-bold uppercase tracking-[.18em] ${statusPillClass(currentStatus)}`}><ShieldCheck className="h-3.5 w-3.5" /> {statusLabel(currentStatus)}</p>
+                        <h2 className="display mt-3 text-3xl font-bold text-burgundy">{booking.service}</h2>
+                        <p className="mt-2 leading-7 text-ink/70">{booking.area}{booking.address ? ` · ${booking.address}` : ""}</p>
+                      </div>
+                      <select value={currentStatus} onChange={(event) => updateStatus(booking.id, event.target.value)} disabled={isUpdating} className="rounded-2xl border border-burgundy/10 bg-porcelain px-4 py-3 text-sm font-bold text-ink outline-none">
+                        <option value="new">Ny</option>
+                        <option value="confirmed">Bekräftad</option>
+                        <option value="completed">Klar</option>
+                        <option value="cancelled">Avbokad</option>
+                      </select>
                     </div>
-                    <select value={booking.status || "new"} onChange={(event) => updateStatus(booking.id, event.target.value)} disabled={updatingId === booking.id} className="rounded-2xl border border-burgundy/10 bg-porcelain px-4 py-3 text-sm font-bold text-ink outline-none">
-                      <option value="new">Ny</option>
-                      <option value="confirmed">Bekräftad</option>
-                      <option value="completed">Klar</option>
-                      <option value="cancelled">Avbokad</option>
-                    </select>
-                  </div>
 
-                  <div className="mt-5 grid gap-3 text-sm text-ink/65 md:grid-cols-2 xl:grid-cols-4">
-                    <p><strong>Kund:</strong> {booking.customer_name}</p>
-                    <p><strong>E-post:</strong> {booking.customer_email}</p>
-                    <p><strong>Telefon:</strong> {booking.customer_phone || "—"}</p>
-                    <p><strong>Datum:</strong> {booking.preferred_date || "—"}</p>
-                    <p><strong>Storlek:</strong> {booking.size_sqm ? `${booking.size_sqm} kvm` : "—"}</p>
-                    <p><strong>Frekvens:</strong> {booking.frequency || "—"}</p>
-                    <p><strong>Tid:</strong> {booking.time_window || "—"}</p>
-                    <p><strong>Skapad:</strong> {new Date(booking.created_at).toLocaleDateString("sv-SE")}</p>
-                  </div>
+                    <div className="mt-5 flex flex-wrap gap-2">
+                      <button disabled={isUpdating || currentStatus === "confirmed"} onClick={() => updateStatus(booking.id, "confirmed")} className="inline-flex items-center gap-2 rounded-full bg-green-100 px-4 py-2 text-sm font-bold text-green-800 disabled:opacity-40"><CheckCircle2 className="h-4 w-4" /> Bekräfta</button>
+                      <button disabled={isUpdating || currentStatus === "completed"} onClick={() => updateStatus(booking.id, "completed")} className="inline-flex items-center gap-2 rounded-full bg-ink px-4 py-2 text-sm font-bold text-porcelain disabled:opacity-40"><CheckCircle2 className="h-4 w-4" /> Klar</button>
+                      <button disabled={isUpdating || currentStatus === "cancelled"} onClick={() => updateStatus(booking.id, "cancelled")} className="inline-flex items-center gap-2 rounded-full bg-red-100 px-4 py-2 text-sm font-bold text-red-800 disabled:opacity-40"><XCircle className="h-4 w-4" /> Avboka</button>
+                      {isUpdating && <span className="inline-flex items-center gap-2 rounded-full bg-porcelain px-4 py-2 text-sm font-bold text-burgundy"><Loader2 className="h-4 w-4 animate-spin" /> Uppdaterar</span>}
+                    </div>
 
-                  {booking.notes && <p className="mt-4 rounded-2xl bg-porcelain p-4 text-sm leading-7 text-ink/65">{booking.notes}</p>}
-                </article>
-              ))
+                    <div className="mt-5 grid gap-3 text-sm text-ink/65 md:grid-cols-2 xl:grid-cols-4">
+                      <p><strong>Kund:</strong> {booking.customer_name}</p>
+                      <p><strong>E-post:</strong> {booking.customer_email}</p>
+                      <p><strong>Telefon:</strong> {booking.customer_phone || "—"}</p>
+                      <p><strong>Datum:</strong> {booking.preferred_date || "—"}</p>
+                      <p><strong>Storlek:</strong> {booking.size_sqm ? `${booking.size_sqm} kvm` : "—"}</p>
+                      <p><strong>Frekvens:</strong> {booking.frequency || "—"}</p>
+                      <p><strong>Tid:</strong> {booking.time_window || "—"}</p>
+                      <p><strong>Skapad:</strong> {new Date(booking.created_at).toLocaleDateString("sv-SE")}</p>
+                    </div>
+
+                    {booking.notes && <p className="mt-4 rounded-2xl bg-porcelain p-4 text-sm leading-7 text-ink/65">{booking.notes}</p>}
+                  </article>
+                );
+              })
             )}
           </div>
         </div>
