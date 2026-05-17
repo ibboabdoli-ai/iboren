@@ -37,10 +37,7 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="sv">
-      <body>
-        {children}
-        <div className="noise" aria-hidden="true" />
-      </body>
+      <body>{children}</body>
     </html>
   );
 }
