@@ -200,14 +200,23 @@ export default function ProfilePage() {
     setCancelingId(bookingId);
     setMessage("");
 
-    const { error } = await supabase
-      .from("bookings")
-      .update({ status: "cancelled" })
-      .eq("id", bookingId)
-      .eq("user_id", user.id);
+    const { data } = await supabase.auth.getSession();
+    const token = data.session?.access_token;
 
-    if (error) {
-      setMessage(`Kunde inte avboka bokningen: ${error.message}`);
+    if (!token) {
+      setMessage("Du behöver logga in igen för att avboka.");
+      setCancelingId(null);
+      return;
+    }
+
+    const response = await fetch(`/api/bookings/${bookingId}/cancel`, {
+      method: "PATCH",
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    const result = await response.json().catch(() => null) as { ok?: boolean; message?: string } | null;
+
+    if (!response.ok || !result?.ok) {
+      setMessage(`Kunde inte avboka bokningen: ${result?.message || "Okänt fel"}`);
     } else {
       setBookings((current) => current.map((booking) => booking.id === bookingId ? { ...booking, status: "cancelled" } : booking));
       setMessage("Bokningen är markerad som avbokad.");
