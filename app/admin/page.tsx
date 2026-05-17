@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { createClient, User } from "@supabase/supabase-js";
 import { ArrowLeft, CheckCircle2, LayoutDashboard, Loader2, RefreshCw, ShieldCheck, XCircle } from "lucide-react";
+import AdminNoteBox from "./AdminNoteBox";
 
 type AdminBooking = {
   id: string;
@@ -19,6 +20,7 @@ type AdminBooking = {
   customer_email: string;
   customer_phone: string | null;
   notes: string | null;
+  admin_notes: string | null;
   status: string | null;
   created_at: string;
 };
@@ -246,7 +248,8 @@ export default function AdminPage() {
                       <p><strong>Skapad:</strong> {new Date(booking.created_at).toLocaleDateString("sv-SE")}</p>
                     </div>
 
-                    {booking.notes && <p className="mt-4 rounded-2xl bg-porcelain p-4 text-sm leading-7 text-ink/65">{booking.notes}</p>}
+                    {booking.notes && <p className="mt-4 rounded-2xl bg-porcelain p-4 text-sm leading-7 text-ink/65"><strong>Kundens önskemål:</strong><br />{booking.notes}</p>}
+                    <AdminNoteBox bookingId={booking.id} initialNote={booking.admin_notes || ""} />
                   </article>
                 );
               })
