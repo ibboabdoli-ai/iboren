@@ -1,9 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 import { createClient, Session, User } from "@supabase/supabase-js";
-import { ArrowLeft, CalendarCheck2, Loader2, LogOut, ShieldCheck, UserRound } from "lucide-react";
+import { ArrowLeft, CalendarCheck2, Loader2, LogOut, Save, ShieldCheck, UserRound } from "lucide-react";
 
 type Booking = {
   id: string;
@@ -22,6 +22,20 @@ type Booking = {
   created_at: string;
 };
 
+type ProfileForm = {
+  full_name: string;
+  phone: string;
+  default_area: string;
+  default_address: string;
+};
+
+const emptyProfile: ProfileForm = {
+  full_name: "",
+  phone: "",
+  default_area: "",
+  default_address: ""
+};
+
 function getSupabase() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -35,14 +49,21 @@ function getSupabase() {
   });
 }
 
+function metadataName(currentUser: User) {
+  return currentUser.user_metadata?.full_name || currentUser.user_metadata?.name || "";
+}
+
 export default function ProfilePage() {
   const hasLoaded = useRef(false);
   const [loading, setLoading] = useState(true);
   const [bookingsLoading, setBookingsLoading] = useState(false);
+  const [profileSaving, setProfileSaving] = useState(false);
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [bookings, setBookings] = useState<Booking[]>([]);
+  const [profile, setProfile] = useState<ProfileForm>(emptyProfile);
   const [message, setMessage] = useState("");
+  const [profileMessage, setProfileMessage] = useState("");
 
   async function loadBookings(currentUser: User) {
     const supabase = getSupabase();
@@ -61,6 +82,35 @@ export default function ProfilePage() {
       setBookings((data ?? []) as Booking[]);
     }
     setBookingsLoading(false);
+  }
+
+  async function loadProfile(currentUser: User) {
+    const supabase = getSupabase();
+    if (!supabase) return;
+
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("full_name, phone, default_area, default_address")
+      .eq("id", currentUser.id)
+      .maybeSingle();
+
+    if (error) {
+      setProfileMessage(`Kunde inte hämta profiluppgifter: ${error.message}`);
+      setProfile({
+        full_name: metadataName(currentUser),
+        phone: "",
+        default_area: "",
+        default_address: ""
+      });
+      return;
+    }
+
+    setProfile({
+      full_name: data?.full_name || metadataName(currentUser),
+      phone: data?.phone || "",
+      default_area: data?.default_area || "",
+      default_address: data?.default_address || ""
+    });
   }
 
   useEffect(() => {
@@ -86,7 +136,7 @@ export default function ProfilePage() {
       setUser(data.session?.user ?? null);
 
       if (data.session?.user) {
-        await loadBookings(data.session.user);
+        await Promise.all([loadBookings(data.session.user), loadProfile(data.session.user)]);
       }
 
       if (!cancelled) setLoading(false);
@@ -98,6 +148,34 @@ export default function ProfilePage() {
       cancelled = true;
     };
   }, []);
+
+  async function saveProfile(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!user) return;
+    const supabase = getSupabase();
+    if (!supabase) return;
+
+    setProfileSaving(true);
+    setProfileMessage("");
+
+    const { error } = await supabase.from("profiles").upsert({
+      id: user.id,
+      full_name: profile.full_name.trim() || metadataName(user),
+      email: user.email,
+      phone: profile.phone.trim() || null,
+      default_area: profile.default_area.trim() || null,
+      default_address: profile.default_address.trim() || null,
+      updated_at: new Date().toISOString()
+    });
+
+    if (error) {
+      setProfileMessage(`Kunde inte spara profilen: ${error.message}`);
+    } else {
+      setProfileMessage("Profiluppgifter sparade.");
+    }
+
+    setProfileSaving(false);
+  }
 
   async function signOut() {
     const supabase = getSupabase();
@@ -125,7 +203,7 @@ export default function ProfilePage() {
     );
   }
 
-  const fullName = user.user_metadata?.full_name || user.user_metadata?.name || "Iboren customer";
+  const fullName = profile.full_name || metadataName(user) || "Iboren customer";
   const avatar = user.user_metadata?.avatar_url || user.user_metadata?.picture;
   const provider = user.app_metadata?.provider || "oauth";
 
@@ -149,6 +227,7 @@ export default function ProfilePage() {
             </div>
             <button onClick={signOut} className="mt-8 inline-flex items-center gap-2 rounded-full bg-porcelain px-5 py-3 text-sm font-bold text-burgundy"><LogOut size={17} /> Logga ut</button>
           </aside>
+
           <div className="grid gap-5">
             <article className="rounded-[2.5rem] bg-porcelain p-8 shadow-soft">
               <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
@@ -192,14 +271,43 @@ export default function ProfilePage() {
                 </div>
               )}
             </article>
+
             <article className="rounded-[2.5rem] bg-porcelain p-8 shadow-soft">
               <div className="mb-6 grid h-14 w-14 place-items-center rounded-full bg-gold text-ink"><ShieldCheck size={25} /></div>
               <h2 className="display text-4xl font-bold text-burgundy">Profiluppgifter</h2>
-              <p className="mt-4 leading-8 text-ink/65">Nästa steg blir att låta kunden spara standardadress, telefonnummer och preferenser.</p>
+              <p className="mt-4 leading-8 text-ink/65">Spara standarduppgifter som kan användas i framtida bokningar.</p>
+
+              <form onSubmit={saveProfile} className="mt-7 grid gap-4">
+                <ProfileField label="Namn" value={profile.full_name} onChange={(value) => setProfile((current) => ({ ...current, full_name: value }))} placeholder="För- och efternamn" />
+                <ProfileField label="Telefon" value={profile.phone} onChange={(value) => setProfile((current) => ({ ...current, phone: value }))} placeholder="+46 ..." />
+                <div className="grid gap-4 md:grid-cols-2">
+                  <ProfileField label="Standardområde" value={profile.default_area} onChange={(value) => setProfile((current) => ({ ...current, default_area: value }))} placeholder="Södertälje, Stockholm..." />
+                  <ProfileField label="Standardadress" value={profile.default_address} onChange={(value) => setProfile((current) => ({ ...current, default_address: value }))} placeholder="Gatuadress" />
+                </div>
+                <button disabled={profileSaving} className="btn-primary w-full md:w-fit">
+                  {profileSaving ? <Loader2 className="h-5 w-5 animate-spin" /> : <Save className="h-5 w-5" />}
+                  Spara profil
+                </button>
+                {profileMessage && <p className="rounded-2xl bg-burgundy/10 p-4 text-sm text-burgundy">{profileMessage}</p>}
+              </form>
             </article>
           </div>
         </div>
       </section>
     </main>
+  );
+}
+
+function ProfileField({ label, value, onChange, placeholder }: { label: string; value: string; onChange: (value: string) => void; placeholder?: string }) {
+  return (
+    <label className="block">
+      <span className="mb-2 block text-sm font-bold text-ink/70">{label}</span>
+      <input
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        className="w-full rounded-2xl border border-burgundy/10 bg-cream px-4 py-3 text-ink outline-none transition focus:border-burgundy/40"
+        placeholder={placeholder}
+      />
+    </label>
   );
 }
