@@ -11,6 +11,8 @@ const providers = [
   { id: "azure", label: "Fortsätt med Microsoft" }
 ] as const;
 
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://iboren.vercel.app";
+
 function getSupabase() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -29,10 +31,9 @@ export default function LoginPage() {
       return;
     }
     setLoading(provider);
-    const origin = window.location.origin;
     const { error } = await supabase.auth.signInWithOAuth({
       provider,
-      options: { redirectTo: `${origin}/profile` }
+      options: { redirectTo: `${siteUrl}/profile` }
     });
     if (error) {
       setMessage(error.message);
