@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { createClient, User } from "@supabase/supabase-js";
-import { ArrowLeft, CheckCircle2, LayoutDashboard, Loader2, RefreshCw, ShieldCheck, XCircle } from "lucide-react";
+import { ArrowDownUp, ArrowLeft, CheckCircle2, LayoutDashboard, Loader2, RefreshCw, Search, ShieldCheck, XCircle } from "lucide-react";
 import AdminNoteBox from "./AdminNoteBox";
 
 type AdminBooking = {
@@ -27,6 +27,8 @@ type AdminBooking = {
 
 const statuses = ["all", "new", "confirmed", "completed", "cancelled"];
 const adminEmails = ["ibbo.abdoli@gmail.com"];
+
+type SortMode = "newest" | "oldest" | "booking_date" | "customer";
 
 function getSupabase() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -55,21 +57,51 @@ function statusPillClass(status: string | null) {
   return "bg-burgundy text-porcelain";
 }
 
+function searchableText(booking: AdminBooking) {
+  return [
+    booking.service,
+    booking.area,
+    booking.address,
+    booking.customer_name,
+    booking.customer_email,
+    booking.customer_phone,
+    booking.preferred_date,
+    booking.frequency,
+    booking.time_window,
+    booking.notes,
+    booking.admin_notes,
+    statusLabel(booking.status)
+  ].filter(Boolean).join(" ").toLowerCase();
+}
+
 export default function AdminPage() {
   const [loading, setLoading] = useState(true);
   const [bookingsLoading, setBookingsLoading] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [bookings, setBookings] = useState<AdminBooking[]>([]);
   const [filter, setFilter] = useState("all");
+  const [search, setSearch] = useState("");
+  const [sortMode, setSortMode] = useState<SortMode>("newest");
   const [message, setMessage] = useState("");
   const [updatingId, setUpdatingId] = useState<string | null>(null);
 
   const isAdmin = Boolean(user?.email && adminEmails.includes(user.email.toLowerCase()));
 
   const filteredBookings = useMemo(() => {
-    if (filter === "all") return bookings;
-    return bookings.filter((booking) => (booking.status || "new") === filter);
-  }, [bookings, filter]);
+    const query = search.trim().toLowerCase();
+    const filtered = bookings.filter((booking) => {
+      const statusOk = filter === "all" || (booking.status || "new") === filter;
+      const searchOk = !query || searchableText(booking).includes(query);
+      return statusOk && searchOk;
+    });
+
+    return [...filtered].sort((a, b) => {
+      if (sortMode === "oldest") return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+      if (sortMode === "booking_date") return String(a.preferred_date || "9999-12-31").localeCompare(String(b.preferred_date || "9999-12-31"));
+      if (sortMode === "customer") return a.customer_name.localeCompare(b.customer_name, "sv");
+      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+    });
+  }, [bookings, filter, search, sortMode]);
 
   async function getToken() {
     const supabase = getSupabase();
@@ -191,15 +223,38 @@ export default function AdminPage() {
         </div>
 
         <div className="mt-6 rounded-[2rem] bg-porcelain p-5 shadow-soft md:p-7">
-          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            <div className="flex flex-wrap gap-2">
-              {statuses.map((status) => (
-                <button key={status} onClick={() => setFilter(status)} className={`rounded-full px-4 py-2 text-sm font-bold ${filter === status ? "bg-burgundy text-porcelain" : "bg-cream text-ink/65"}`}>
-                  {status === "all" ? "Alla" : statusLabel(status)}
-                </button>
-              ))}
+          <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+              <div className="flex flex-wrap gap-2">
+                {statuses.map((status) => (
+                  <button key={status} onClick={() => setFilter(status)} className={`rounded-full px-4 py-2 text-sm font-bold ${filter === status ? "bg-burgundy text-porcelain" : "bg-cream text-ink/65"}`}>
+                    {status === "all" ? "Alla" : statusLabel(status)}
+                  </button>
+                ))}
+              </div>
+              <p className="text-sm font-bold text-ink/55">{filteredBookings.length} av {bookings.length} bokningar</p>
             </div>
-            <p className="text-sm font-bold text-ink/55">{filteredBookings.length} bokningar</p>
+
+            <div className="grid gap-3 lg:grid-cols-[1fr_260px]">
+              <label className="relative block">
+                <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-burgundy/55" />
+                <input
+                  value={search}
+                  onChange={(event) => setSearch(event.target.value)}
+                  className="w-full rounded-2xl border border-burgundy/10 bg-cream py-3 pl-11 pr-4 text-sm font-semibold text-ink outline-none focus:border-burgundy/40"
+                  placeholder="Sök namn, email, telefon, adress, stad, tjänst..."
+                />
+              </label>
+              <label className="relative block">
+                <ArrowDownUp className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-burgundy/55" />
+                <select value={sortMode} onChange={(event) => setSortMode(event.target.value as SortMode)} className="w-full rounded-2xl border border-burgundy/10 bg-cream py-3 pl-11 pr-4 text-sm font-bold text-ink outline-none focus:border-burgundy/40">
+                  <option value="newest">Sortera: nyast först</option>
+                  <option value="oldest">Sortera: äldst först</option>
+                  <option value="booking_date">Sortera: bokningsdatum</option>
+                  <option value="customer">Sortera: kundnamn</option>
+                </select>
+              </label>
+            </div>
           </div>
 
           {message && <p className="mt-5 rounded-2xl bg-burgundy/10 p-4 text-sm text-burgundy">{message}</p>}
@@ -208,7 +263,7 @@ export default function AdminPage() {
             {bookingsLoading ? (
               <div className="grid min-h-40 place-items-center text-burgundy"><Loader2 className="h-7 w-7 animate-spin" /></div>
             ) : filteredBookings.length === 0 ? (
-              <div className="rounded-[2rem] border border-dashed border-burgundy/20 bg-cream p-6 text-ink/65">Inga bokningar i detta filter.</div>
+              <div className="rounded-[2rem] border border-dashed border-burgundy/20 bg-cream p-6 text-ink/65">Inga bokningar matchar filter/sökning.</div>
             ) : (
               filteredBookings.map((booking) => {
                 const currentStatus = booking.status || "new";
