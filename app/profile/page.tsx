@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { FormEvent, useEffect, useRef, useState } from "react";
 import { createClient, Session, User } from "@supabase/supabase-js";
-import { ArrowLeft, CalendarCheck2, Loader2, LogOut, Save, ShieldCheck, UserRound } from "lucide-react";
+import { ArrowLeft, CalendarCheck2, Loader2, LogOut, Save, ShieldCheck, UserRound, XCircle } from "lucide-react";
 
 type Booking = {
   id: string;
@@ -53,11 +53,26 @@ function metadataName(currentUser: User) {
   return currentUser.user_metadata?.full_name || currentUser.user_metadata?.name || "";
 }
 
+function statusLabel(status: string | null) {
+  if (status === "cancelled") return "Avbokad";
+  if (status === "confirmed") return "Bekräftad";
+  if (status === "completed") return "Klar";
+  return "Ny";
+}
+
+function statusClass(status: string | null) {
+  if (status === "cancelled") return "bg-red-100 text-red-800 border-red-200";
+  if (status === "confirmed") return "bg-green-100 text-green-800 border-green-200";
+  if (status === "completed") return "bg-ink text-porcelain border-ink";
+  return "bg-burgundy text-porcelain border-burgundy";
+}
+
 export default function ProfilePage() {
   const hasLoaded = useRef(false);
   const [loading, setLoading] = useState(true);
   const [bookingsLoading, setBookingsLoading] = useState(false);
   const [profileSaving, setProfileSaving] = useState(false);
+  const [cancelingId, setCancelingId] = useState<string | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [bookings, setBookings] = useState<Booking[]>([]);
@@ -177,6 +192,30 @@ export default function ProfilePage() {
     setProfileSaving(false);
   }
 
+  async function cancelBooking(bookingId: string) {
+    if (!user) return;
+    const supabase = getSupabase();
+    if (!supabase) return;
+
+    setCancelingId(bookingId);
+    setMessage("");
+
+    const { error } = await supabase
+      .from("bookings")
+      .update({ status: "cancelled" })
+      .eq("id", bookingId)
+      .eq("user_id", user.id);
+
+    if (error) {
+      setMessage(`Kunde inte avboka bokningen: ${error.message}`);
+    } else {
+      setBookings((current) => current.map((booking) => booking.id === bookingId ? { ...booking, status: "cancelled" } : booking));
+      setMessage("Bokningen är markerad som avbokad.");
+    }
+
+    setCancelingId(null);
+  }
+
   async function signOut() {
     const supabase = getSupabase();
     if (!supabase) return;
@@ -236,7 +275,7 @@ export default function ProfilePage() {
                   <h2 className="display text-4xl font-bold text-burgundy">Mina bokningar</h2>
                   <p className="mt-3 leading-8 text-ink/65">Här visas bokningsförfrågningar som sparats på ditt konto.</p>
                 </div>
-                <Link href="/#booking" className="btn-secondary">Ny bokning</Link>
+                <Link href="/booking" className="btn-secondary">Ny bokning</Link>
               </div>
 
               {message && <p className="mb-5 rounded-2xl bg-burgundy/10 p-4 text-sm text-burgundy">{message}</p>}
@@ -246,28 +285,37 @@ export default function ProfilePage() {
               ) : bookings.length === 0 ? (
                 <div className="rounded-[2rem] border border-dashed border-burgundy/20 bg-cream p-6 text-ink/65">
                   <p>Du har inga sparade bokningar ännu.</p>
-                  <Link href="/#booking" className="mt-4 inline-flex font-bold text-burgundy">Skapa första bokningen →</Link>
+                  <Link href="/booking" className="mt-4 inline-flex font-bold text-burgundy">Skapa första bokningen →</Link>
                 </div>
               ) : (
                 <div className="grid gap-4">
-                  {bookings.map((booking) => (
-                    <article key={booking.id} className="rounded-[2rem] border border-burgundy/10 bg-cream p-5">
-                      <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-                        <div>
-                          <p className="text-xs font-bold uppercase tracking-[.24em] text-burgundy/60">{booking.status || "new"}</p>
-                          <h3 className="display mt-1 text-3xl font-bold text-burgundy">{booking.service}</h3>
-                          <p className="mt-2 leading-7 text-ink/70">{booking.area}{booking.address ? ` · ${booking.address}` : ""}</p>
+                  {bookings.map((booking) => {
+                    const isCancelled = booking.status === "cancelled";
+                    return (
+                      <article key={booking.id} className={`rounded-[2rem] border p-5 ${isCancelled ? "border-red-200 bg-red-50/60 opacity-75" : "border-burgundy/10 bg-cream"}`}>
+                        <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                          <div>
+                            <p className={`inline-flex rounded-full border px-3 py-1 text-xs font-bold uppercase tracking-[.18em] ${statusClass(booking.status)}`}>{statusLabel(booking.status)}</p>
+                            <h3 className="display mt-3 text-3xl font-bold text-burgundy">{booking.service}</h3>
+                            <p className="mt-2 leading-7 text-ink/70">{booking.area}{booking.address ? ` · ${booking.address}` : ""}</p>
+                          </div>
+                          <span className="rounded-full bg-burgundy px-4 py-2 text-xs font-bold uppercase tracking-[.18em] text-porcelain">{booking.preferred_date || "Datum saknas"}</span>
                         </div>
-                        <span className="rounded-full bg-burgundy px-4 py-2 text-xs font-bold uppercase tracking-[.18em] text-porcelain">{booking.preferred_date || "Datum saknas"}</span>
-                      </div>
-                      <div className="mt-5 grid gap-3 text-sm text-ink/62 md:grid-cols-3">
-                        <p><strong>Storlek:</strong> {booking.size_sqm ? `${booking.size_sqm} kvm` : "—"}</p>
-                        <p><strong>Frekvens:</strong> {booking.frequency || "—"}</p>
-                        <p><strong>Tid:</strong> {booking.time_window || "—"}</p>
-                      </div>
-                      {booking.notes && <p className="mt-4 rounded-2xl bg-porcelain p-4 text-sm leading-7 text-ink/62">{booking.notes}</p>}
-                    </article>
-                  ))}
+                        <div className="mt-5 grid gap-3 text-sm text-ink/62 md:grid-cols-3">
+                          <p><strong>Storlek:</strong> {booking.size_sqm ? `${booking.size_sqm} kvm` : "—"}</p>
+                          <p><strong>Frekvens:</strong> {booking.frequency || "—"}</p>
+                          <p><strong>Tid:</strong> {booking.time_window || "—"}</p>
+                        </div>
+                        {booking.notes && <p className="mt-4 rounded-2xl bg-porcelain p-4 text-sm leading-7 text-ink/62">{booking.notes}</p>}
+                        {!isCancelled && (
+                          <button onClick={() => cancelBooking(booking.id)} disabled={cancelingId === booking.id} className="mt-5 inline-flex items-center gap-2 rounded-full border border-red-200 bg-white px-4 py-2 text-sm font-bold text-red-700 transition hover:bg-red-50 disabled:opacity-60">
+                            {cancelingId === booking.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <XCircle className="h-4 w-4" />}
+                            Avboka
+                          </button>
+                        )}
+                      </article>
+                    );
+                  })}
                 </div>
               )}
             </article>
