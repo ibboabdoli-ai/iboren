@@ -81,12 +81,28 @@ async function saveBooking(payload: Required<BookingPayload>, auth: AuthContext)
   if (!supabase) throw new Error("Supabase saknas.");
 
   const size = Number.parseInt(payload.size, 10);
-  const { error } = await supabase.from("bookings").insert({
+  const sizeSqm = Number.isFinite(size) ? size : null;
+
+  const { data: existing, error: lookupError } = await supabase
+    .from("bookings")
+    .select("id")
+    .eq("user_id", auth.user.id)
+    .eq("service", payload.service)
+    .eq("address", payload.address || "")
+    .eq("preferred_date", payload.date)
+    .eq("customer_email", payload.email)
+    .limit(1)
+    .maybeSingle();
+
+  if (lookupError) throw new Error(`Kunde inte kontrollera tidigare bokning: ${lookupError.message}`);
+  if (existing?.id) return existing.id as string;
+
+  const { data, error } = await supabase.from("bookings").insert({
     user_id: auth.user.id,
     service: payload.service,
     area: payload.area,
     address: payload.address || null,
-    size_sqm: Number.isFinite(size) ? size : null,
+    size_sqm: sizeSqm,
     frequency: payload.frequency,
     preferred_date: payload.date,
     time_window: payload.timeWindow,
@@ -95,9 +111,10 @@ async function saveBooking(payload: Required<BookingPayload>, auth: AuthContext)
     customer_phone: payload.phone || null,
     notes: payload.notes || null,
     status: "new"
-  });
+  }).select("id").single();
 
   if (error) throw new Error(`Kunde inte spara bokningen i databasen: ${error.message}`);
+  return data.id as string;
 }
 
 export async function POST(request: Request) {
@@ -135,12 +152,12 @@ export async function POST(request: Request) {
       return NextResponse.json({ ok: false, message: "Bokningens e-post måste matcha ditt inloggade konto." }, { status: 403 });
     }
 
-    await saveBooking(payload, auth);
+    const bookingId = await saveBooking(payload, auth);
 
     const resendApiKey = process.env.RESEND_API_KEY;
     const toEmail = process.env.BOOKING_TO_EMAIL || "hej@iboren.se";
     const fromEmail = process.env.BOOKING_FROM_EMAIL || "Iboren <onboarding@resend.dev>";
-    const bookingText = buildText(payload, auth.user);
+    const bookingText = `${buildText(payload, auth.user)}\n\nBooking ID: ${bookingId}`;
 
     if (resendApiKey) {
       const response = await fetch("https://api.resend.com/emails", {
