@@ -69,12 +69,14 @@ const cinematicImagePatch = `
 const bookingLoginGuardPatch = `
 (function () {
   function isLoggedIn() {
-    var profileLinks = Array.from(document.querySelectorAll('a[href="/profile"]'));
-    var hasProfileLink = profileLinks.some(function (link) {
+    var header = document.querySelector('header');
+    var profileLinks = header ? Array.from(header.querySelectorAll('a[href="/profile"]')) : [];
+    var hasHeaderProfileLink = profileLinks.some(function (link) {
       return /Min profil/i.test(link.textContent || '');
     });
-    var hasLoggedInText = /Inloggad som/i.test(document.body.textContent || '');
-    return hasProfileLink || hasLoggedInText;
+    var top = document.querySelector('#top');
+    var hasLoggedInText = top ? /Inloggad som/i.test(top.textContent || '') : false;
+    return hasHeaderProfileLink || hasLoggedInText;
   }
 
   function buildLoginCard() {
@@ -104,7 +106,6 @@ const bookingLoginGuardPatch = `
       form.addEventListener('submit', function (event) {
         if (!isLoggedIn()) {
           event.preventDefault();
-          event.stopPropagation();
           window.location.href = '/login';
         }
       }, true);
