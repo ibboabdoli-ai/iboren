@@ -173,53 +173,6 @@ const bookingClientValidationPatch = `
 })();
 `;
 
-const bookingSuccessUxPatch = `
-(function () {
-  function findSubmitButton(form) {
-    var buttons = Array.from(form.querySelectorAll('button'));
-    return buttons.find(function (button) {
-      var text = (button.textContent || '').trim();
-      return /Skicka bokningsförfrågan|Bokning skickad/i.test(text);
-    }) || null;
-  }
-
-  function applyBookingSuccessUx() {
-    var section = document.querySelector('#booking');
-    if (!section) return;
-    var form = section.querySelector('form');
-    if (!form) return;
-
-    var text = section.textContent || '';
-    var success = /Tack!.*Bokning|Bokningen är sparad|bekräftelse har skickats/i.test(text);
-    if (!success) return;
-
-    var submitButton = findSubmitButton(form);
-    if (submitButton) {
-      submitButton.disabled = true;
-      submitButton.setAttribute('aria-disabled', 'true');
-      submitButton.classList.add('opacity-80', 'cursor-not-allowed');
-      submitButton.innerHTML = '✓ Bokning skickad';
-    }
-
-    if (!form.querySelector('#iboren-booking-success-actions')) {
-      var actions = document.createElement('div');
-      actions.id = 'iboren-booking-success-actions';
-      actions.className = 'grid gap-3 rounded-2xl border border-gold/25 bg-gold/10 p-4 text-sm text-gold sm:grid-cols-2';
-      actions.innerHTML = '' +
-        '<a href="/profile" class="inline-flex items-center justify-center rounded-full bg-gold px-5 py-3 font-black uppercase tracking-[.12em] text-ink">Gå till min profil</a>' +
-        '<a href="/#top" class="inline-flex items-center justify-center rounded-full border border-gold/35 px-5 py-3 font-bold text-gold">Till startsidan</a>';
-      form.appendChild(actions);
-    }
-  }
-
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', applyBookingSuccessUx);
-  else applyBookingSuccessUx();
-
-  var observer = new MutationObserver(applyBookingSuccessUx);
-  observer.observe(document.documentElement, { childList: true, subtree: true, characterData: true });
-})();
-`;
-
 const bookingLoginGuardPatch = `
 (function () {
   function isLoggedIn() {
@@ -303,7 +256,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <script dangerouslySetInnerHTML={{ __html: cinematicImagePatch }} />
         <script dangerouslySetInnerHTML={{ __html: bookingAuthPatch }} />
         <script dangerouslySetInnerHTML={{ __html: bookingClientValidationPatch }} />
-        <script dangerouslySetInnerHTML={{ __html: bookingSuccessUxPatch }} />
         <script dangerouslySetInnerHTML={{ __html: bookingLoginGuardPatch }} />
       </body>
     </html>
