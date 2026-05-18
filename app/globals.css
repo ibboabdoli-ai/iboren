@@ -8,6 +8,7 @@
   --ink: #202020;
   --burgundy: #6B2737;
   --gold: #D4A574;
+  --night: #020504;
 }
 
 * { box-sizing: border-box; }
@@ -23,25 +24,22 @@ body {
 ::selection { background: rgba(107, 39, 55, 0.18); }
 
 .luxe-container { width: min(1180px, calc(100% - 32px)); margin-inline: auto; }
-.eyebrow { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .38em; color: rgba(107,39,55,.72); }
-.display { font-family: Georgia, serif; letter-spacing: -0.055em; }
-.btn-primary { display: inline-flex; align-items: center; justify-content: center; gap: .5rem; border-radius: 999px; background: var(--burgundy); color: var(--porcelain); padding: 1rem 1.5rem; font-weight: 750; box-shadow: 0 24px 70px rgba(107,39,55,.18); transition: .25s ease; }
-.btn-primary:hover { transform: translateY(-2px); background: #3B183F; }
-.btn-secondary { display: inline-flex; align-items: center; justify-content: center; gap: .5rem; border-radius: 999px; border: 1px solid rgba(107,39,55,.2); background: rgba(255,253,248,.62); color: var(--burgundy); padding: 1rem 1.5rem; font-weight: 750; transition: .25s ease; }
-.btn-secondary:hover { transform: translateY(-2px); background: var(--porcelain); }
-.glass { border: 1px solid rgba(107,39,55,.11); background: rgba(255,253,248,.58); backdrop-filter: blur(18px); box-shadow: 0 24px 80px rgba(107,39,55,.12); }
+.eyebrow { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .34em; color: rgba(212,165,116,.88); }
+.display { font-family: Georgia, serif; letter-spacing: -0.05em; }
+.btn-primary { display: inline-flex; align-items: center; justify-content: center; gap: .5rem; border-radius: 999px; background: var(--gold); color: var(--night); padding: 1rem 1.5rem; font-weight: 800; box-shadow: 0 24px 70px rgba(212,165,116,.16); transition: .25s ease; }
+.btn-primary:hover { transform: translateY(-2px); background: var(--porcelain); }
+.btn-secondary { display: inline-flex; align-items: center; justify-content: center; gap: .5rem; border-radius: 999px; border: 1px solid rgba(212,165,116,.35); background: rgba(255,253,248,.06); color: var(--gold); padding: 1rem 1.5rem; font-weight: 800; transition: .25s ease; }
+.btn-secondary:hover { transform: translateY(-2px); background: var(--gold); color: var(--night); }
 .noise { display: none; }
 
-input,
-textarea {
+input, textarea, select {
   color: var(--ink);
   -webkit-text-fill-color: var(--ink);
   caret-color: var(--ink);
   opacity: 1;
 }
 
-input::placeholder,
-textarea::placeholder {
+input::placeholder, textarea::placeholder {
   color: rgba(32, 32, 32, 0.45);
   -webkit-text-fill-color: rgba(32, 32, 32, 0.45);
   opacity: 1;
@@ -62,13 +60,8 @@ select:-webkit-autofill:focus {
   transition: background-color 9999s ease-in-out 0s;
 }
 
-#booking {
-  overflow-x: hidden;
-  background: var(--ink);
-}
-
-#booking input,
-#booking textarea {
+#booking { overflow-x: hidden; background: var(--ink); }
+#booking input, #booking textarea, #booking select {
   min-width: 0;
   max-width: 100%;
   background: var(--porcelain) !important;
@@ -78,62 +71,12 @@ select:-webkit-autofill:focus {
   font-size: 16px;
   opacity: 1 !important;
 }
-
-#booking input::placeholder,
-#booking textarea::placeholder {
+#booking input::placeholder, #booking textarea::placeholder {
   color: rgba(32, 32, 32, 0.45) !important;
   -webkit-text-fill-color: rgba(32, 32, 32, 0.45) !important;
 }
 
-#booking select {
-  max-width: 100%;
-  font-size: 16px;
+@media (max-width: 767px) {
+  .display { letter-spacing: -0.035em; }
+  .luxe-container { width: min(100% - 24px, 1180px); }
 }
-
-#cinematic-scroll .sticky > div:nth-child(7) > div:nth-child(3),
-#cinematic-scroll .sticky > div:nth-child(1) {
-  background-image: linear-gradient(90deg, rgba(2,5,4,.62), rgba(2,5,4,.12) 42%, rgba(2,5,4,.58)), url("https://images.unsplash.com/photo-1586023492125-27b2c045efd7?auto=format&fit=crop&w=1600&q=80") !important;
-  background-size: cover !important;
-  background-position: center !important;
-}
-
-#cinematic-scroll .sticky > div:nth-child(7) > div:nth-child(4),
-#cinematic-scroll .sticky > div:nth-child(2) {
-  background-image: linear-gradient(90deg, rgba(2,5,4,.60), rgba(2,5,4,.08) 45%, rgba(2,5,4,.52)), url("https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=1600&q=80") !important;
-  background-size: cover !important;
-  background-position: center !important;
-}
-
-#cinematic-scroll .sticky > div:nth-child(7) > div:nth-child(5),
-#cinematic-scroll .sticky > div:nth-child(3) {
-  background-image: linear-gradient(90deg, rgba(2,5,4,.56), rgba(2,5,4,.05) 45%, rgba(2,5,4,.50)), url("https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1600&q=80") !important;
-  background-size: cover !important;
-  background-position: center !important;
-}
-
-#cinematic-scroll .sticky > div:nth-child(7) > div:nth-child(6),
-#cinematic-scroll .sticky > div:nth-child(4) {
-  background-image: linear-gradient(90deg, rgba(2,5,4,.64), rgba(2,5,4,.14) 45%, rgba(2,5,4,.60)), url("https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&fit=crop&w=1600&q=80") !important;
-  background-size: cover !important;
-  background-position: center !important;
-}
-
-#cinematic-scroll .sticky > div:nth-child(7) > div:nth-child(7),
-#cinematic-scroll .sticky > div:nth-child(5) {
-  background-image: linear-gradient(90deg, rgba(2,5,4,.62), rgba(2,5,4,.10) 45%, rgba(2,5,4,.56)), url("https://images.unsplash.com/photo-1527515637462-cff94eecc1ac?auto=format&fit=crop&w=1600&q=80") !important;
-  background-size: cover !important;
-  background-position: center !important;
-}
-
-#cinematic-scroll .sticky > div:nth-child(7) > div:nth-child(8),
-#cinematic-scroll .sticky > div:nth-child(6) {
-  background-image: linear-gradient(90deg, rgba(2,5,4,.56), rgba(2,5,4,.08) 45%, rgba(2,5,4,.52)), url("https://images.unsplash.com/photo-1497366811353-6870744d04b2?auto=format&fit=crop&w=1600&q=80") !important;
-  background-size: cover !important;
-  background-position: center !important;
-}
-
-#cinematic-scroll .sticky > div:nth-child(7) > div:nth-child(n+3):nth-child(-n+8) {
-  filter: saturate(.92) contrast(1.04);
-}
-
-/* Mobile booking form contrast and overflow fix. */
