@@ -34,6 +34,26 @@ export const viewport: Viewport = {
   themeColor: "#F5F0E8"
 };
 
+const brandHeaderPatch = `
+(function () {
+  function applyBrandHeader() {
+    var headerLink = document.querySelector('header a[href="#top"]');
+    if (!headerLink || headerLink.getAttribute('data-brand-ready') === '1') return;
+    var mark = headerLink.querySelector('span.grid');
+    if (!mark) return;
+    mark.innerHTML = '<img src="/favicon.svg" alt="IB" class="h-9 w-9 rounded-full" />';
+    mark.className = 'grid h-12 w-12 place-items-center overflow-hidden rounded-2xl border border-[#49D8EA]/35 bg-[#06131A] shadow-lg';
+    headerLink.setAttribute('data-brand-ready', '1');
+  }
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', applyBrandHeader);
+  else applyBrandHeader();
+
+  var observer = new MutationObserver(applyBrandHeader);
+  observer.observe(document.documentElement, { childList: true, subtree: true });
+})();
+`;
+
 const cinematicImagePatch = `
 (function () {
   var cinematicImages = [
@@ -177,6 +197,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="sv">
       <body>
         {children}
+        <script dangerouslySetInnerHTML={{ __html: brandHeaderPatch }} />
         <script dangerouslySetInnerHTML={{ __html: cinematicImagePatch }} />
         <script dangerouslySetInnerHTML={{ __html: bookingAuthPatch }} />
         <script dangerouslySetInnerHTML={{ __html: bookingLoginGuardPatch }} />
