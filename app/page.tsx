@@ -2,7 +2,7 @@
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { ArrowUpRight, Building2, CheckCircle2, Copy, Home, LocateFixed, Loader2, Mail, Menu, Send, ShieldCheck, Sparkles, Truck, UserRound, X } from "lucide-react";
+import { ArrowUpRight, Building2, CheckCircle2, Copy, Home, LocateFixed, Loader2, Mail, Menu, Send, ShieldCheck, Truck, UserRound, X } from "lucide-react";
 import { createClient, User } from "@supabase/supabase-js";
 
 type BookingDraft = {
@@ -34,65 +34,59 @@ const initialDraft: BookingDraft = {
 };
 
 const services = [
-  { icon: Home, title: "Hemstädning", href: "/hemstadning", price: "från 399 SEK", body: "För återkommande eller enstaka städning hemma. CleanAI samlar yta, frekvens och särskilda önskemål." },
-  { icon: Truck, title: "Flyttstädning", href: "/flyttstadning", price: "offert efter yta", body: "För flytt, överlämning och checklista. Kunden anger kvm, adress och önskat datum för snabb offert." },
-  { icon: Building2, title: "Kontorsstädning", href: "/kontorsstadning", price: "skräddarsydd offert", body: "För företag, lokaler och återkommande service. Flödet samlar yta, tider och åtkomstbehov." }
+  { icon: Home, title: "Hemstädning", href: "/hemstadning", price: "från 399 SEK", body: "För återkommande eller enstaka städning hemma. Vi samlar yta, frekvens och särskilda önskemål." },
+  { icon: Truck, title: "Flyttstädning", href: "/flyttstadning", price: "offert efter yta", body: "För flytt, överlämning och checklista. Ange kvm, adress och önskat datum för snabb offert." },
+  { icon: Building2, title: "Kontorsstädning", href: "/kontorsstadning", price: "skräddarsydd offert", body: "För företag, lokaler och återkommande service. Vi samlar yta, tider och åtkomstbehov." }
 ];
 
 const cinematicFrames = [
   {
     counter: "I / VI",
     kicker: "HOME · BEFORE",
-    title: "The mess",
-    body: "Vardagens röra syns direkt: ytor, detaljer och småsaker som skapar stress innan städningen börjar.",
-    micro: "vardag · röra · stress",
+    title: "Before the reset",
+    body: "Vardagens röra, mörkare ytor och detaljer som skapar stress innan städningen börjar.",
     phase: "Hem",
-    background: "radial-gradient(circle at 25% 28%, rgba(255,253,248,.78), transparent 0 11%, transparent 12%), radial-gradient(circle at 66% 35%, rgba(201,169,97,.72), transparent 0 9%, transparent 10%), radial-gradient(circle at 38% 68%, rgba(107,39,55,.9), transparent 0 13%, transparent 14%), linear-gradient(135deg, #2d2024 0%, #171717 46%, #4b342d 100%)"
+    image: "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?auto=format&fit=crop&w=1800&q=82"
   },
   {
     counter: "II / VI",
-    kicker: "HOME · CLEANING",
-    title: "The hands",
-    body: "En metodisk reset: yta för yta, med rätt rytm, material och uppmärksamhet på detaljer.",
-    micro: "method · care · detail",
-    phase: "Hem",
-    background: "radial-gradient(circle at 72% 25%, rgba(89,199,183,.82), transparent 0 16%, transparent 17%), radial-gradient(circle at 34% 58%, rgba(255,253,248,.72), transparent 0 12%, transparent 13%), linear-gradient(135deg, #071013 0%, #21302e 50%, #c9a961 140%)"
+    kicker: "CLEANING · MOTION",
+    title: "The work begins",
+    body: "Ytorna bearbetas metodiskt med rätt rytm, material och fokus på detaljer.",
+    phase: "Städning",
+    image: "https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=1800&q=82"
   },
   {
     counter: "III / VI",
     kicker: "HOME · AFTER",
-    title: "The calm",
-    body: "När hemmet är klart känns rummet lättare: renare ljus, lugnare ytor och mer energi tillbaka.",
-    micro: "clean · bright · calm",
+    title: "The calm after",
+    body: "Ett renare hem med ljusare känsla, lugnare ytor och mer energi tillbaka.",
     phase: "Hem",
-    background: "radial-gradient(circle at 50% 34%, rgba(255,253,248,.95), transparent 0 20%, transparent 21%), radial-gradient(circle at 70% 70%, rgba(201,169,97,.62), transparent 0 18%, transparent 19%), linear-gradient(135deg, #f5f0e8 0%, #d9c7ae 52%, #1f2c2b 125%)"
+    image: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1800&q=82"
   },
   {
     counter: "IV / VI",
     kicker: "OFFICE · BEFORE",
-    title: "The clutter",
-    body: "På kontoret handlar städning om flow: mindre visuell friktion och bättre start på arbetsdagen.",
-    micro: "office · noise · backlog",
+    title: "Workplace friction",
+    body: "På kontoret handlar städning om bättre flow och mindre visuell friktion.",
     phase: "Kontor",
-    background: "repeating-linear-gradient(90deg, rgba(255,253,248,.12) 0 1px, transparent 1px 70px), radial-gradient(circle at 24% 68%, rgba(107,39,55,.86), transparent 0 14%, transparent 15%), linear-gradient(135deg, #161616 0%, #30262a 50%, #0b1515 100%)"
+    image: "https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&fit=crop&w=1800&q=82"
   },
   {
     counter: "V / VI",
-    kicker: "OFFICE · CLEANING",
-    title: "The reset",
-    body: "Arbetsytor, mötesrum och entré återställs utan att tappa känslan av en levande arbetsplats.",
-    micro: "reset · surfaces · flow",
+    kicker: "OFFICE · RESET",
+    title: "Surface by surface",
+    body: "Arbetsytor, mötesrum och entré återställs utan att störa verksamhetens rytm.",
     phase: "Kontor",
-    background: "radial-gradient(circle at 58% 40%, rgba(89,199,183,.75), transparent 0 18%, transparent 19%), radial-gradient(circle at 32% 62%, rgba(201,169,97,.75), transparent 0 12%, transparent 13%), linear-gradient(135deg, #020504 0%, #14302e 55%, #2a1d24 100%)"
+    image: "https://images.unsplash.com/photo-1527515637462-cff94eecc1ac?auto=format&fit=crop&w=1800&q=82"
   },
   {
     counter: "VI / VI",
-    kicker: "OFFICE · AFTER",
-    title: "Begin again",
+    kicker: "READY · AFTER",
+    title: "Ready again",
     body: "En renare arbetsplats, redo för fokus, kunder, möten och nästa produktiva dag.",
-    micro: "ready · open · professional",
-    phase: "Kontor",
-    background: "radial-gradient(circle at 42% 40%, rgba(255,253,248,.95), transparent 0 18%, transparent 19%), radial-gradient(circle at 75% 66%, rgba(89,199,183,.58), transparent 0 14%, transparent 15%), linear-gradient(135deg, #f5f0e8 0%, #d9d0c4 45%, #051514 125%)"
+    phase: "Klar",
+    image: "https://images.unsplash.com/photo-1497366811353-6870744d04b2?auto=format&fit=crop&w=1800&q=82"
   }
 ];
 
@@ -134,25 +128,32 @@ export default function HomePage() {
 
   useEffect(() => {
     let ticking = false;
+
     function updateCinematicScroll() {
       ticking = false;
       const section = document.getElementById("cinematic-scroll");
       if (!section) return;
-      const scrollable = Math.max(1, section.offsetHeight - window.innerHeight);
-      const progress = Math.max(0, Math.min(1, (window.scrollY - section.offsetTop) / scrollable));
-      const index = Math.max(0, Math.min(cinematicFrames.length - 1, Math.floor(progress * cinematicFrames.length)));
+
+      const rect = section.getBoundingClientRect();
+      const scrollable = Math.max(1, rect.height - window.innerHeight);
+      const progress = Math.max(0, Math.min(1, -rect.top / scrollable));
+      const index = Math.min(cinematicFrames.length - 1, Math.floor(progress * cinematicFrames.length));
+
       setScrollProgress(progress);
       setActiveFrame(index);
     }
+
     function onScroll() {
       if (!ticking) {
         ticking = true;
         window.requestAnimationFrame(updateCinematicScroll);
       }
     }
+
     window.addEventListener("scroll", onScroll, { passive: true });
     window.addEventListener("resize", onScroll);
     updateCinematicScroll();
+
     return () => {
       window.removeEventListener("scroll", onScroll);
       window.removeEventListener("resize", onScroll);
@@ -180,6 +181,7 @@ export default function HomePage() {
       setMessage("Din webbläsare stödjer inte platsdelning. Fyll i adress manuellt.");
       return;
     }
+
     setLocating(true);
     navigator.geolocation.getCurrentPosition(
       (position) => {
@@ -199,8 +201,10 @@ export default function HomePage() {
   async function saveBookingToDatabase() {
     const supabase = getSupabase();
     if (!supabase) return;
+
     const { data } = await supabase.auth.getUser();
     const currentUser = data.user;
+
     const { error } = await supabase.from("bookings").insert({
       user_id: currentUser?.id ?? null,
       service: draft.service,
@@ -216,6 +220,7 @@ export default function HomePage() {
       notes: draft.notes || null,
       status: "new"
     });
+
     if (error) throw new Error(`Kunde inte spara bokningen i databasen: ${error.message}`);
   }
 
@@ -226,11 +231,17 @@ export default function HomePage() {
       setMessage("Fyll i namn, e-post, område, storlek och datum innan du skickar.");
       return;
     }
+
     setStatus("loading");
     setMessage("");
+
     try {
       await saveBookingToDatabase();
-      const response = await fetch("/api/bookings", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(draft) });
+      const response = await fetch("/api/bookings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(draft)
+      });
       const result = await response.json();
       if (!response.ok || !result.ok) throw new Error(result.message || "Något gick fel.");
       setStatus("success");
@@ -245,7 +256,7 @@ export default function HomePage() {
 
   return (
     <main className="min-h-screen overflow-x-hidden bg-night text-porcelain">
-      <header className="fixed inset-x-0 top-0 z-50 border-b border-gold/10 bg-night/72 backdrop-blur-2xl">
+      <header className="fixed inset-x-0 top-0 z-50 border-b border-gold/10 bg-night/75 backdrop-blur-2xl">
         <nav className="luxe-container flex h-20 items-center justify-between">
           <a href="#top" className="group flex items-center gap-3" onClick={() => setMenuOpen(false)}>
             <span className="grid h-11 w-11 place-items-center rounded-full border border-gold/35 bg-porcelain/5 text-gold transition group-hover:bg-gold group-hover:text-night"><span className="display text-2xl font-bold">I</span></span>
@@ -264,34 +275,46 @@ export default function HomePage() {
       </header>
 
       <section id="top" className="relative grid min-h-screen place-items-center overflow-hidden px-5 pt-28 text-center">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_42%,rgba(89,199,183,.18),transparent_30%),radial-gradient(circle_at_74%_64%,rgba(201,169,97,.12),transparent_32%),linear-gradient(180deg,#071013_0%,#020504_100%)]" />
-        <div className="absolute inset-[10vh_6vw] overflow-hidden border border-gold/15 opacity-75 shadow-[0_40px_140px_rgba(0,0,0,.55)]" style={{ background: cinematicFrames[2].background }} />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0_30%,rgba(0,0,0,.45)_65%,rgba(0,0,0,.9)_100%)]" />
+        <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `linear-gradient(90deg, rgba(2,5,4,.72), rgba(2,5,4,.24) 45%, rgba(2,5,4,.78)), url(${cinematicFrames[2].image})` }} />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0_28%,rgba(0,0,0,.38)_62%,rgba(0,0,0,.92)_100%)]" />
         <div className="relative z-10 mx-auto max-w-5xl">
           <p className="text-[11px] font-bold uppercase tracking-[0.44em] text-gold/90">Stockholm · cleaning ritual · est 2026</p>
           <h1 className="display mt-6 text-[clamp(5rem,16vw,13rem)] font-normal uppercase leading-[.78] tracking-[.03em] text-porcelain">Iboren</h1>
-          <p className="mx-auto mt-7 max-w-3xl text-lg leading-8 text-porcelain/72 md:text-2xl">Rent hem. Klar arbetsplats. Mindre stress.</p>
+          <p className="mx-auto mt-7 max-w-3xl text-lg leading-8 text-porcelain/78 md:text-2xl">Rent hem. Klar arbetsplats. Mindre stress.</p>
           {user && <p className="mt-5 inline-flex rounded-full border border-gold/25 bg-night/50 px-4 py-2 text-sm font-bold text-gold">Inloggad som {user.email}</p>}
-          <div className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row"><a href="#cinematic-scroll" className="btn-primary bg-gold text-night hover:bg-porcelain">Se transformationen <ArrowUpRight size={17} /></a><a href="#booking" className="btn-secondary border-gold/35 bg-porcelain/5 text-gold hover:bg-gold hover:text-night">Boka direkt</a></div>
+          <div className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row"><a href="#cinematic-scroll" className="btn-primary">Se transformationen <ArrowUpRight size={17} /></a><a href="#booking" className="btn-secondary">Boka direkt</a></div>
           <div className="mt-10 inline-flex items-center gap-4 text-[11px] font-bold uppercase tracking-[0.32em] text-gold/75 before:h-px before:w-10 before:bg-gold/40 after:h-px after:w-10 after:bg-gold/40">Scroll to begin</div>
         </div>
       </section>
 
-      <section id="cinematic-scroll" className="relative h-[520vh] bg-night md:h-[620vh]">
-        <div className="sticky top-0 h-screen overflow-hidden bg-[radial-gradient(circle_at_50%_48%,rgba(18,51,48,.55),transparent_36%),linear-gradient(180deg,#020504,#071013_50%,#020504)]">
-          {cinematicFrames.map((frame, index) => <div key={`blur-${frame.counter}`} className={`absolute inset-0 scale-110 blur-3xl transition-opacity duration-500 ${activeFrame === index ? "opacity-70" : "opacity-0"}`} style={{ background: frame.background }} />)}
-          <div className="absolute left-5 right-5 top-[92px] z-10 h-[calc(100vh-220px)] overflow-hidden border border-gold/20 bg-black/20 shadow-[0_40px_120px_rgba(0,0,0,.55)] md:left-[8vw] md:right-[8vw] md:top-[12vh] md:h-[68vh]">
+      <section id="cinematic-scroll" className="relative h-[520vh] min-h-[2600px] bg-night md:h-[620vh]">
+        <div className="sticky top-0 h-screen overflow-hidden bg-night">
+          {cinematicFrames.map((frame, index) => (
+            <div
+              key={`scene-${frame.counter}`}
+              className={`absolute inset-0 bg-cover bg-center transition-all duration-700 ease-out ${activeFrame === index ? "scale-100 opacity-100" : "scale-[1.025] opacity-0"}`}
+              style={{ backgroundImage: `linear-gradient(90deg, rgba(2,5,4,.72), rgba(2,5,4,.10) 46%, rgba(2,5,4,.70)), url(${frame.image})` }}
+            />
+          ))}
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_52%_46%,transparent_0_32%,rgba(0,0,0,.28)_64%,rgba(0,0,0,.78)_100%)]" />
+          <div className="absolute left-5 right-5 top-[92px] z-10 h-[calc(100vh-220px)] overflow-hidden border border-gold/30 bg-black/15 shadow-[0_40px_120px_rgba(0,0,0,.55)] md:left-[8vw] md:right-[8vw] md:top-[12vh] md:h-[68vh]">
             <span className="pointer-events-none absolute left-4 top-4 z-20 h-16 w-16 border-l border-t border-gold/70 md:h-24 md:w-24" />
             <span className="pointer-events-none absolute bottom-4 right-4 z-20 h-16 w-16 border-b border-r border-gold/70 md:h-24 md:w-24" />
-            {cinematicFrames.map((frame, index) => <div key={frame.counter} className={`absolute inset-0 transition-all duration-500 ${activeFrame === index ? "scale-100 opacity-100" : "scale-[1.015] opacity-0"}`} style={{ background: frame.background }} />)}
-            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_58%_44%,transparent_0_33%,rgba(0,0,0,.14)_64%,rgba(0,0,0,.42)_100%),linear-gradient(90deg,rgba(0,0,0,.52),transparent_34%,transparent_66%,rgba(0,0,0,.26))]" />
+            {cinematicFrames.map((frame, index) => (
+              <div
+                key={`framed-${frame.counter}`}
+                className={`absolute inset-0 bg-cover bg-center transition-all duration-700 ease-out ${activeFrame === index ? "scale-100 opacity-100" : "scale-[1.025] opacity-0"}`}
+                style={{ backgroundImage: `linear-gradient(90deg, rgba(2,5,4,.56), rgba(2,5,4,.05) 48%, rgba(2,5,4,.52)), url(${frame.image})` }}
+              />
+            ))}
+            <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,rgba(0,0,0,.48),transparent_38%,rgba(0,0,0,.20)),radial-gradient(circle_at_50%_46%,transparent_0_38%,rgba(0,0,0,.42)_100%)]" />
           </div>
           <div className="absolute left-5 right-5 top-6 z-20 grid grid-cols-[1fr_auto] items-start gap-4 md:left-[8vw] md:right-[8vw] md:top-[7vh]">
             <div><p className="text-[10px] font-bold uppercase tracking-[.34em] text-gold/80">{activeScene.phase}</p><p className="display mt-1 text-4xl font-normal uppercase tracking-[.02em] text-porcelain md:text-6xl">{activeScene.counter}</p></div>
             <div className="h-24 w-1 overflow-hidden rounded-full bg-porcelain/15"><div className="w-full rounded-full bg-gold transition-all" style={{ height: `${Math.round(scrollProgress * 100)}%` }} /></div>
           </div>
           <div className="absolute inset-x-0 bottom-10 z-30 px-5 md:bottom-16">
-            {cinematicFrames.map((frame, index) => <article key={`copy-${frame.counter}`} className={`luxe-container grid gap-6 transition-all duration-500 md:grid-cols-[1fr_220px] ${activeFrame === index ? "translate-y-0 opacity-100" : "pointer-events-none translate-y-6 opacity-0"}`}><div><p className="mb-3 text-[11px] font-bold uppercase tracking-[0.34em] text-gold/90">{frame.kicker}</p><h2 className="display text-[clamp(2.6rem,7vw,6rem)] font-normal uppercase leading-[.86] tracking-[.02em] text-porcelain">{frame.title}</h2><p className="mt-4 max-w-xl text-sm leading-7 text-porcelain/70 md:text-lg">{frame.body}</p>{index === cinematicFrames.length - 1 && <a href="#booking" className="mt-5 inline-flex rounded-full border border-gold/50 bg-gold/10 px-5 py-3 text-[11px] font-bold uppercase tracking-[.22em] text-gold backdrop-blur hover:bg-gold hover:text-night">boka städning</a>}</div><div className="hidden self-center text-right text-[11px] uppercase leading-7 tracking-[.22em] text-porcelain/50 md:block">◆<br />{frame.micro}</div></article>)}
+            {cinematicFrames.map((frame, index) => <article key={`copy-${frame.counter}`} className={`luxe-container grid gap-6 transition-all duration-500 md:grid-cols-[1fr_220px] ${activeFrame === index ? "translate-y-0 opacity-100" : "pointer-events-none translate-y-6 opacity-0"}`}><div><p className="mb-3 text-[11px] font-bold uppercase tracking-[0.34em] text-gold/90">{frame.kicker}</p><h2 className="display text-[clamp(2.6rem,7vw,6rem)] font-normal uppercase leading-[.86] tracking-[.02em] text-porcelain">{frame.title}</h2><p className="mt-4 max-w-xl text-sm leading-7 text-porcelain/74 md:text-lg">{frame.body}</p>{index === cinematicFrames.length - 1 && <a href="#booking" className="mt-5 inline-flex rounded-full border border-gold/50 bg-gold/10 px-5 py-3 text-[11px] font-bold uppercase tracking-[.22em] text-gold backdrop-blur hover:bg-gold hover:text-night">boka städning</a>}</div><div className="hidden self-center text-right text-[11px] uppercase leading-7 tracking-[.22em] text-porcelain/50 md:block">◆<br />Scroll cinematic</div></article>)}
           </div>
         </div>
       </section>
