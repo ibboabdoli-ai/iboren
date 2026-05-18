@@ -76,15 +76,16 @@ select:-webkit-autofill:focus {
   -webkit-text-fill-color: rgba(32, 32, 32, 0.45) !important;
 }
 
-/* Keep the cinematic scroll pinned long enough to show all frames before the page continues. */
+/* Cinematic is one viewport only. Frame changes are handled in React. */
 #cinematic-scroll {
-  height: 820vh !important;
-  min-height: 5200px !important;
+  height: 100vh !important;
+  min-height: 100vh !important;
+  overflow: hidden !important;
 }
 
 #cinematic-scroll > div {
-  position: sticky !important;
-  top: 0 !important;
+  position: relative !important;
+  top: auto !important;
   height: 100vh !important;
   min-height: 100vh !important;
 }
@@ -99,8 +100,8 @@ select:-webkit-autofill:focus {
   .display { letter-spacing: -0.035em; }
   .luxe-container { width: min(100% - 24px, 1180px); }
   #cinematic-scroll {
-    height: 760vh !important;
-    min-height: 4200px !important;
+    height: 100svh !important;
+    min-height: 100svh !important;
   }
   #cinematic-scroll > div {
     height: 100svh !important;
