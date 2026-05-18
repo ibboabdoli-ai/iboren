@@ -66,73 +66,76 @@ const cinematicImagePatch = `
 })();
 `;
 
-const bookingDetailsPatch = `
+const bookingLoginGuardPatch = `
 (function () {
-  function findBookingForm() {
-    var section = document.querySelector('#booking');
-    return section ? section.querySelector('form') : null;
+  function isLoggedIn() {
+    var profileLinks = Array.from(document.querySelectorAll('a[href="/profile"]'));
+    var hasProfileLink = profileLinks.some(function (link) {
+      return /Min profil/i.test(link.textContent || '');
+    });
+    var hasLoggedInText = /Inloggad som/i.test(document.body.textContent || '');
+    return hasProfileLink || hasLoggedInText;
   }
 
-  function fieldMarkup() {
-    return '' +
-      '<div id="iboren-extra-details" class="rounded-[1.5rem] border border-gold/15 bg-night/30 p-4">' +
-      '<p class="mb-4 text-xs font-bold uppercase tracking-[.28em] text-gold">Objekt & detaljer</p>' +
-      '<div class="grid gap-4 sm:grid-cols-2">' +
-      '<label class="block"><span class="mb-2 block text-sm font-bold text-porcelain/80">Typ av objekt</span><select data-extra="Typ av objekt" class="w-full rounded-2xl border border-porcelain/10 bg-porcelain px-4 py-4 text-ink outline-none"><option>Lägenhet</option><option>Villa</option><option>Radhus</option><option>Kontor</option><option>Annat</option></select></label>' +
-      '<label class="block"><span class="mb-2 block text-sm font-bold text-porcelain/80">Antal rum</span><input data-extra="Antal rum" class="w-full rounded-2xl border border-porcelain/10 bg-porcelain px-4 py-4 text-ink outline-none" placeholder="3" inputmode="numeric"></label>' +
-      '<label class="block"><span class="mb-2 block text-sm font-bold text-porcelain/80">Antal badrum</span><input data-extra="Antal badrum" class="w-full rounded-2xl border border-porcelain/10 bg-porcelain px-4 py-4 text-ink outline-none" placeholder="1" inputmode="numeric"></label>' +
-      '<label class="block"><span class="mb-2 block text-sm font-bold text-porcelain/80">Husdjur</span><select data-extra="Husdjur" class="w-full rounded-2xl border border-porcelain/10 bg-porcelain px-4 py-4 text-ink outline-none"><option>Nej</option><option>Ja</option><option>Vet ej</option></select></label>' +
-      '<label class="block"><span class="mb-2 block text-sm font-bold text-porcelain/80">Våning</span><input data-extra="Våning" class="w-full rounded-2xl border border-porcelain/10 bg-porcelain px-4 py-4 text-ink outline-none" placeholder="3"></label>' +
-      '<label class="block"><span class="mb-2 block text-sm font-bold text-porcelain/80">Hiss</span><select data-extra="Hiss" class="w-full rounded-2xl border border-porcelain/10 bg-porcelain px-4 py-4 text-ink outline-none"><option>Vet ej</option><option>Ja</option><option>Nej</option></select></label>' +
-      '<label class="block"><span class="mb-2 block text-sm font-bold text-porcelain/80">Parkering</span><select data-extra="Parkering" class="w-full rounded-2xl border border-porcelain/10 bg-porcelain px-4 py-4 text-ink outline-none"><option>Vet ej</option><option>Ja</option><option>Nej</option></select></label>' +
-      '</div>' +
-      '<div class="mt-4"><p class="mb-2 block text-sm font-bold text-porcelain/80">Extra tjänster</p><div class="grid grid-cols-2 gap-2 sm:grid-cols-3">' +
-      ['Fönsterputs','Ugn','Kyl/frys','Balkong','Grovstädning','Skåp/lådor'].map(function (item) { return '<label class="rounded-2xl border border-porcelain/10 bg-porcelain/6 px-3 py-3 text-sm font-bold text-porcelain/80"><input data-extra-check="Extra tjänster" value="' + item + '" type="checkbox" class="mr-2">' + item + '</label>'; }).join('') +
-      '</div></div>' +
+  function buildLoginCard() {
+    var card = document.createElement('div');
+    card.id = 'iboren-login-required';
+    card.className = 'rounded-[2rem] border border-gold/20 bg-cream p-7 text-ink shadow-2xl md:p-9';
+    card.innerHTML = '' +
+      '<p class="text-xs font-black uppercase tracking-[.28em] text-burgundy/60">Logga in krävs</p>' +
+      '<h3 class="display mt-3 text-4xl font-bold leading-none text-burgundy">Logga in för att boka.</h3>' +
+      '<p class="mt-5 leading-8 text-ink/68">För att undvika felaktiga bokningar behöver du logga in med Google, Microsoft eller LinkedIn innan du fyller i bokningsformuläret.</p>' +
+      '<div class="mt-6 flex flex-col gap-3 sm:flex-row">' +
+      '<a href="/login" class="inline-flex items-center justify-center rounded-full bg-burgundy px-5 py-3 text-sm font-black uppercase tracking-[.12em] text-porcelain">Logga in / Skapa konto</a>' +
+      '<a href="/privacy" class="inline-flex items-center justify-center rounded-full border border-burgundy/15 bg-porcelain px-5 py-3 text-sm font-bold text-burgundy">Privacy</a>' +
       '</div>';
+    return card;
   }
 
-  function applyBookingDetails() {
-    var form = findBookingForm();
-    if (!form || form.querySelector('#iboren-extra-details')) return;
-    var notes = form.querySelector('textarea');
-    if (!notes) return;
-    var wrapper = document.createElement('div');
-    wrapper.innerHTML = fieldMarkup();
-    notes.parentElement.insertBefore(wrapper.firstChild, notes);
+  function applyBookingLoginGuard() {
+    var section = document.querySelector('#booking');
+    if (!section) return;
+    var form = section.querySelector('form');
+    var aside = section.querySelector('aside');
+    if (!form) return;
 
-    form.addEventListener('submit', function (event) {
-      if (form.getAttribute('data-extra-prepared') === '1') return;
-      event.preventDefault();
-      form.setAttribute('data-extra-prepared', '1');
+    if (!form.getAttribute('data-login-guarded')) {
+      form.setAttribute('data-login-guarded', '1');
+      form.addEventListener('submit', function (event) {
+        if (!isLoggedIn()) {
+          event.preventDefault();
+          event.stopPropagation();
+          window.location.href = '/login';
+        }
+      }, true);
+    }
 
-      var lines = ['--- Objekt & detaljer ---'];
-      form.querySelectorAll('[data-extra]').forEach(function (input) {
-        var label = input.getAttribute('data-extra');
-        var value = input.value || '';
-        if (value) lines.push(label + ': ' + value);
-      });
-      var checked = Array.from(form.querySelectorAll('[data-extra-check]:checked')).map(function (input) { return input.value; });
-      lines.push('Extra tjänster: ' + (checked.length ? checked.join(', ') : 'Inga valda'));
+    var existingCard = section.querySelector('#iboren-login-required');
 
-      var current = notes.value || '';
-      var next = lines.join('\n') + (current.trim() ? '\n\n--- Kundens önskemål ---\n' + current.trim() : '');
-      notes.value = next;
-      notes.dispatchEvent(new Event('input', { bubbles: true }));
-      notes.dispatchEvent(new Event('change', { bubbles: true }));
+    if (isLoggedIn()) {
+      form.style.display = '';
+      if (aside) aside.style.display = '';
+      if (existingCard) existingCard.remove();
+      return;
+    }
 
-      window.setTimeout(function () {
-        if (form.requestSubmit) form.requestSubmit();
-        else form.submit();
-      }, 80);
-    }, true);
+    form.style.display = 'none';
+    if (aside) aside.style.display = 'none';
+
+    if (!existingCard) {
+      var parent = form.parentElement || section;
+      parent.insertBefore(buildLoginCard(), form);
+    }
   }
 
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', applyBookingDetails);
-  else applyBookingDetails();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyBookingLoginGuard);
+  } else {
+    applyBookingLoginGuard();
+  }
 
-  var observer = new MutationObserver(applyBookingDetails);
-  observer.observe(document.documentElement, { childList: true, subtree: true });
+  var observer = new MutationObserver(applyBookingLoginGuard);
+  observer.observe(document.documentElement, { childList: true, subtree: true, characterData: true });
 })();
 `;
 
@@ -142,7 +145,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         {children}
         <script dangerouslySetInnerHTML={{ __html: cinematicImagePatch }} />
-        <script dangerouslySetInnerHTML={{ __html: bookingDetailsPatch }} />
+        <script dangerouslySetInnerHTML={{ __html: bookingLoginGuardPatch }} />
       </body>
     </html>
   );
