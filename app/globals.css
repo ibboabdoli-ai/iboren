@@ -76,7 +76,34 @@ select:-webkit-autofill:focus {
   -webkit-text-fill-color: rgba(32, 32, 32, 0.45) !important;
 }
 
+/* Keep the cinematic scroll pinned long enough to show all frames before the page continues. */
+#cinematic-scroll {
+  height: 820vh !important;
+  min-height: 5200px !important;
+}
+
+#cinematic-scroll > div {
+  position: sticky !important;
+  top: 0 !important;
+  height: 100vh !important;
+  min-height: 100vh !important;
+}
+
+#cinematic-scroll img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+}
+
 @media (max-width: 767px) {
   .display { letter-spacing: -0.035em; }
   .luxe-container { width: min(100% - 24px, 1180px); }
+  #cinematic-scroll {
+    height: 760vh !important;
+    min-height: 4200px !important;
+  }
+  #cinematic-scroll > div {
+    height: 100svh !important;
+    min-height: 100svh !important;
+  }
 }
