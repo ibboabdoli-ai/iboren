@@ -59,6 +59,20 @@ function getSupabase() {
   return createClient(url, key);
 }
 
+function pickCity(address: Record<string, string | undefined>) {
+  return address.city || address.town || address.village || address.municipality || address.county || "";
+}
+
+function formatStreetAddress(address: Record<string, string | undefined>, fallback: string) {
+  const street = address.road || address.pedestrian || address.footway || address.path || address.residential || "";
+  const houseNumber = address.house_number || "";
+  const postcode = address.postcode || "";
+  const city = pickCity(address);
+  const streetLine = [street, houseNumber].filter(Boolean).join(" ");
+  const cityLine = [postcode, city].filter(Boolean).join(" ");
+  return [streetLine, cityLine].filter(Boolean).join(", ") || fallback;
+}
+
 export default function HomePage() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [draft, setDraft] = useState(initialDraft);
@@ -136,24 +150,59 @@ export default function HomePage() {
 
   const setField = <K extends keyof BookingDraft>(key: K, value: BookingDraft[K]) => setDraft((current) => ({ ...current, [key]: value }));
 
+  async function reverseGeocode(latitude: number, longitude: number) {
+    const url = new URL("https://nominatim.openstreetmap.org/reverse");
+    url.searchParams.set("format", "jsonv2");
+    url.searchParams.set("lat", String(latitude));
+    url.searchParams.set("lon", String(longitude));
+    url.searchParams.set("addressdetails", "1");
+    url.searchParams.set("accept-language", "sv");
+
+    const response = await fetch(url.toString(), {
+      headers: { Accept: "application/json" }
+    });
+
+    if (!response.ok) throw new Error("Reverse geocoding failed");
+    return response.json() as Promise<{ display_name?: string; address?: Record<string, string | undefined> }>;
+  }
+
   function useLocation() {
     if (!navigator.geolocation) {
       setMessage("Din webbläsare stödjer inte platsdelning. Fyll i adress manuellt.");
       return;
     }
+
     setLocating(true);
+    setMessage("Hämtar din position och försöker fylla i adressen...");
+
     navigator.geolocation.getCurrentPosition(
-      (position) => {
+      async (position) => {
         const { latitude, longitude } = position.coords;
-        setField("notes", `${draft.notes ? `${draft.notes}\n` : ""}GPS ungefärlig position: ${latitude.toFixed(5)}, ${longitude.toFixed(5)}`);
-        setMessage("Plats hämtad. Fyll gärna i exakt adress manuellt för korrekt offert.");
-        setLocating(false);
+
+        try {
+          const result = await reverseGeocode(latitude, longitude);
+          const address = result.address || {};
+          const formattedAddress = formatStreetAddress(address, result.display_name || "");
+          const city = pickCity(address);
+
+          setDraft((current) => ({
+            ...current,
+            address: formattedAddress || current.address,
+            area: city || current.area
+          }));
+
+          setMessage(formattedAddress ? "Adress hämtad automatiskt. Kontrollera att den stämmer innan du skickar." : "Position hämtad, men adress kunde inte tolkas. Fyll i adress manuellt.");
+        } catch {
+          setMessage("Position hämtad, men adress kunde inte hämtas automatiskt. Fyll i adress manuellt.");
+        } finally {
+          setLocating(false);
+        }
       },
       () => {
         setMessage("Platsdelning nekades. Det går bra att skriva adressen manuellt.");
         setLocating(false);
       },
-      { enableHighAccuracy: false, timeout: 8000, maximumAge: 60000 }
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 30000 }
     );
   }
 
