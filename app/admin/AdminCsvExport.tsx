@@ -131,7 +131,7 @@ function buildCsv(bookings: CsvBooking[]) {
       booking.customer_name,
       booking.customer_email,
       booking.customer_phone,
-      parsed.customerRequest || booking.notes,
+      parsed.customerRequest,
       booking.admin_notes,
       formatDate(booking.created_at)
     ];
