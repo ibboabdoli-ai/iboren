@@ -34,10 +34,45 @@ export const viewport: Viewport = {
   themeColor: "#F5F0E8"
 };
 
+const cinematicImagePatch = `
+(function () {
+  var cinematicImages = [
+    "/cinematic/01-home-before.webp",
+    "/cinematic/02-home-cleaner.webp",
+    "/cinematic/03-home-after.webp",
+    "/cinematic/04-office-before.webp",
+    "/cinematic/05-office-cleaner.webp",
+    "/cinematic/06-office-after.webp"
+  ];
+
+  function applyCinematicImages() {
+    var heroImage = document.querySelector('#top img');
+    if (heroImage) heroImage.setAttribute('src', '/cinematic/03-home-after.webp');
+
+    var images = document.querySelectorAll('#cinematic-scroll img');
+    images.forEach(function (image, index) {
+      if (cinematicImages[index]) image.setAttribute('src', cinematicImages[index]);
+    });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyCinematicImages);
+  } else {
+    applyCinematicImages();
+  }
+
+  var observer = new MutationObserver(applyCinematicImages);
+  observer.observe(document.documentElement, { childList: true, subtree: true });
+})();
+`;
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="sv">
-      <body>{children}</body>
+      <body>
+        {children}
+        <script dangerouslySetInnerHTML={{ __html: cinematicImagePatch }} />
+      </body>
     </html>
   );
 }
