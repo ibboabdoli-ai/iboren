@@ -76,6 +76,30 @@ select:-webkit-autofill:focus {
   -webkit-text-fill-color: rgba(32, 32, 32, 0.45) !important;
 }
 
+/* Keep the booking area inside the viewport on desktop. */
+#booking .luxe-container,
+#booking .luxe-container > *,
+#booking form,
+#booking aside,
+#booking pre {
+  min-width: 0;
+  max-width: 100%;
+}
+
+#booking pre {
+  overflow-x: auto;
+}
+
+#booking .xl\:grid-cols-\[1fr_\.88fr\] {
+  grid-template-columns: minmax(0, 1fr) !important;
+}
+
+@media (min-width: 1024px) {
+  #booking > .luxe-container {
+    grid-template-columns: minmax(0, .78fr) minmax(0, 1.22fr) !important;
+  }
+}
+
 /* Cinematic is one viewport only. Frame changes are handled in React. */
 #cinematic-scroll {
   height: 100vh !important;
