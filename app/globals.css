@@ -29,3 +29,5 @@ body {
 .btn-secondary:hover { transform: translateY(-2px); background: var(--porcelain); }
 .glass { border: 1px solid rgba(107,39,55,.11); background: rgba(255,253,248,.58); backdrop-filter: blur(18px); box-shadow: 0 24px 80px rgba(107,39,55,.12); }
 .noise { position: fixed; inset: 0; pointer-events: none; z-index: 80; opacity: .035; background-image: radial-gradient(rgba(32,32,32,.35) 1px, transparent 1px); background-size: 4px 4px; }
+
+/* Deployment trigger: release queued UI/admin updates after Vercel limit reset. */
