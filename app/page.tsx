@@ -19,6 +19,13 @@ type BookingDraft = {
   notes: string;
 };
 
+type ReverseGeocodeResponse = {
+  ok: boolean;
+  address?: string;
+  area?: string;
+  message?: string;
+};
+
 const initialDraft: BookingDraft = {
   service: "Hemstädning",
   area: "Södertälje",
@@ -34,12 +41,12 @@ const initialDraft: BookingDraft = {
 };
 
 const frames = [
-  { counter: "01 / 06", kicker: "HOME · BEFORE", title: "Before the reset", body: "Ett hem innan återställningen: rörigt, tungt och svårt att slappna av i.", image: "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?auto=format&fit=crop&w=1800&q=90" },
-  { counter: "02 / 06", kicker: "CLEANING · MOTION", title: "The work begins", body: "Yta för yta återställs med metod, rytm och precision.", image: "https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=1800&q=90" },
-  { counter: "03 / 06", kicker: "HOME · AFTER", title: "The calm after", body: "Ett rent, ljust och lugnt hem där allt känns lättare.", image: "https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?auto=format&fit=crop&w=1800&q=90" },
-  { counter: "04 / 06", kicker: "OFFICE · BEFORE", title: "Workplace friction", body: "Kontoret innan reset: ytor, detaljer och saker som tar fokus.", image: "https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&fit=crop&w=1800&q=90" },
-  { counter: "05 / 06", kicker: "OFFICE · RESET", title: "Surface by surface", body: "Arbetsytor, mötesrum och entré återställs utan att störa verksamheten.", image: "https://images.unsplash.com/photo-1497366811353-6870744d04b2?auto=format&fit=crop&w=1800&q=90" },
-  { counter: "06 / 06", kicker: "READY · AFTER", title: "Ready again", body: "En renare arbetsplats, redo för fokus, kunder och nästa produktiva dag.", image: "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=1800&q=90" }
+  { counter: "01 / 06", kicker: "HOME · BEFORE", title: "Before the reset", body: "Ett hem innan återställningen: rörigt, tungt och svårt att slappna av i.", image: "/cinematic/01-home-before.webp" },
+  { counter: "02 / 06", kicker: "CLEANING · MOTION", title: "The work begins", body: "Yta för yta återställs med metod, rytm och precision.", image: "/cinematic/02-home-cleaner.webp" },
+  { counter: "03 / 06", kicker: "HOME · AFTER", title: "The calm after", body: "Ett rent, ljust och lugnt hem där allt känns lättare.", image: "/cinematic/03-home-after.webp" },
+  { counter: "04 / 06", kicker: "OFFICE · BEFORE", title: "Workplace friction", body: "Kontoret innan reset: ytor, detaljer och saker som tar fokus.", image: "/cinematic/04-office-before.webp" },
+  { counter: "05 / 06", kicker: "OFFICE · RESET", title: "Surface by surface", body: "Arbetsytor, mötesrum och entré återställs utan att störa verksamheten.", image: "/cinematic/05-office-cleaner.webp" },
+  { counter: "06 / 06", kicker: "READY · AFTER", title: "Ready again", body: "En renare arbetsplats, redo för fokus, kunder och nästa produktiva dag.", image: "/cinematic/06-office-after.webp" }
 ];
 
 const services = [
@@ -57,20 +64,6 @@ function getSupabase() {
   const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   if (!url || !key) return null;
   return createClient(url, key);
-}
-
-function pickCity(address: Record<string, string | undefined>) {
-  return address.city || address.town || address.village || address.municipality || address.county || "";
-}
-
-function formatStreetAddress(address: Record<string, string | undefined>, fallback: string) {
-  const street = address.road || address.pedestrian || address.footway || address.path || address.residential || "";
-  const houseNumber = address.house_number || "";
-  const postcode = address.postcode || "";
-  const city = pickCity(address);
-  const streetLine = [street, houseNumber].filter(Boolean).join(" ");
-  const cityLine = [postcode, city].filter(Boolean).join(" ");
-  return [streetLine, cityLine].filter(Boolean).join(", ") || fallback;
 }
 
 export default function HomePage() {
@@ -151,19 +144,13 @@ export default function HomePage() {
   const setField = <K extends keyof BookingDraft>(key: K, value: BookingDraft[K]) => setDraft((current) => ({ ...current, [key]: value }));
 
   async function reverseGeocode(latitude: number, longitude: number) {
-    const url = new URL("https://nominatim.openstreetmap.org/reverse");
-    url.searchParams.set("format", "jsonv2");
-    url.searchParams.set("lat", String(latitude));
-    url.searchParams.set("lon", String(longitude));
-    url.searchParams.set("addressdetails", "1");
-    url.searchParams.set("accept-language", "sv");
-
-    const response = await fetch(url.toString(), {
+    const response = await fetch(`/api/reverse-geocode?lat=${encodeURIComponent(latitude)}&lon=${encodeURIComponent(longitude)}`, {
       headers: { Accept: "application/json" }
     });
 
-    if (!response.ok) throw new Error("Reverse geocoding failed");
-    return response.json() as Promise<{ display_name?: string; address?: Record<string, string | undefined> }>;
+    const result = (await response.json()) as ReverseGeocodeResponse;
+    if (!response.ok || !result.ok) throw new Error(result.message || "Reverse geocoding failed");
+    return result;
   }
 
   function useLocation() {
@@ -181,9 +168,8 @@ export default function HomePage() {
 
         try {
           const result = await reverseGeocode(latitude, longitude);
-          const address = result.address || {};
-          const formattedAddress = formatStreetAddress(address, result.display_name || "");
-          const city = pickCity(address);
+          const formattedAddress = result.address || "";
+          const city = result.area || "";
 
           setDraft((current) => ({
             ...current,
