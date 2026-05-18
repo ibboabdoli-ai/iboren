@@ -20,6 +20,18 @@ type CsvBooking = {
   created_at: string;
 };
 
+type ParsedNotes = {
+  propertyType: string;
+  rooms: string;
+  bathrooms: string;
+  pets: string;
+  floor: string;
+  elevator: string;
+  parking: string;
+  extras: string;
+  customerRequest: string;
+};
+
 function statusLabel(status: string | null) {
   if (status === "cancelled") return "Avbokad";
   if (status === "confirmed") return "Bekräftad";
@@ -40,8 +52,32 @@ function formatDate(value: string | null) {
   });
 }
 
+function pickLine(lines: string[], label: string) {
+  const prefix = `${label}:`;
+  const line = lines.find((item) => item.trim().toLowerCase().startsWith(prefix.toLowerCase()));
+  return line ? line.slice(prefix.length).trim() : "";
+}
+
+function parseNotes(notes: string | null): ParsedNotes {
+  const text = String(notes ?? "").replace(/\r\n/g, "\n");
+  const lines = text.split("\n").map((line) => line.trim()).filter(Boolean);
+  const customerMarkerIndex = lines.findIndex((line) => line.includes("Kundens önskemål"));
+
+  return {
+    propertyType: pickLine(lines, "Typ av objekt"),
+    rooms: pickLine(lines, "Antal rum"),
+    bathrooms: pickLine(lines, "Antal badrum"),
+    pets: pickLine(lines, "Husdjur"),
+    floor: pickLine(lines, "Våning"),
+    elevator: pickLine(lines, "Hiss"),
+    parking: pickLine(lines, "Parkering"),
+    extras: pickLine(lines, "Extra tjänster"),
+    customerRequest: customerMarkerIndex >= 0 ? lines.slice(customerMarkerIndex + 1).join(" | ") : ""
+  };
+}
+
 function csvEscape(value: unknown) {
-  const text = String(value ?? "").replace(/\r?\n|\r/g, " ").trim();
+  const text = String(value ?? "").replace(/\r?\n|\r/g, " | ").trim();
   return `"${text.replace(/"/g, '""')}"`;
 }
 
@@ -53,6 +89,14 @@ function buildCsv(bookings: CsvBooking[]) {
     "Område",
     "Adress",
     "Storlek kvm",
+    "Typ av objekt",
+    "Antal rum",
+    "Antal badrum",
+    "Husdjur",
+    "Våning",
+    "Hiss",
+    "Parkering",
+    "Extra tjänster",
     "Frekvens",
     "Bokningsdatum",
     "Tidsfönster",
@@ -64,28 +108,37 @@ function buildCsv(bookings: CsvBooking[]) {
     "Skapad"
   ];
 
-  const rows = bookings.map((booking) => [
-    booking.id,
-    statusLabel(booking.status),
-    booking.service,
-    booking.area,
-    booking.address,
-    booking.size_sqm,
-    booking.frequency,
-    booking.preferred_date,
-    booking.time_window,
-    booking.customer_name,
-    booking.customer_email,
-    booking.customer_phone,
-    booking.notes,
-    booking.admin_notes,
-    formatDate(booking.created_at)
-  ]);
+  const rows = bookings.map((booking) => {
+    const parsed = parseNotes(booking.notes);
+    return [
+      booking.id,
+      statusLabel(booking.status),
+      booking.service,
+      booking.area,
+      booking.address,
+      booking.size_sqm,
+      parsed.propertyType,
+      parsed.rooms,
+      parsed.bathrooms,
+      parsed.pets,
+      parsed.floor,
+      parsed.elevator,
+      parsed.parking,
+      parsed.extras,
+      booking.frequency,
+      booking.preferred_date,
+      booking.time_window,
+      booking.customer_name,
+      booking.customer_email,
+      booking.customer_phone,
+      parsed.customerRequest || booking.notes,
+      booking.admin_notes,
+      formatDate(booking.created_at)
+    ];
+  });
 
-  // Swedish Excel commonly expects semicolon-separated CSV.
-  return [headers, ...rows]
-    .map((row) => row.map(csvEscape).join(";"))
-    .join("\r\n");
+  // Swedish Excel expects semicolon-separated CSV. The sep row tells Excel to split columns correctly.
+  return ["sep=;", [headers, ...rows].map((row) => row.map(csvEscape).join(";")).join("\r\n")].join("\r\n");
 }
 
 export default function AdminCsvExport({ bookings }: { bookings: CsvBooking[] }) {
@@ -96,7 +149,7 @@ export default function AdminCsvExport({ bookings }: { bookings: CsvBooking[] })
     const date = new Date().toISOString().slice(0, 10);
     const link = document.createElement("a");
     link.href = url;
-    link.download = `iboren-bokningar-${date}.csv`;
+    link.download = `iboren-bokningar-excel-${date}.csv`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
