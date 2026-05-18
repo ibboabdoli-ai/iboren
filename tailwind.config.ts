@@ -10,7 +10,9 @@ const config: Config = {
         ink: "#202020",
         burgundy: "#6B2737",
         gold: "#D4A574",
-        plum: "#3B183F"
+        plum: "#3B183F",
+        night: "#020504",
+        teal: "#59C7B7"
       },
       fontFamily: {
         display: ["Georgia", "serif"],
