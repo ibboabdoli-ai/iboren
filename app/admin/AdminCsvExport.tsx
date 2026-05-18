@@ -4,6 +4,7 @@ import { Download } from "lucide-react";
 
 type CsvBooking = {
   id: string;
+  user_id?: string | null;
   service: string;
   area: string;
   address: string | null;
@@ -76,12 +77,59 @@ function parseNotes(notes: string | null): ParsedNotes {
   };
 }
 
+function duplicateKey(booking: CsvBooking) {
+  return [
+    booking.user_id || booking.customer_email || "no-user",
+    booking.service || "",
+    booking.address || "",
+    booking.size_sqm ?? "",
+    booking.frequency || "",
+    booking.preferred_date || "",
+    booking.time_window || "",
+    booking.customer_email || ""
+  ].map((value) => String(value).trim().toLowerCase()).join("|");
+}
+
+function statusPriority(status: string | null) {
+  if (status === "confirmed") return 4;
+  if (status === "new" || !status) return 3;
+  if (status === "completed") return 2;
+  if (status === "cancelled") return 1;
+  return 0;
+}
+
+function collapseDuplicates(bookings: CsvBooking[]) {
+  const kept = new Map<string, CsvBooking>();
+
+  for (const booking of bookings) {
+    const key = duplicateKey(booking);
+    const existing = kept.get(key);
+
+    if (!existing) {
+      kept.set(key, booking);
+      continue;
+    }
+
+    const existingPriority = statusPriority(existing.status);
+    const bookingPriority = statusPriority(booking.status);
+    const existingTime = new Date(existing.created_at).getTime();
+    const bookingTime = new Date(booking.created_at).getTime();
+
+    if (bookingPriority > existingPriority || (bookingPriority === existingPriority && bookingTime > existingTime)) {
+      kept.set(key, booking);
+    }
+  }
+
+  return Array.from(kept.values());
+}
+
 function csvEscape(value: unknown) {
   const text = String(value ?? "").replace(/\r?\n|\r/g, " | ").trim();
   return `"${text.replace(/"/g, '""')}"`;
 }
 
 function buildCsv(bookings: CsvBooking[]) {
+  const cleanedBookings = collapseDuplicates(bookings);
   const headers = [
     "ID",
     "Status",
@@ -108,7 +156,7 @@ function buildCsv(bookings: CsvBooking[]) {
     "Skapad"
   ];
 
-  const rows = bookings.map((booking) => {
+  const rows = cleanedBookings.map((booking) => {
     const parsed = parseNotes(booking.notes);
     return [
       booking.id,
