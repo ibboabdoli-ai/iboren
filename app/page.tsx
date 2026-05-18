@@ -10,6 +10,14 @@ type BookingDraft = {
   area: string;
   address: string;
   size: string;
+  propertyType: string;
+  rooms: string;
+  bathrooms: string;
+  pets: string;
+  floor: string;
+  elevator: string;
+  parking: string;
+  extras: string[];
   frequency: string;
   date: string;
   timeWindow: string;
@@ -19,18 +27,21 @@ type BookingDraft = {
   notes: string;
 };
 
-type ReverseGeocodeResponse = {
-  ok: boolean;
-  address?: string;
-  area?: string;
-  message?: string;
-};
+type ReverseGeocodeResponse = { ok: boolean; address?: string; area?: string; message?: string };
 
 const initialDraft: BookingDraft = {
   service: "Hemstädning",
   area: "Södertälje",
   address: "",
   size: "",
+  propertyType: "Lägenhet",
+  rooms: "",
+  bathrooms: "",
+  pets: "Nej",
+  floor: "",
+  elevator: "Vet ej",
+  parking: "Vet ej",
+  extras: [],
   frequency: "Engång",
   date: "",
   timeWindow: "Flexibel",
@@ -58,12 +69,35 @@ const services = [
 const serviceOptions = ["Hemstädning", "Flyttstädning", "Kontorsstädning", "Fönsterputs"];
 const frequencyOptions = ["Engång", "Varje vecka", "Varannan vecka", "Varje månad"];
 const timeOptions = ["Morgon", "Förmiddag", "Eftermiddag", "Kväll", "Flexibel"];
+const propertyTypes = ["Lägenhet", "Villa", "Radhus", "Kontor", "Annat"];
+const yesNoOptions = ["Ja", "Nej", "Vet ej"];
+const extraOptions = ["Fönsterputs", "Ugn", "Kyl/frys", "Balkong", "Grovstädning", "Skåp/lådor"];
 
 function getSupabase() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   if (!url || !key) return null;
   return createClient(url, key);
+}
+
+function buildBookingNotes(draft: BookingDraft) {
+  const details = [
+    "--- Objekt & detaljer ---",
+    `Typ av objekt: ${draft.propertyType || "Ej ifyllt"}`,
+    `Antal rum: ${draft.rooms || "Ej ifyllt"}`,
+    `Antal badrum: ${draft.bathrooms || "Ej ifyllt"}`,
+    `Husdjur: ${draft.pets || "Ej ifyllt"}`,
+    `Våning: ${draft.floor || "Ej ifyllt"}`,
+    `Hiss: ${draft.elevator || "Ej ifyllt"}`,
+    `Parkering: ${draft.parking || "Ej ifyllt"}`,
+    `Extra tjänster: ${draft.extras.length ? draft.extras.join(", ") : "Inga valda"}`
+  ];
+
+  if (draft.notes.trim()) {
+    details.push("", "--- Kundens önskemål ---", draft.notes.trim());
+  }
+
+  return details.join("\n");
 }
 
 export default function HomePage() {
@@ -92,6 +126,7 @@ export default function HomePage() {
 
   const activeScene = frames[activeFrame];
   const progress = (activeFrame + 1) / frames.length;
+  const fullBookingNotes = useMemo(() => buildBookingNotes(draft), [draft]);
 
   function stepFrame(direction: 1 | -1) {
     setActiveFrame((current) => Math.max(0, Math.min(frames.length - 1, current + direction)));
@@ -102,15 +137,12 @@ export default function HomePage() {
     const up = event.deltaY < 0;
     const canGoNext = down && activeFrame < frames.length - 1;
     const canGoPrev = up && activeFrame > 0;
-
     if (!canGoNext && !canGoPrev) return;
     event.preventDefault();
     if (wheelLock.current) return;
     wheelLock.current = true;
     stepFrame(down ? 1 : -1);
-    window.setTimeout(() => {
-      wheelLock.current = false;
-    }, 520);
+    window.setTimeout(() => { wheelLock.current = false; }, 520);
   }
 
   function handleTouchStart(event: React.TouchEvent<HTMLElement>) {
@@ -132,6 +164,14 @@ export default function HomePage() {
     `Område: ${draft.area || "—"}`,
     `Adress: ${draft.address || "Ej ifylld"}`,
     `Storlek: ${draft.size ? `${draft.size} kvm` : "Ej ifylld"}`,
+    `Typ av objekt: ${draft.propertyType}`,
+    `Antal rum: ${draft.rooms || "Ej ifyllt"}`,
+    `Antal badrum: ${draft.bathrooms || "Ej ifyllt"}`,
+    `Husdjur: ${draft.pets}`,
+    `Våning: ${draft.floor || "Ej ifyllt"}`,
+    `Hiss: ${draft.elevator}`,
+    `Parkering: ${draft.parking}`,
+    `Extra tjänster: ${draft.extras.length ? draft.extras.join(", ") : "Inga valda"}`,
     `Frekvens: ${draft.frequency}`,
     `Datum: ${draft.date || "Ej valt"}`,
     `Tid: ${draft.timeWindow}`,
@@ -143,11 +183,12 @@ export default function HomePage() {
 
   const setField = <K extends keyof BookingDraft>(key: K, value: BookingDraft[K]) => setDraft((current) => ({ ...current, [key]: value }));
 
-  async function reverseGeocode(latitude: number, longitude: number) {
-    const response = await fetch(`/api/reverse-geocode?lat=${encodeURIComponent(latitude)}&lon=${encodeURIComponent(longitude)}`, {
-      headers: { Accept: "application/json" }
-    });
+  function toggleExtra(extra: string) {
+    setDraft((current) => ({ ...current, extras: current.extras.includes(extra) ? current.extras.filter((item) => item !== extra) : [...current.extras, extra] }));
+  }
 
+  async function reverseGeocode(latitude: number, longitude: number) {
+    const response = await fetch(`/api/reverse-geocode?lat=${encodeURIComponent(latitude)}&lon=${encodeURIComponent(longitude)}`, { headers: { Accept: "application/json" } });
     const result = (await response.json()) as ReverseGeocodeResponse;
     if (!response.ok || !result.ok) throw new Error(result.message || "Reverse geocoding failed");
     return result;
@@ -158,36 +199,22 @@ export default function HomePage() {
       setMessage("Din webbläsare stödjer inte platsdelning. Fyll i adress manuellt.");
       return;
     }
-
     setLocating(true);
     setMessage("Hämtar din position och försöker fylla i adressen...");
-
     navigator.geolocation.getCurrentPosition(
       async (position) => {
         const { latitude, longitude } = position.coords;
-
         try {
           const result = await reverseGeocode(latitude, longitude);
-          const formattedAddress = result.address || "";
-          const city = result.area || "";
-
-          setDraft((current) => ({
-            ...current,
-            address: formattedAddress || current.address,
-            area: city || current.area
-          }));
-
-          setMessage(formattedAddress ? "Adress hämtad automatiskt. Kontrollera att den stämmer innan du skickar." : "Position hämtad, men adress kunde inte tolkas. Fyll i adress manuellt.");
+          setDraft((current) => ({ ...current, address: result.address || current.address, area: result.area || current.area }));
+          setMessage(result.address ? "Adress hämtad automatiskt. Kontrollera att den stämmer innan du skickar." : "Position hämtad, men adress kunde inte tolkas. Fyll i adress manuellt.");
         } catch {
           setMessage("Position hämtad, men adress kunde inte hämtas automatiskt. Fyll i adress manuellt.");
         } finally {
           setLocating(false);
         }
       },
-      () => {
-        setMessage("Platsdelning nekades. Det går bra att skriva adressen manuellt.");
-        setLocating(false);
-      },
+      () => { setMessage("Platsdelning nekades. Det går bra att skriva adressen manuellt."); setLocating(false); },
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 30000 }
     );
   }
@@ -208,7 +235,7 @@ export default function HomePage() {
       customer_name: draft.name,
       customer_email: draft.email,
       customer_phone: draft.phone || null,
-      notes: draft.notes || null,
+      notes: fullBookingNotes || null,
       status: "new"
     });
     if (error) throw new Error(`Kunde inte spara bokningen i databasen: ${error.message}`);
@@ -216,16 +243,16 @@ export default function HomePage() {
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!draft.name || !draft.email || !draft.area || !draft.size || !draft.date) {
+    if (!draft.name || !draft.email || !draft.phone || !draft.area || !draft.address || !draft.size || !draft.rooms || !draft.bathrooms || !draft.date) {
       setStatus("error");
-      setMessage("Fyll i namn, e-post, område, storlek och datum innan du skickar.");
+      setMessage("Fyll i namn, e-post, telefon, område, adress, storlek, antal rum, antal badrum och datum innan du skickar.");
       return;
     }
     setStatus("loading");
     setMessage("");
     try {
       await saveBookingToDatabase();
-      const response = await fetch("/api/bookings", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(draft) });
+      const response = await fetch("/api/bookings", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...draft, notes: fullBookingNotes }) });
       const result = await response.json();
       if (!response.ok || !result.ok) throw new Error(result.message || "Något gick fel.");
       setStatus("success");
@@ -271,24 +298,10 @@ export default function HomePage() {
 
       <section id="cinematic-scroll" onWheel={handleCinematicWheel} onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd} className="relative h-screen min-h-screen overflow-hidden bg-night">
         <div className="relative h-screen min-h-screen overflow-hidden bg-night">
-          {frames.map((frame, index) => (
-            <img key={frame.counter} src={frame.image} alt={frame.title} style={{ opacity: activeFrame === index ? 1 : 0, transform: activeFrame === index ? "scale(1)" : "scale(1.04)", zIndex: activeFrame === index ? 2 : 1 }} className="absolute inset-0 h-full w-full object-cover transition-all duration-700 ease-out" />
-          ))}
+          {frames.map((frame, index) => <img key={frame.counter} src={frame.image} alt={frame.title} style={{ opacity: activeFrame === index ? 1 : 0, transform: activeFrame === index ? "scale(1)" : "scale(1.04)", zIndex: activeFrame === index ? 2 : 1 }} className="absolute inset-0 h-full w-full object-cover transition-all duration-700 ease-out" />)}
           <div className="absolute inset-0 z-10 bg-[linear-gradient(90deg,rgba(2,5,4,.50),rgba(2,5,4,.06)_48%,rgba(2,5,4,.50)),radial-gradient(circle_at_52%_46%,transparent_0_42%,rgba(0,0,0,.34)_100%)]" />
-          <div className="absolute left-5 right-5 top-24 z-20 flex items-start justify-between md:left-[8vw] md:right-[8vw] md:top-[12vh]">
-            <div><p className="text-[10px] font-black uppercase tracking-[.34em] text-gold/85">{activeScene.kicker}</p><p className="display mt-1 text-4xl font-normal uppercase tracking-[.02em] text-porcelain md:text-6xl">{activeScene.counter}</p></div>
-            <div className="h-24 w-1 overflow-hidden rounded-full bg-porcelain/15"><div className="w-full rounded-full bg-gold transition-all" style={{ height: `${Math.round(progress * 100)}%` }} /></div>
-          </div>
-          <div className="absolute inset-x-0 bottom-12 z-20 px-5 md:bottom-20">
-            <div className="luxe-container">
-              <h2 className="display max-w-4xl text-[clamp(3rem,8vw,7rem)] font-normal uppercase leading-[.84] tracking-[.02em] text-porcelain">{activeScene.title}</h2>
-              <p className="mt-5 max-w-2xl text-base leading-8 text-porcelain/86 md:text-xl">{activeScene.body}</p>
-              <div className="mt-7 flex flex-wrap gap-3">
-                {activeFrame > 0 && <button type="button" onClick={() => stepFrame(-1)} className="rounded-full border border-gold/40 px-5 py-3 text-[11px] font-bold uppercase tracking-[.22em] text-gold">Föregående</button>}
-                {activeFrame < frames.length - 1 ? <button type="button" onClick={() => stepFrame(1)} className="rounded-full border border-gold/50 bg-gold/10 px-5 py-3 text-[11px] font-bold uppercase tracking-[.22em] text-gold backdrop-blur hover:bg-gold hover:text-night">Nästa bild</button> : <a href="#booking" className="rounded-full border border-gold/50 bg-gold/10 px-5 py-3 text-[11px] font-bold uppercase tracking-[.22em] text-gold backdrop-blur hover:bg-gold hover:text-night">Boka städning</a>}
-              </div>
-            </div>
-          </div>
+          <div className="absolute left-5 right-5 top-24 z-20 flex items-start justify-between md:left-[8vw] md:right-[8vw] md:top-[12vh]"><div><p className="text-[10px] font-black uppercase tracking-[.34em] text-gold/85">{activeScene.kicker}</p><p className="display mt-1 text-4xl font-normal uppercase tracking-[.02em] text-porcelain md:text-6xl">{activeScene.counter}</p></div><div className="h-24 w-1 overflow-hidden rounded-full bg-porcelain/15"><div className="w-full rounded-full bg-gold transition-all" style={{ height: `${Math.round(progress * 100)}%` }} /></div></div>
+          <div className="absolute inset-x-0 bottom-12 z-20 px-5 md:bottom-20"><div className="luxe-container"><h2 className="display max-w-4xl text-[clamp(3rem,8vw,7rem)] font-normal uppercase leading-[.84] tracking-[.02em] text-porcelain">{activeScene.title}</h2><p className="mt-5 max-w-2xl text-base leading-8 text-porcelain/86 md:text-xl">{activeScene.body}</p><div className="mt-7 flex flex-wrap gap-3">{activeFrame > 0 && <button type="button" onClick={() => stepFrame(-1)} className="rounded-full border border-gold/40 px-5 py-3 text-[11px] font-bold uppercase tracking-[.22em] text-gold">Föregående</button>}{activeFrame < frames.length - 1 ? <button type="button" onClick={() => stepFrame(1)} className="rounded-full border border-gold/50 bg-gold/10 px-5 py-3 text-[11px] font-bold uppercase tracking-[.22em] text-gold backdrop-blur hover:bg-gold hover:text-night">Nästa bild</button> : <a href="#booking" className="rounded-full border border-gold/50 bg-gold/10 px-5 py-3 text-[11px] font-bold uppercase tracking-[.22em] text-gold backdrop-blur hover:bg-gold hover:text-night">Boka städning</a>}</div></div></div>
         </div>
       </section>
 
@@ -296,7 +309,7 @@ export default function HomePage() {
 
       <section id="process" className="bg-porcelain py-24 text-ink md:py-32"><div className="luxe-container"><p className="eyebrow">II / Method</p><h2 className="display mt-4 max-w-4xl text-5xl font-normal uppercase leading-[.9] text-burgundy md:text-7xl">Four steps. One clear booking.</h2><div className="mt-12 grid gap-4 md:grid-cols-4">{["Välj tjänst", "Fyll i plats", "CleanAI sammanfattar", "Skicka förfrågan"].map((item, i) => <article key={item} className="rounded-[2rem] border border-burgundy/10 bg-cream p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-soft"><div className="mb-10 flex items-center justify-between"><span className="display text-4xl text-burgundy/55">0{i + 1}</span><CheckCircle2 className="text-burgundy" /></div><h3 className="display text-3xl font-normal uppercase">{item}</h3><p className="mt-4 text-sm leading-7 text-ink/60">Ett enkelt steg som gör bokningsunderlaget tydligare och lättare att följa upp.</p></article>)}</div></div></section>
 
-      <section id="booking" className="bg-ink py-24 text-porcelain md:py-32"><div className="luxe-container grid gap-10 lg:grid-cols-[.82fr_1.18fr]"><div><p className="mb-4 text-[11px] font-bold uppercase tracking-[.38em] text-gold">CleanAI booking</p><h2 className="display text-5xl font-normal uppercase leading-[.9] md:text-7xl">Skapa en tydlig bokningsförfrågan.</h2><p className="mt-6 max-w-xl text-lg leading-8 text-porcelain/70">MVP-flödet samlar rätt information direkt: tjänst, plats, storlek, datum, kontakt och särskilda önskemål.</p><div className="mt-8 grid gap-3 text-sm text-porcelain/70"><p className="flex items-center gap-3"><ShieldCheck className="h-5 w-5 text-gold" /> GDPR-aware: plats delas bara efter aktivt val.</p><p className="flex items-center gap-3"><Mail className="h-5 w-5 text-gold" /> {user ? "Din förfrågan sparas även på din profil." : "Logga in för att spara bokningen på din profil."}</p></div></div><div className="grid gap-5 xl:grid-cols-[1fr_.88fr]"><form onSubmit={submit} className="rounded-[2rem] border border-porcelain/10 bg-porcelain/8 p-5 shadow-2xl backdrop-blur-xl md:p-7"><div className="mb-6 flex items-center justify-between"><div><p className="text-xs uppercase tracking-[.28em] text-gold">Step 1 / Request</p><h3 className="display mt-2 text-3xl font-normal uppercase">Bokningsdetaljer</h3></div><span className="rounded-full border border-gold/30 px-3 py-1 text-[10px] font-bold uppercase tracking-[.22em] text-gold">Draft</span></div><div className="grid gap-4"><div><label className="mb-2 block text-sm font-bold text-porcelain/80">Tjänst</label><div className="grid grid-cols-2 gap-2">{serviceOptions.map((service) => <button type="button" key={service} onClick={() => setField("service", service)} className={`rounded-2xl border px-3 py-3 text-sm font-bold transition ${draft.service === service ? "border-gold bg-gold text-ink" : "border-porcelain/10 bg-porcelain/6 text-porcelain/80"}`}>{service}</button>)}</div></div><div className="grid gap-4 sm:grid-cols-2"><Field label="Område / stad" value={draft.area} onChange={(v) => setField("area", v)} placeholder="Stockholm, Södertälje..." /><Field label="Storlek kvm" value={draft.size} onChange={(v) => setField("size", v.replace(/[^0-9]/g, ""))} placeholder="75" /></div><div><label className="mb-2 block text-sm font-bold text-porcelain/80">Adress</label><div className="flex gap-2"><input value={draft.address} onChange={(e) => setField("address", e.target.value)} className="min-w-0 flex-1 rounded-2xl border border-porcelain/10 bg-porcelain px-4 py-4 text-ink placeholder:text-ink/45 outline-none" placeholder="Gatuadress" /><button type="button" onClick={useLocation} className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl border border-gold/30 text-gold">{locating ? <Loader2 className="h-5 w-5 animate-spin" /> : <LocateFixed className="h-5 w-5" />}</button></div></div><div className="grid gap-4 sm:grid-cols-2"><Field label="Önskat datum" type="date" value={draft.date} onChange={(v) => setField("date", v)} /><Select label="Tidsfönster" value={draft.timeWindow} options={timeOptions} onChange={(v) => setField("timeWindow", v)} /></div><Select label="Frekvens" value={draft.frequency} options={frequencyOptions} onChange={(v) => setField("frequency", v)} /><div className="grid gap-4 sm:grid-cols-2"><Field label="Namn" value={draft.name} onChange={(v) => setField("name", v)} placeholder="För- och efternamn" /><Field label="E-post" value={draft.email} onChange={(v) => setField("email", v)} placeholder="namn@email.se" type="email" /></div><Field label="Telefon" value={draft.phone} onChange={(v) => setField("phone", v)} placeholder="+46 ..." type="tel" /><textarea value={draft.notes} onChange={(e) => setField("notes", e.target.value)} className="min-h-28 w-full rounded-2xl border border-porcelain/10 bg-porcelain px-4 py-4 text-ink placeholder:text-ink/45 outline-none" placeholder="Särskilda önskemål..." /><button disabled={status === "loading"} className="btn-primary w-full bg-gold text-ink hover:bg-porcelain">{status === "loading" ? <Loader2 className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5" />} Skicka bokningsförfrågan</button>{message && <p className={`rounded-2xl px-4 py-3 text-sm ${status === "success" ? "bg-gold/20 text-gold" : status === "error" ? "bg-red-500/10 text-red-200" : "bg-porcelain/10 text-porcelain/70"}`}>{message}</p>}</div></form><aside className="rounded-[2rem] border border-porcelain/10 bg-cream p-5 text-ink shadow-2xl md:p-7"><div className="mb-6 flex items-center justify-between"><div><p className="text-xs font-bold uppercase tracking-[.28em] text-burgundy/60">Live summary</p><h3 className="display mt-2 text-3xl font-normal uppercase text-burgundy">CleanAI draft</h3></div><button onClick={() => navigator.clipboard.writeText(summary)} className="grid h-11 w-11 place-items-center rounded-full border border-burgundy/15 bg-porcelain text-burgundy"><Copy className="h-4 w-4" /></button></div><pre className="max-h-[420px] overflow-auto whitespace-pre-wrap rounded-[1.5rem] border border-burgundy/10 bg-porcelain/70 p-5 text-sm leading-7 text-ink/70">{summary}</pre></aside></div></div></section>
+      <section id="booking" className="bg-ink py-24 text-porcelain md:py-32"><div className="luxe-container grid gap-10 lg:grid-cols-[.82fr_1.18fr]"><div><p className="mb-4 text-[11px] font-bold uppercase tracking-[.38em] text-gold">CleanAI booking</p><h2 className="display text-5xl font-normal uppercase leading-[.9] md:text-7xl">Skapa en tydlig bokningsförfrågan.</h2><p className="mt-6 max-w-xl text-lg leading-8 text-porcelain/70">MVP-flödet samlar rätt information direkt: tjänst, plats, storlek, rum, datum, kontakt och särskilda önskemål.</p><div className="mt-8 grid gap-3 text-sm text-porcelain/70"><p className="flex items-center gap-3"><ShieldCheck className="h-5 w-5 text-gold" /> GDPR-aware: plats delas bara efter aktivt val.</p><p className="flex items-center gap-3"><Mail className="h-5 w-5 text-gold" /> {user ? "Din förfrågan sparas även på din profil." : "Logga in för att spara bokningen på din profil."}</p></div></div><div className="grid gap-5 xl:grid-cols-[1fr_.88fr]"><form onSubmit={submit} className="rounded-[2rem] border border-porcelain/10 bg-porcelain/8 p-5 shadow-2xl backdrop-blur-xl md:p-7"><div className="mb-6 flex items-center justify-between"><div><p className="text-xs uppercase tracking-[.28em] text-gold">Step 1 / Request</p><h3 className="display mt-2 text-3xl font-normal uppercase">Bokningsdetaljer</h3></div><span className="rounded-full border border-gold/30 px-3 py-1 text-[10px] font-bold uppercase tracking-[.22em] text-gold">Draft</span></div><div className="grid gap-4"><div><label className="mb-2 block text-sm font-bold text-porcelain/80">Tjänst</label><div className="grid grid-cols-2 gap-2">{serviceOptions.map((service) => <button type="button" key={service} onClick={() => setField("service", service)} className={`rounded-2xl border px-3 py-3 text-sm font-bold transition ${draft.service === service ? "border-gold bg-gold text-ink" : "border-porcelain/10 bg-porcelain/6 text-porcelain/80"}`}>{service}</button>)}</div></div><div className="grid gap-4 sm:grid-cols-2"><Field label="Område / stad" value={draft.area} onChange={(v) => setField("area", v)} placeholder="Stockholm, Södertälje..." /><Field label="Storlek kvm" value={draft.size} onChange={(v) => setField("size", v.replace(/[^0-9]/g, ""))} placeholder="75" /></div><div><label className="mb-2 block text-sm font-bold text-porcelain/80">Adress</label><div className="flex gap-2"><input value={draft.address} onChange={(e) => setField("address", e.target.value)} className="min-w-0 flex-1 rounded-2xl border border-porcelain/10 bg-porcelain px-4 py-4 text-ink placeholder:text-ink/45 outline-none" placeholder="Gatuadress" /><button type="button" onClick={useLocation} className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl border border-gold/30 text-gold">{locating ? <Loader2 className="h-5 w-5 animate-spin" /> : <LocateFixed className="h-5 w-5" />}</button></div></div><div className="rounded-[1.5rem] border border-gold/15 bg-night/30 p-4"><p className="mb-4 text-xs font-bold uppercase tracking-[.28em] text-gold">Objekt & detaljer</p><div className="grid gap-4 sm:grid-cols-2"><Select label="Typ av objekt" value={draft.propertyType} options={propertyTypes} onChange={(v) => setField("propertyType", v)} /><Field label="Antal rum" value={draft.rooms} onChange={(v) => setField("rooms", v.replace(/[^0-9]/g, ""))} placeholder="3" /><Field label="Antal badrum" value={draft.bathrooms} onChange={(v) => setField("bathrooms", v.replace(/[^0-9]/g, ""))} placeholder="1" /><Select label="Husdjur" value={draft.pets} options={yesNoOptions} onChange={(v) => setField("pets", v)} /><Field label="Våning" value={draft.floor} onChange={(v) => setField("floor", v)} placeholder="3" /><Select label="Hiss" value={draft.elevator} options={yesNoOptions} onChange={(v) => setField("elevator", v)} /><Select label="Parkering" value={draft.parking} options={yesNoOptions} onChange={(v) => setField("parking", v)} /></div></div><div><label className="mb-2 block text-sm font-bold text-porcelain/80">Extra tjänster</label><div className="grid grid-cols-2 gap-2 sm:grid-cols-3">{extraOptions.map((extra) => <button type="button" key={extra} onClick={() => toggleExtra(extra)} className={`rounded-2xl border px-3 py-3 text-sm font-bold transition ${draft.extras.includes(extra) ? "border-gold bg-gold text-ink" : "border-porcelain/10 bg-porcelain/6 text-porcelain/80"}`}>{extra}</button>)}</div></div><div className="grid gap-4 sm:grid-cols-2"><Field label="Önskat datum" type="date" value={draft.date} onChange={(v) => setField("date", v)} /><Select label="Tidsfönster" value={draft.timeWindow} options={timeOptions} onChange={(v) => setField("timeWindow", v)} /></div><Select label="Frekvens" value={draft.frequency} options={frequencyOptions} onChange={(v) => setField("frequency", v)} /><div className="grid gap-4 sm:grid-cols-2"><Field label="Namn" value={draft.name} onChange={(v) => setField("name", v)} placeholder="För- och efternamn" /><Field label="E-post" value={draft.email} onChange={(v) => setField("email", v)} placeholder="namn@email.se" type="email" /></div><Field label="Telefon" value={draft.phone} onChange={(v) => setField("phone", v)} placeholder="+46 ..." type="tel" /><textarea value={draft.notes} onChange={(e) => setField("notes", e.target.value)} className="min-h-28 w-full rounded-2xl border border-porcelain/10 bg-porcelain px-4 py-4 text-ink placeholder:text-ink/45 outline-none" placeholder="Särskilda önskemål..." /><button disabled={status === "loading"} className="btn-primary w-full bg-gold text-ink hover:bg-porcelain">{status === "loading" ? <Loader2 className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5" />} Skicka bokningsförfrågan</button>{message && <p className={`rounded-2xl px-4 py-3 text-sm ${status === "success" ? "bg-gold/20 text-gold" : status === "error" ? "bg-red-500/10 text-red-200" : "bg-porcelain/10 text-porcelain/70"}`}>{message}</p>}</div></form><aside className="rounded-[2rem] border border-porcelain/10 bg-cream p-5 text-ink shadow-2xl md:p-7"><div className="mb-6 flex items-center justify-between"><div><p className="text-xs font-bold uppercase tracking-[.28em] text-burgundy/60">Live summary</p><h3 className="display mt-2 text-3xl font-normal uppercase text-burgundy">CleanAI draft</h3></div><button onClick={() => navigator.clipboard.writeText(summary)} className="grid h-11 w-11 place-items-center rounded-full border border-burgundy/15 bg-porcelain text-burgundy"><Copy className="h-4 w-4" /></button></div><pre className="max-h-[520px] overflow-auto whitespace-pre-wrap rounded-[1.5rem] border border-burgundy/10 bg-porcelain/70 p-5 text-sm leading-7 text-ink/70">{summary}</pre></aside></div></div></section>
 
       <footer className="border-t border-gold/10 bg-night py-10"><div className="luxe-container flex flex-col gap-6 md:flex-row md:items-center md:justify-between"><div><p className="display text-4xl font-normal uppercase text-gold">Iboren</p><p className="mt-1 text-[10px] font-bold uppercase tracking-[.32em] text-porcelain/45">Smart städbokning med AI i Sverige</p></div><div className="flex flex-wrap gap-4 text-sm font-semibold text-porcelain/60"><Link href="/profile" className="hover:text-gold">Min profil</Link><Link href="/privacy" className="hover:text-gold">Privacy</Link><Link href="/terms" className="hover:text-gold">Terms</Link><a href="mailto:hej@iboren.se" className="hover:text-gold">hej@iboren.se</a></div></div></footer>
     </main>
