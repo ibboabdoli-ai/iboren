@@ -53,6 +53,14 @@ function metadataName(currentUser: User) {
   return currentUser.user_metadata?.full_name || currentUser.user_metadata?.name || "";
 }
 
+function providerLabel(provider: unknown) {
+  const value = String(provider || "oauth").toLowerCase();
+  if (value.includes("google")) return "Verifierad med Google";
+  if (value.includes("linkedin")) return "Verifierad med LinkedIn";
+  if (value.includes("azure") || value.includes("microsoft")) return "Verifierad med Microsoft";
+  return "Verifierad inloggning";
+}
+
 function statusLabel(status: string | null) {
   if (status === "cancelled") return "Avbokad";
   if (status === "confirmed") return "Bekräftad";
@@ -258,7 +266,7 @@ export default function ProfilePage() {
 
   const fullName = profile.full_name || metadataName(user) || "Iboren customer";
   const avatar = user.user_metadata?.avatar_url || user.user_metadata?.picture;
-  const provider = user.app_metadata?.provider || "oauth";
+  const verifiedProvider = providerLabel(user.app_metadata?.provider);
 
   return (
     <main className="min-h-screen bg-cream py-16 text-ink">
@@ -275,8 +283,7 @@ export default function ProfilePage() {
             </div>
             <div className="space-y-3 break-words text-sm text-porcelain/74">
               <p><strong className="text-gold">Email:</strong> {user.email}</p>
-              <p><strong className="text-gold">Provider:</strong> {provider}</p>
-              <p><strong className="text-gold">User ID:</strong> {user.id}</p>
+              <p><strong className="text-gold">Status:</strong> {verifiedProvider}</p>
             </div>
             <button onClick={signOut} className="mt-8 inline-flex items-center gap-2 rounded-full bg-porcelain px-5 py-3 text-sm font-bold text-burgundy"><LogOut size={17} /> Logga ut</button>
           </aside>
@@ -296,7 +303,7 @@ export default function ProfilePage() {
                       {showCancelled ? "Dölj avbokade" : "Visa avbokade"}
                     </button>
                   )}
-                  <Link href="/booking" className="btn-secondary">Ny bokning</Link>
+                  <Link href="/#booking" className="btn-secondary">Ny bokning</Link>
                 </div>
               </div>
 
@@ -307,7 +314,7 @@ export default function ProfilePage() {
               ) : bookings.length === 0 ? (
                 <div className="rounded-[2rem] border border-dashed border-burgundy/20 bg-cream p-6 text-ink/65">
                   <p>Du har inga sparade bokningar ännu.</p>
-                  <Link href="/booking" className="mt-4 inline-flex font-bold text-burgundy">Skapa första bokningen →</Link>
+                  <Link href="/#booking" className="mt-4 inline-flex font-bold text-burgundy">Skapa första bokningen →</Link>
                 </div>
               ) : visibleBookings.length === 0 ? (
                 <div className="rounded-[2rem] border border-dashed border-burgundy/20 bg-cream p-6 text-ink/65">
