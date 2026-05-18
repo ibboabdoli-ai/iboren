@@ -88,18 +88,24 @@ const cinematicImagePatch = `
 
 const bookingAuthPatch = `
 (function () {
-  function getAccessToken() {
+  function getSession() {
     for (var i = 0; i < localStorage.length; i++) {
       var key = localStorage.key(i) || '';
       if (!key.includes('auth-token')) continue;
       try {
         var data = JSON.parse(localStorage.getItem(key) || '{}');
-        var token = data && data.access_token;
-        if (token) return token;
+        if (data && data.access_token) return data;
       } catch (e) {}
     }
-    return '';
+    return null;
   }
+
+  function getAccessToken() {
+    var session = getSession();
+    return session && session.access_token ? session.access_token : '';
+  }
+
+  window.__iborenGetSession = getSession;
 
   var originalFetch = window.fetch;
   window.fetch = function (input, init) {
@@ -115,6 +121,55 @@ const bookingAuthPatch = `
 
     return originalFetch(input, init);
   };
+})();
+`;
+
+const bookingClientValidationPatch = `
+(function () {
+  function getSession() {
+    if (typeof window.__iborenGetSession === 'function') return window.__iborenGetSession();
+    return null;
+  }
+
+  function getSessionEmail() {
+    var session = getSession();
+    var user = session && session.user;
+    return user && user.email ? String(user.email).toLowerCase() : '';
+  }
+
+  function applyBookingClientValidation() {
+    var section = document.querySelector('#booking');
+    if (!section) return;
+    var form = section.querySelector('form');
+    if (!form || form.getAttribute('data-client-validated') === '1') return;
+    form.setAttribute('data-client-validated', '1');
+
+    form.addEventListener('submit', function (event) {
+      var session = getSession();
+      var token = session && session.access_token;
+      if (!token) {
+        event.preventDefault();
+        event.stopPropagation();
+        window.location.href = '/login';
+        return;
+      }
+
+      var sessionEmail = getSessionEmail();
+      var emailInput = form.querySelector('input[type="email"]');
+      var formEmail = emailInput && emailInput.value ? String(emailInput.value).trim().toLowerCase() : '';
+      if (sessionEmail && formEmail && sessionEmail !== formEmail) {
+        event.preventDefault();
+        event.stopPropagation();
+        alert('Bokningens e-post måste matcha ditt inloggade konto: ' + sessionEmail);
+      }
+    }, true);
+  }
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', applyBookingClientValidation);
+  else applyBookingClientValidation();
+
+  var observer = new MutationObserver(applyBookingClientValidation);
+  observer.observe(document.documentElement, { childList: true, subtree: true });
 })();
 `;
 
@@ -200,6 +255,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <script dangerouslySetInnerHTML={{ __html: brandHeaderPatch }} />
         <script dangerouslySetInnerHTML={{ __html: cinematicImagePatch }} />
         <script dangerouslySetInnerHTML={{ __html: bookingAuthPatch }} />
+        <script dangerouslySetInnerHTML={{ __html: bookingClientValidationPatch }} />
         <script dangerouslySetInnerHTML={{ __html: bookingLoginGuardPatch }} />
       </body>
     </html>
