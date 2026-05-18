@@ -124,12 +124,7 @@ export default function ProfilePage() {
 
     if (error) {
       setProfileMessage(`Kunde inte hämta profiluppgifter: ${error.message}`);
-      setProfile({
-        full_name: metadataName(currentUser),
-        phone: "",
-        default_area: "",
-        default_address: ""
-      });
+      setProfile({ full_name: metadataName(currentUser), phone: "", default_area: "", default_address: "" });
       return;
     }
 
@@ -144,7 +139,6 @@ export default function ProfilePage() {
   useEffect(() => {
     if (hasLoaded.current) return;
     hasLoaded.current = true;
-
     let cancelled = false;
 
     async function initProfile() {
@@ -159,22 +153,15 @@ export default function ProfilePage() {
 
       const { data } = await supabase.auth.getSession();
       if (cancelled) return;
-
       setSession(data.session);
       setUser(data.session?.user ?? null);
 
-      if (data.session?.user) {
-        await Promise.all([loadBookings(data.session.user), loadProfile(data.session.user)]);
-      }
-
+      if (data.session?.user) await Promise.all([loadBookings(data.session.user), loadProfile(data.session.user)]);
       if (!cancelled) setLoading(false);
     }
 
     void initProfile();
-
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
   }, []);
 
   async function saveProfile(event: FormEvent<HTMLFormElement>) {
@@ -182,7 +169,6 @@ export default function ProfilePage() {
     if (!user) return;
     const supabase = getSupabase();
     if (!supabase) return;
-
     setProfileSaving(true);
     setProfileMessage("");
 
@@ -196,12 +182,7 @@ export default function ProfilePage() {
       updated_at: new Date().toISOString()
     });
 
-    if (error) {
-      setProfileMessage(`Kunde inte spara profilen: ${error.message}`);
-    } else {
-      setProfileMessage("Profiluppgifter sparade.");
-    }
-
+    setProfileMessage(error ? `Kunde inte spara profilen: ${error.message}` : "Profiluppgifter sparade.");
     setProfileSaving(false);
   }
 
@@ -209,32 +190,25 @@ export default function ProfilePage() {
     if (!user) return;
     const supabase = getSupabase();
     if (!supabase) return;
-
     setCancelingId(bookingId);
     setMessage("");
 
     const { data } = await supabase.auth.getSession();
     const token = data.session?.access_token;
-
     if (!token) {
       setMessage("Du behöver logga in igen för att avboka.");
       setCancelingId(null);
       return;
     }
 
-    const response = await fetch(`/api/bookings/${bookingId}/cancel`, {
-      method: "PATCH",
-      headers: { Authorization: `Bearer ${token}` }
-    });
+    const response = await fetch(`/api/bookings/${bookingId}/cancel`, { method: "PATCH", headers: { Authorization: `Bearer ${token}` } });
     const result = await response.json().catch(() => null) as { ok?: boolean; message?: string } | null;
 
-    if (!response.ok || !result?.ok) {
-      setMessage(`Kunde inte avboka bokningen: ${result?.message || "Okänt fel"}`);
-    } else {
+    if (!response.ok || !result?.ok) setMessage(`Kunde inte avboka bokningen: ${result?.message || "Okänt fel"}`);
+    else {
       setBookings((current) => current.map((booking) => booking.id === bookingId ? { ...booking, status: "cancelled" } : booking));
       setMessage("Bokningen är markerad som avbokad.");
     }
-
     setCancelingId(null);
   }
 
@@ -245,16 +219,14 @@ export default function ProfilePage() {
     window.location.href = "/";
   }
 
-  if (loading) {
-    return <main className="grid min-h-screen place-items-center bg-cream text-burgundy"><Loader2 className="h-8 w-8 animate-spin" /></main>;
-  }
+  if (loading) return <main className="grid min-h-screen place-items-center bg-cream text-burgundy"><Loader2 className="h-8 w-8 animate-spin" /></main>;
 
   if (!session || !user) {
     return (
       <main className="min-h-screen bg-cream py-16 text-ink">
         <section className="luxe-container max-w-2xl rounded-[2rem] bg-porcelain p-8 shadow-luxe md:p-10">
           <Link href="/" className="mb-8 inline-flex items-center gap-2 text-sm font-bold text-burgundy"><ArrowLeft size={17} /> Tillbaka</Link>
-          <div className="mb-6 grid h-14 w-14 place-items-center rounded-full bg-burgundy text-porcelain"><UserRound size={24} /></div>
+          <img src="/logo.svg" alt="Iboren" className="mb-8 h-auto w-full max-w-[320px] rounded-[1.6rem] shadow-2xl" />
           <h1 className="display text-5xl font-bold text-burgundy">Profil</h1>
           <p className="mt-4 leading-8 text-ink/70">Du behöver logga in för att se din profil och dina framtida bokningar.</p>
           {message && <p className="mt-4 rounded-2xl bg-burgundy/10 p-4 text-sm text-burgundy">{message}</p>}
@@ -273,19 +245,20 @@ export default function ProfilePage() {
       <section className="luxe-container">
         <Link href="/" className="mb-8 inline-flex items-center gap-2 text-sm font-bold text-burgundy"><ArrowLeft size={17} /> Tillbaka</Link>
         <div className="grid gap-6 lg:grid-cols-[.72fr_1.28fr]">
-          <aside className="rounded-[2.5rem] bg-burgundy p-8 text-porcelain shadow-luxe">
+          <aside className="overflow-hidden rounded-[2.5rem] bg-[#06131A] p-8 text-porcelain shadow-luxe">
+            <img src="/logo.svg" alt="Iboren" className="mb-8 h-auto w-full rounded-[1.6rem] shadow-2xl" />
             <div className="mb-8 flex items-center gap-4">
-              {avatar ? <img src={avatar} alt="Profilbild" className="h-16 w-16 rounded-full object-cover" /> : <div className="grid h-16 w-16 place-items-center rounded-full bg-gold text-ink"><UserRound size={30} /></div>}
+              {avatar ? <img src={avatar} alt="Profilbild" className="h-16 w-16 rounded-full border border-[#49D8EA]/40 object-cover" /> : <div className="grid h-16 w-16 place-items-center rounded-full bg-[#49D8EA]/15 text-[#49D8EA]"><UserRound size={30} /></div>}
               <div>
-                <p className="text-xs font-bold uppercase tracking-[.28em] text-gold">Logged in</p>
+                <p className="text-xs font-bold uppercase tracking-[.28em] text-[#49D8EA]">Verified account</p>
                 <h1 className="display mt-1 text-4xl font-bold">{fullName}</h1>
               </div>
             </div>
-            <div className="space-y-3 break-words text-sm text-porcelain/74">
-              <p><strong className="text-gold">Email:</strong> {user.email}</p>
-              <p><strong className="text-gold">Status:</strong> {verifiedProvider}</p>
+            <div className="space-y-3 break-words rounded-[1.5rem] border border-[#49D8EA]/20 bg-white/5 p-4 text-sm text-porcelain/78">
+              <p><strong className="text-[#49D8EA]">Email:</strong> {user.email}</p>
+              <p><strong className="text-[#49D8EA]">Status:</strong> {verifiedProvider}</p>
             </div>
-            <button onClick={signOut} className="mt-8 inline-flex items-center gap-2 rounded-full bg-porcelain px-5 py-3 text-sm font-bold text-burgundy"><LogOut size={17} /> Logga ut</button>
+            <button onClick={signOut} className="mt-8 inline-flex items-center gap-2 rounded-full bg-porcelain px-5 py-3 text-sm font-bold text-[#06131A]"><LogOut size={17} /> Logga ut</button>
           </aside>
 
           <div className="grid gap-5">
@@ -298,11 +271,7 @@ export default function ProfilePage() {
                   <p className="mt-2 text-sm font-bold text-ink/45">Aktiva: {activeCount} · Avbokade: {cancelledCount}</p>
                 </div>
                 <div className="flex flex-col gap-3 sm:flex-row">
-                  {cancelledCount > 0 && (
-                    <button type="button" onClick={() => setShowCancelled((current) => !current)} className="rounded-full border border-burgundy/15 bg-cream px-5 py-3 text-sm font-bold text-burgundy">
-                      {showCancelled ? "Dölj avbokade" : "Visa avbokade"}
-                    </button>
-                  )}
+                  {cancelledCount > 0 && <button type="button" onClick={() => setShowCancelled((current) => !current)} className="rounded-full border border-burgundy/15 bg-cream px-5 py-3 text-sm font-bold text-burgundy">{showCancelled ? "Dölj avbokade" : "Visa avbokade"}</button>}
                   <Link href="/#booking" className="btn-secondary">Ny bokning</Link>
                 </div>
               </div>
@@ -312,15 +281,9 @@ export default function ProfilePage() {
               {bookingsLoading ? (
                 <div className="grid min-h-32 place-items-center text-burgundy"><Loader2 className="h-7 w-7 animate-spin" /></div>
               ) : bookings.length === 0 ? (
-                <div className="rounded-[2rem] border border-dashed border-burgundy/20 bg-cream p-6 text-ink/65">
-                  <p>Du har inga sparade bokningar ännu.</p>
-                  <Link href="/#booking" className="mt-4 inline-flex font-bold text-burgundy">Skapa första bokningen →</Link>
-                </div>
+                <div className="rounded-[2rem] border border-dashed border-burgundy/20 bg-cream p-6 text-ink/65"><p>Du har inga sparade bokningar ännu.</p><Link href="/#booking" className="mt-4 inline-flex font-bold text-burgundy">Skapa första bokningen →</Link></div>
               ) : visibleBookings.length === 0 ? (
-                <div className="rounded-[2rem] border border-dashed border-burgundy/20 bg-cream p-6 text-ink/65">
-                  <p>Du har inga aktiva bokningar just nu.</p>
-                  {cancelledCount > 0 && <button type="button" onClick={() => setShowCancelled(true)} className="mt-4 font-bold text-burgundy">Visa avbokade bokningar →</button>}
-                </div>
+                <div className="rounded-[2rem] border border-dashed border-burgundy/20 bg-cream p-6 text-ink/65"><p>Du har inga aktiva bokningar just nu.</p>{cancelledCount > 0 && <button type="button" onClick={() => setShowCancelled(true)} className="mt-4 font-bold text-burgundy">Visa avbokade bokningar →</button>}</div>
               ) : (
                 <div className="grid gap-4">
                   {visibleBookings.map((booking) => {
@@ -341,12 +304,7 @@ export default function ProfilePage() {
                           <p><strong>Tid:</strong> {booking.time_window || "—"}</p>
                         </div>
                         {booking.notes && <pre className="mt-4 whitespace-pre-wrap break-words rounded-2xl bg-porcelain p-4 font-sans text-sm leading-7 text-ink/68">{booking.notes}</pre>}
-                        {!isCancelled && (
-                          <button onClick={() => cancelBooking(booking.id)} disabled={cancelingId === booking.id} className="mt-5 inline-flex items-center gap-2 rounded-full border border-red-200 bg-white px-4 py-2 text-sm font-bold text-red-700 transition hover:bg-red-50 disabled:opacity-60">
-                            {cancelingId === booking.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <XCircle className="h-4 w-4" />}
-                            Avboka
-                          </button>
-                        )}
+                        {!isCancelled && <button onClick={() => cancelBooking(booking.id)} disabled={cancelingId === booking.id} className="mt-5 inline-flex items-center gap-2 rounded-full border border-red-200 bg-white px-4 py-2 text-sm font-bold text-red-700 transition hover:bg-red-50 disabled:opacity-60">{cancelingId === booking.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <XCircle className="h-4 w-4" />} Avboka</button>}
                       </article>
                     );
                   })}
@@ -358,18 +316,11 @@ export default function ProfilePage() {
               <div className="mb-6 grid h-14 w-14 place-items-center rounded-full bg-gold text-ink"><ShieldCheck size={25} /></div>
               <h2 className="display text-4xl font-bold text-burgundy">Profiluppgifter</h2>
               <p className="mt-4 leading-8 text-ink/65">Spara standarduppgifter som kan användas i framtida bokningar.</p>
-
               <form onSubmit={saveProfile} className="mt-7 grid gap-4">
                 <ProfileField label="Namn" value={profile.full_name} onChange={(value) => setProfile((current) => ({ ...current, full_name: value }))} placeholder="För- och efternamn" />
                 <ProfileField label="Telefon" value={profile.phone} onChange={(value) => setProfile((current) => ({ ...current, phone: value }))} placeholder="+46 ..." />
-                <div className="grid gap-4 md:grid-cols-2">
-                  <ProfileField label="Standardområde" value={profile.default_area} onChange={(value) => setProfile((current) => ({ ...current, default_area: value }))} placeholder="Södertälje, Stockholm..." />
-                  <ProfileField label="Standardadress" value={profile.default_address} onChange={(value) => setProfile((current) => ({ ...current, default_address: value }))} placeholder="Gatuadress" />
-                </div>
-                <button disabled={profileSaving} className="btn-primary w-full md:w-fit">
-                  {profileSaving ? <Loader2 className="h-5 w-5 animate-spin" /> : <Save className="h-5 w-5" />}
-                  Spara profil
-                </button>
+                <div className="grid gap-4 md:grid-cols-2"><ProfileField label="Standardområde" value={profile.default_area} onChange={(value) => setProfile((current) => ({ ...current, default_area: value }))} placeholder="Södertälje, Stockholm..." /><ProfileField label="Standardadress" value={profile.default_address} onChange={(value) => setProfile((current) => ({ ...current, default_address: value }))} placeholder="Gatuadress" /></div>
+                <button disabled={profileSaving} className="btn-primary w-full md:w-fit">{profileSaving ? <Loader2 className="h-5 w-5 animate-spin" /> : <Save className="h-5 w-5" />} Spara profil</button>
                 {profileMessage && <p className="rounded-2xl bg-burgundy/10 p-4 text-sm text-burgundy">{profileMessage}</p>}
               </form>
             </article>
@@ -384,12 +335,7 @@ function ProfileField({ label, value, onChange, placeholder }: { label: string; 
   return (
     <label className="block">
       <span className="mb-2 block text-sm font-bold text-ink/70">{label}</span>
-      <input
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-        className="w-full rounded-2xl border border-burgundy/10 bg-cream px-4 py-3 text-ink outline-none transition focus:border-burgundy/40"
-        placeholder={placeholder}
-      />
+      <input value={value} onChange={(event) => onChange(event.target.value)} className="w-full rounded-2xl border border-burgundy/10 bg-cream px-4 py-3 text-ink outline-none transition focus:border-burgundy/40" placeholder={placeholder} />
     </label>
   );
 }
