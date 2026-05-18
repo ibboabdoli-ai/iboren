@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { ArrowUpRight, Building2, CheckCircle2, Copy, Home, LocateFixed, Loader2, Mail, Menu, Send, ShieldCheck, Truck, UserRound, X } from "lucide-react";
 import { createClient, User } from "@supabase/supabase-js";
@@ -34,48 +34,12 @@ const initialDraft: BookingDraft = {
 };
 
 const frames = [
-  {
-    counter: "01 / 06",
-    kicker: "HOME · BEFORE",
-    title: "Before the reset",
-    body: "Ett hem innan återställningen: rörigt, tungt och svårt att slappna av i.",
-    image: "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?auto=format&fit=crop&w=1800&q=90"
-  },
-  {
-    counter: "02 / 06",
-    kicker: "CLEANING · MOTION",
-    title: "The work begins",
-    body: "Yta för yta återställs med metod, rytm och precision.",
-    image: "https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=1800&q=90"
-  },
-  {
-    counter: "03 / 06",
-    kicker: "HOME · AFTER",
-    title: "The calm after",
-    body: "Ett rent, ljust och lugnt hem där allt känns lättare.",
-    image: "https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?auto=format&fit=crop&w=1800&q=90"
-  },
-  {
-    counter: "04 / 06",
-    kicker: "OFFICE · BEFORE",
-    title: "Workplace friction",
-    body: "Kontoret innan reset: ytor, detaljer och saker som tar fokus.",
-    image: "https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&fit=crop&w=1800&q=90"
-  },
-  {
-    counter: "05 / 06",
-    kicker: "OFFICE · RESET",
-    title: "Surface by surface",
-    body: "Arbetsytor, mötesrum och entré återställs utan att störa verksamheten.",
-    image: "https://images.unsplash.com/photo-1497366811353-6870744d04b2?auto=format&fit=crop&w=1800&q=90"
-  },
-  {
-    counter: "06 / 06",
-    kicker: "READY · AFTER",
-    title: "Ready again",
-    body: "En renare arbetsplats, redo för fokus, kunder och nästa produktiva dag.",
-    image: "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=1800&q=90"
-  }
+  { counter: "01 / 06", kicker: "HOME · BEFORE", title: "Before the reset", body: "Ett hem innan återställningen: rörigt, tungt och svårt att slappna av i.", image: "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?auto=format&fit=crop&w=1800&q=90" },
+  { counter: "02 / 06", kicker: "CLEANING · MOTION", title: "The work begins", body: "Yta för yta återställs med metod, rytm och precision.", image: "https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=1800&q=90" },
+  { counter: "03 / 06", kicker: "HOME · AFTER", title: "The calm after", body: "Ett rent, ljust och lugnt hem där allt känns lättare.", image: "https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?auto=format&fit=crop&w=1800&q=90" },
+  { counter: "04 / 06", kicker: "OFFICE · BEFORE", title: "Workplace friction", body: "Kontoret innan reset: ytor, detaljer och saker som tar fokus.", image: "https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&fit=crop&w=1800&q=90" },
+  { counter: "05 / 06", kicker: "OFFICE · RESET", title: "Surface by surface", body: "Arbetsytor, mötesrum och entré återställs utan att störa verksamheten.", image: "https://images.unsplash.com/photo-1497366811353-6870744d04b2?auto=format&fit=crop&w=1800&q=90" },
+  { counter: "06 / 06", kicker: "READY · AFTER", title: "Ready again", body: "En renare arbetsplats, redo för fokus, kunder och nästa produktiva dag.", image: "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=1800&q=90" }
 ];
 
 const services = [
@@ -103,48 +67,58 @@ export default function HomePage() {
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [user, setUser] = useState<User | null>(null);
   const [activeFrame, setActiveFrame] = useState(0);
-  const [scrollProgress, setScrollProgress] = useState(0);
+  const wheelLock = useRef(false);
+  const touchStartY = useRef<number | null>(null);
 
   useEffect(() => {
     const supabase = getSupabase();
     if (!supabase) return;
     supabase.auth.getUser().then(({ data }) => {
       if (!data.user) return;
-      setUser(data.user);
       const fullName = data.user.user_metadata?.full_name || data.user.user_metadata?.name || "";
+      setUser(data.user);
       setDraft((current) => ({ ...current, name: current.name || fullName, email: current.email || data.user?.email || "" }));
     });
     const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => setUser(session?.user ?? null));
     return () => listener.subscription.unsubscribe();
   }, []);
 
-  useEffect(() => {
-    let ticking = false;
-    function updateCinematic() {
-      ticking = false;
-      const section = document.getElementById("cinematic-scroll");
-      if (!section) return;
-      const rect = section.getBoundingClientRect();
-      const total = Math.max(1, rect.height - window.innerHeight);
-      const progress = Math.max(0, Math.min(1, -rect.top / total));
-      const nextFrame = Math.max(0, Math.min(frames.length - 1, Math.floor(progress * frames.length)));
-      setScrollProgress(progress);
-      setActiveFrame(nextFrame);
-    }
-    function onScroll() {
-      if (!ticking) {
-        ticking = true;
-        window.requestAnimationFrame(updateCinematic);
-      }
-    }
-    window.addEventListener("scroll", onScroll, { passive: true });
-    window.addEventListener("resize", onScroll);
-    updateCinematic();
-    return () => {
-      window.removeEventListener("scroll", onScroll);
-      window.removeEventListener("resize", onScroll);
-    };
-  }, []);
+  const activeScene = frames[activeFrame];
+  const progress = (activeFrame + 1) / frames.length;
+
+  function stepFrame(direction: 1 | -1) {
+    setActiveFrame((current) => Math.max(0, Math.min(frames.length - 1, current + direction)));
+  }
+
+  function handleCinematicWheel(event: React.WheelEvent<HTMLElement>) {
+    const down = event.deltaY > 0;
+    const up = event.deltaY < 0;
+    const canGoNext = down && activeFrame < frames.length - 1;
+    const canGoPrev = up && activeFrame > 0;
+
+    if (!canGoNext && !canGoPrev) return;
+    event.preventDefault();
+    if (wheelLock.current) return;
+    wheelLock.current = true;
+    stepFrame(down ? 1 : -1);
+    window.setTimeout(() => {
+      wheelLock.current = false;
+    }, 520);
+  }
+
+  function handleTouchStart(event: React.TouchEvent<HTMLElement>) {
+    touchStartY.current = event.touches[0]?.clientY ?? null;
+  }
+
+  function handleTouchEnd(event: React.TouchEvent<HTMLElement>) {
+    if (touchStartY.current === null) return;
+    const endY = event.changedTouches[0]?.clientY ?? touchStartY.current;
+    const delta = touchStartY.current - endY;
+    touchStartY.current = null;
+    if (Math.abs(delta) < 40) return;
+    if (delta > 0 && activeFrame < frames.length - 1) stepFrame(1);
+    if (delta < 0 && activeFrame > 0) stepFrame(-1);
+  }
 
   const summary = useMemo(() => [
     `Tjänst: ${draft.service || "—"}`,
@@ -187,9 +161,8 @@ export default function HomePage() {
     const supabase = getSupabase();
     if (!supabase) return;
     const { data } = await supabase.auth.getUser();
-    const currentUser = data.user;
     const { error } = await supabase.from("bookings").insert({
-      user_id: currentUser?.id ?? null,
+      user_id: data.user?.id ?? null,
       service: draft.service,
       area: draft.area,
       address: draft.address || null,
@@ -228,8 +201,6 @@ export default function HomePage() {
     }
   }
 
-  const activeScene = frames[activeFrame];
-
   return (
     <main className="min-h-screen overflow-x-hidden bg-night text-porcelain">
       <header className="fixed inset-x-0 top-0 z-50 border-b border-gold/10 bg-night/80 backdrop-blur-2xl">
@@ -263,21 +234,24 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section id="cinematic-scroll" className="relative h-[820vh] min-h-[5200px] bg-night">
-        <div className="sticky top-0 h-screen overflow-hidden bg-night">
+      <section id="cinematic-scroll" onWheel={handleCinematicWheel} onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd} className="relative h-screen min-h-screen overflow-hidden bg-night">
+        <div className="relative h-screen min-h-screen overflow-hidden bg-night">
           {frames.map((frame, index) => (
-            <img key={frame.counter} src={frame.image} alt={frame.title} className={`absolute inset-0 h-full w-full object-cover transition-all duration-700 ease-out ${activeFrame === index ? "scale-100 opacity-100" : "scale-[1.04] opacity-0"}`} />
+            <img key={frame.counter} src={frame.image} alt={frame.title} style={{ opacity: activeFrame === index ? 1 : 0, transform: activeFrame === index ? "scale(1)" : "scale(1.04)", zIndex: activeFrame === index ? 2 : 1 }} className="absolute inset-0 h-full w-full object-cover transition-all duration-700 ease-out" />
           ))}
-          <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(2,5,4,.50),rgba(2,5,4,.06)_48%,rgba(2,5,4,.50)),radial-gradient(circle_at_52%_46%,transparent_0_42%,rgba(0,0,0,.34)_100%)]" />
+          <div className="absolute inset-0 z-10 bg-[linear-gradient(90deg,rgba(2,5,4,.50),rgba(2,5,4,.06)_48%,rgba(2,5,4,.50)),radial-gradient(circle_at_52%_46%,transparent_0_42%,rgba(0,0,0,.34)_100%)]" />
           <div className="absolute left-5 right-5 top-24 z-20 flex items-start justify-between md:left-[8vw] md:right-[8vw] md:top-[12vh]">
             <div><p className="text-[10px] font-black uppercase tracking-[.34em] text-gold/85">{activeScene.kicker}</p><p className="display mt-1 text-4xl font-normal uppercase tracking-[.02em] text-porcelain md:text-6xl">{activeScene.counter}</p></div>
-            <div className="h-24 w-1 overflow-hidden rounded-full bg-porcelain/15"><div className="w-full rounded-full bg-gold transition-all" style={{ height: `${Math.round(scrollProgress * 100)}%` }} /></div>
+            <div className="h-24 w-1 overflow-hidden rounded-full bg-porcelain/15"><div className="w-full rounded-full bg-gold transition-all" style={{ height: `${Math.round(progress * 100)}%` }} /></div>
           </div>
           <div className="absolute inset-x-0 bottom-12 z-20 px-5 md:bottom-20">
             <div className="luxe-container">
               <h2 className="display max-w-4xl text-[clamp(3rem,8vw,7rem)] font-normal uppercase leading-[.84] tracking-[.02em] text-porcelain">{activeScene.title}</h2>
               <p className="mt-5 max-w-2xl text-base leading-8 text-porcelain/86 md:text-xl">{activeScene.body}</p>
-              {activeFrame === frames.length - 1 && <a href="#booking" className="mt-7 inline-flex rounded-full border border-gold/50 bg-gold/10 px-5 py-3 text-[11px] font-bold uppercase tracking-[.22em] text-gold backdrop-blur hover:bg-gold hover:text-night">Boka städning</a>}
+              <div className="mt-7 flex flex-wrap gap-3">
+                {activeFrame > 0 && <button type="button" onClick={() => stepFrame(-1)} className="rounded-full border border-gold/40 px-5 py-3 text-[11px] font-bold uppercase tracking-[.22em] text-gold">Föregående</button>}
+                {activeFrame < frames.length - 1 ? <button type="button" onClick={() => stepFrame(1)} className="rounded-full border border-gold/50 bg-gold/10 px-5 py-3 text-[11px] font-bold uppercase tracking-[.22em] text-gold backdrop-blur hover:bg-gold hover:text-night">Nästa bild</button> : <a href="#booking" className="rounded-full border border-gold/50 bg-gold/10 px-5 py-3 text-[11px] font-bold uppercase tracking-[.22em] text-gold backdrop-blur hover:bg-gold hover:text-night">Boka städning</a>}
+              </div>
             </div>
           </div>
         </div>
