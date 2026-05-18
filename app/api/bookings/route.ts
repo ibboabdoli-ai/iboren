@@ -59,10 +59,11 @@ async function getAuthContext(request: Request): Promise<AuthContext | null> {
   return { user: data.user, token };
 }
 
-function buildText(payload: Required<BookingPayload>, user: User) {
+function buildAdminText(payload: Required<BookingPayload>, user: User, bookingId: string) {
   return [
     "New Iboren booking request",
     "",
+    `Booking ID: ${bookingId}`,
     `Authenticated user: ${user.email || user.id}`,
     "",
     `Service: ${payload.service}`,
@@ -78,6 +79,29 @@ function buildText(payload: Required<BookingPayload>, user: User) {
     `Phone: ${payload.phone || "Not provided"}`,
     "",
     `Notes: ${payload.notes || "-"}`
+  ].join("\n");
+}
+
+function buildCustomerText(payload: Required<BookingPayload>, bookingId: string) {
+  return [
+    `Hej ${payload.name},`,
+    "",
+    "Tack för din bokningsförfrågan till Iboren. Vi har tagit emot den och återkommer så snart som möjligt.",
+    "",
+    "Din sammanfattning:",
+    `Boknings-ID: ${bookingId}`,
+    `Tjänst: ${payload.service}`,
+    `Område: ${payload.area}`,
+    `Adress: ${payload.address}`,
+    `Storlek: ${payload.size} kvm`,
+    `Frekvens: ${payload.frequency}`,
+    `Datum: ${payload.date}`,
+    `Tid: ${payload.timeWindow}`,
+    "",
+    "Om något inte stämmer kan du svara på det här mejlet eller kontakta oss på hej@iboren.se.",
+    "",
+    "Vänliga hälsningar,",
+    "Iboren"
   ].join("\n");
 }
 
@@ -126,6 +150,20 @@ async function saveBooking(payload: Required<BookingPayload>, auth: AuthContext)
   return { id: data.id as string, duplicate: false };
 }
 
+async function sendEmail(params: { apiKey: string; from: string; to: string; replyTo?: string; subject: string; text: string }) {
+  return fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${params.apiKey}`, "Content-Type": "application/json" },
+    body: JSON.stringify({
+      from: params.from,
+      to: [params.to],
+      reply_to: params.replyTo,
+      subject: params.subject,
+      text: params.text
+    })
+  });
+}
+
 export async function POST(request: Request) {
   try {
     const auth = await getAuthContext(request);
@@ -170,28 +208,42 @@ export async function POST(request: Request) {
     const resendApiKey = process.env.RESEND_API_KEY;
     const toEmail = process.env.BOOKING_TO_EMAIL || "hej@iboren.se";
     const fromEmail = process.env.BOOKING_FROM_EMAIL || "Iboren <onboarding@resend.dev>";
-    const bookingText = `${buildText(payload, auth.user)}\n\nBooking ID: ${booking.id}`;
+    const adminText = buildAdminText(payload, auth.user, booking.id);
+    const customerText = buildCustomerText(payload, booking.id);
 
     if (resendApiKey) {
-      const response = await fetch("https://api.resend.com/emails", {
-        method: "POST",
-        headers: { Authorization: `Bearer ${resendApiKey}`, "Content-Type": "application/json" },
-        body: JSON.stringify({
-          from: fromEmail,
-          to: [toEmail],
-          reply_to: payload.email,
-          subject: `New Iboren booking: ${payload.service} · ${payload.area}`,
-          text: bookingText
-        })
+      const adminResponse = await sendEmail({
+        apiKey: resendApiKey,
+        from: fromEmail,
+        to: toEmail,
+        replyTo: payload.email,
+        subject: `New Iboren booking: ${payload.service} · ${payload.area}`,
+        text: adminText
       });
 
-      if (!response.ok) {
+      const customerResponse = await sendEmail({
+        apiKey: resendApiKey,
+        from: fromEmail,
+        to: payload.email,
+        replyTo: toEmail,
+        subject: `Iboren har tagit emot din bokning · ${payload.service}`,
+        text: customerText
+      });
+
+      if (!adminResponse.ok && !customerResponse.ok) {
         return NextResponse.json({ ok: true, message: "Bokningen är sparad, men e-post kunde inte skickas. Kontrollera Resend-inställningar." }, { status: 202 });
       }
-      return NextResponse.json({ ok: true, message: "Tack! Din bokningsförfrågan är sparad och skickad till Iboren." });
+      if (!customerResponse.ok) {
+        return NextResponse.json({ ok: true, message: "Bokningen är sparad och skickad till Iboren, men bekräftelsemejlet till kunden kunde inte skickas." }, { status: 202 });
+      }
+      if (!adminResponse.ok) {
+        return NextResponse.json({ ok: true, message: "Bokningen är sparad och kunden har fått bekräftelse, men mejlet till Iboren kunde inte skickas." }, { status: 202 });
+      }
+
+      return NextResponse.json({ ok: true, message: "Tack! Din bokningsförfrågan är sparad. En bekräftelse har skickats till din e-post." });
     }
 
-    console.info("IBOREN_BOOKING_REQUEST", bookingText);
+    console.info("IBOREN_BOOKING_REQUEST", adminText);
     return NextResponse.json({ ok: true, message: "Bokningen är sparad. Demo-läge: lägg till RESEND_API_KEY i Vercel för riktig e-post." });
   } catch (error) {
     return NextResponse.json({ ok: false, message: error instanceof Error ? error.message : "Invalid request." }, { status: 400 });
