@@ -66,12 +66,83 @@ const cinematicImagePatch = `
 })();
 `;
 
+const bookingDetailsPatch = `
+(function () {
+  function findBookingForm() {
+    var section = document.querySelector('#booking');
+    return section ? section.querySelector('form') : null;
+  }
+
+  function fieldMarkup() {
+    return '' +
+      '<div id="iboren-extra-details" class="rounded-[1.5rem] border border-gold/15 bg-night/30 p-4">' +
+      '<p class="mb-4 text-xs font-bold uppercase tracking-[.28em] text-gold">Objekt & detaljer</p>' +
+      '<div class="grid gap-4 sm:grid-cols-2">' +
+      '<label class="block"><span class="mb-2 block text-sm font-bold text-porcelain/80">Typ av objekt</span><select data-extra="Typ av objekt" class="w-full rounded-2xl border border-porcelain/10 bg-porcelain px-4 py-4 text-ink outline-none"><option>Lägenhet</option><option>Villa</option><option>Radhus</option><option>Kontor</option><option>Annat</option></select></label>' +
+      '<label class="block"><span class="mb-2 block text-sm font-bold text-porcelain/80">Antal rum</span><input data-extra="Antal rum" class="w-full rounded-2xl border border-porcelain/10 bg-porcelain px-4 py-4 text-ink outline-none" placeholder="3" inputmode="numeric"></label>' +
+      '<label class="block"><span class="mb-2 block text-sm font-bold text-porcelain/80">Antal badrum</span><input data-extra="Antal badrum" class="w-full rounded-2xl border border-porcelain/10 bg-porcelain px-4 py-4 text-ink outline-none" placeholder="1" inputmode="numeric"></label>' +
+      '<label class="block"><span class="mb-2 block text-sm font-bold text-porcelain/80">Husdjur</span><select data-extra="Husdjur" class="w-full rounded-2xl border border-porcelain/10 bg-porcelain px-4 py-4 text-ink outline-none"><option>Nej</option><option>Ja</option><option>Vet ej</option></select></label>' +
+      '<label class="block"><span class="mb-2 block text-sm font-bold text-porcelain/80">Våning</span><input data-extra="Våning" class="w-full rounded-2xl border border-porcelain/10 bg-porcelain px-4 py-4 text-ink outline-none" placeholder="3"></label>' +
+      '<label class="block"><span class="mb-2 block text-sm font-bold text-porcelain/80">Hiss</span><select data-extra="Hiss" class="w-full rounded-2xl border border-porcelain/10 bg-porcelain px-4 py-4 text-ink outline-none"><option>Vet ej</option><option>Ja</option><option>Nej</option></select></label>' +
+      '<label class="block"><span class="mb-2 block text-sm font-bold text-porcelain/80">Parkering</span><select data-extra="Parkering" class="w-full rounded-2xl border border-porcelain/10 bg-porcelain px-4 py-4 text-ink outline-none"><option>Vet ej</option><option>Ja</option><option>Nej</option></select></label>' +
+      '</div>' +
+      '<div class="mt-4"><p class="mb-2 block text-sm font-bold text-porcelain/80">Extra tjänster</p><div class="grid grid-cols-2 gap-2 sm:grid-cols-3">' +
+      ['Fönsterputs','Ugn','Kyl/frys','Balkong','Grovstädning','Skåp/lådor'].map(function (item) { return '<label class="rounded-2xl border border-porcelain/10 bg-porcelain/6 px-3 py-3 text-sm font-bold text-porcelain/80"><input data-extra-check="Extra tjänster" value="' + item + '" type="checkbox" class="mr-2">' + item + '</label>'; }).join('') +
+      '</div></div>' +
+      '</div>';
+  }
+
+  function applyBookingDetails() {
+    var form = findBookingForm();
+    if (!form || form.querySelector('#iboren-extra-details')) return;
+    var notes = form.querySelector('textarea');
+    if (!notes) return;
+    var wrapper = document.createElement('div');
+    wrapper.innerHTML = fieldMarkup();
+    notes.parentElement.insertBefore(wrapper.firstChild, notes);
+
+    form.addEventListener('submit', function (event) {
+      if (form.getAttribute('data-extra-prepared') === '1') return;
+      event.preventDefault();
+      form.setAttribute('data-extra-prepared', '1');
+
+      var lines = ['--- Objekt & detaljer ---'];
+      form.querySelectorAll('[data-extra]').forEach(function (input) {
+        var label = input.getAttribute('data-extra');
+        var value = input.value || '';
+        if (value) lines.push(label + ': ' + value);
+      });
+      var checked = Array.from(form.querySelectorAll('[data-extra-check]:checked')).map(function (input) { return input.value; });
+      lines.push('Extra tjänster: ' + (checked.length ? checked.join(', ') : 'Inga valda'));
+
+      var current = notes.value || '';
+      var next = lines.join('\n') + (current.trim() ? '\n\n--- Kundens önskemål ---\n' + current.trim() : '');
+      notes.value = next;
+      notes.dispatchEvent(new Event('input', { bubbles: true }));
+      notes.dispatchEvent(new Event('change', { bubbles: true }));
+
+      window.setTimeout(function () {
+        if (form.requestSubmit) form.requestSubmit();
+        else form.submit();
+      }, 80);
+    }, true);
+  }
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', applyBookingDetails);
+  else applyBookingDetails();
+
+  var observer = new MutationObserver(applyBookingDetails);
+  observer.observe(document.documentElement, { childList: true, subtree: true });
+})();
+`;
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="sv">
       <body>
         {children}
         <script dangerouslySetInnerHTML={{ __html: cinematicImagePatch }} />
+        <script dangerouslySetInnerHTML={{ __html: bookingDetailsPatch }} />
       </body>
     </html>
   );
