@@ -11,15 +11,13 @@ const providers = [
   { id: "azure", label: "Fortsätt med Microsoft" }
 ] as const;
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://iboren.vercel.app";
-
 function getSupabase() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   if (!url || !key) return null;
   return createClient(url, key, {
     auth: {
-      flowType: "pkce",
+      flowType: "implicit",
       persistSession: true,
       autoRefreshToken: true,
       detectSessionInUrl: true
@@ -37,11 +35,16 @@ export default function LoginPage() {
       setMessage("Supabase saknas. Lägg till NEXT_PUBLIC_SUPABASE_URL och NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY i Vercel.");
       return;
     }
+
     setLoading(provider);
+    setMessage("");
+
+    const redirectBase = window.location.origin;
     const { error } = await supabase.auth.signInWithOAuth({
       provider,
-      options: { redirectTo: `${siteUrl}/profile` }
+      options: { redirectTo: `${redirectBase}/profile` }
     });
+
     if (error) {
       setMessage(error.message);
       setLoading(null);
