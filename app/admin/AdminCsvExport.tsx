@@ -27,15 +27,65 @@ function statusLabel(status: string | null) {
   return "Ny";
 }
 
+function formatDate(value: string | null) {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleString("sv-SE", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit"
+  });
+}
+
 function csvEscape(value: unknown) {
-  const text = String(value ?? "").replace(/\r?\n|\r/g, " ");
+  const text = String(value ?? "").replace(/\r?\n|\r/g, " ").trim();
   return `"${text.replace(/"/g, '""')}"`;
 }
 
 function buildCsv(bookings: CsvBooking[]) {
-  const headers = ["ID", "Status", "Service", "Area", "Address", "Size sqm", "Frequency", "Preferred date", "Time window", "Customer name", "Customer email", "Customer phone", "Customer notes", "Admin notes", "Created at"];
-  const rows = bookings.map((booking) => [booking.id, statusLabel(booking.status), booking.service, booking.area, booking.address, booking.size_sqm, booking.frequency, booking.preferred_date, booking.time_window, booking.customer_name, booking.customer_email, booking.customer_phone, booking.notes, booking.admin_notes, booking.created_at]);
-  return [headers, ...rows].map((row) => row.map(csvEscape).join(",")).join("\n");
+  const headers = [
+    "ID",
+    "Status",
+    "Tjänst",
+    "Område",
+    "Adress",
+    "Storlek kvm",
+    "Frekvens",
+    "Bokningsdatum",
+    "Tidsfönster",
+    "Kundnamn",
+    "E-post",
+    "Telefon",
+    "Kundens önskemål",
+    "Adminanteckning",
+    "Skapad"
+  ];
+
+  const rows = bookings.map((booking) => [
+    booking.id,
+    statusLabel(booking.status),
+    booking.service,
+    booking.area,
+    booking.address,
+    booking.size_sqm,
+    booking.frequency,
+    booking.preferred_date,
+    booking.time_window,
+    booking.customer_name,
+    booking.customer_email,
+    booking.customer_phone,
+    booking.notes,
+    booking.admin_notes,
+    formatDate(booking.created_at)
+  ]);
+
+  // Swedish Excel commonly expects semicolon-separated CSV.
+  return [headers, ...rows]
+    .map((row) => row.map(csvEscape).join(";"))
+    .join("\r\n");
 }
 
 export default function AdminCsvExport({ bookings }: { bookings: CsvBooking[] }) {
@@ -46,7 +96,7 @@ export default function AdminCsvExport({ bookings }: { bookings: CsvBooking[] })
     const date = new Date().toISOString().slice(0, 10);
     const link = document.createElement("a");
     link.href = url;
-    link.download = `iboren-bookings-${date}.csv`;
+    link.download = `iboren-bokningar-${date}.csv`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -59,10 +109,10 @@ export default function AdminCsvExport({ bookings }: { bookings: CsvBooking[] })
       onClick={exportCsv}
       disabled={!bookings.length}
       className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-full border border-gold/40 bg-gold px-5 py-3 text-sm font-black uppercase tracking-[.12em] text-ink shadow-lg transition hover:bg-porcelain disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
-      aria-label="Exportera bokningar som CSV"
+      aria-label="Exportera bokningar som Excel-vänlig CSV"
     >
       <Download className="h-4 w-4" />
-      Exportera CSV
+      Exportera Excel CSV
     </button>
   );
 }
