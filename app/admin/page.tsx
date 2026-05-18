@@ -52,10 +52,29 @@ function statusLabel(status: string | null) {
 }
 
 function statusPillClass(status: string | null) {
-  if (status === "cancelled") return "bg-red-100 text-red-800";
-  if (status === "confirmed") return "bg-green-100 text-green-800";
-  if (status === "completed") return "bg-ink text-porcelain";
-  return "bg-burgundy text-porcelain";
+  if (status === "cancelled") return "bg-red-100 text-red-800 ring-1 ring-red-200";
+  if (status === "confirmed") return "bg-green-100 text-green-800 ring-1 ring-green-200";
+  if (status === "completed") return "bg-ink text-porcelain ring-1 ring-ink/20";
+  return "bg-burgundy text-porcelain ring-1 ring-burgundy/20";
+}
+
+function statusCardClass(status: string | null) {
+  if (status === "cancelled") return "border-red-200 bg-red-50/70 opacity-80";
+  if (status === "confirmed") return "border-green-200 bg-green-50/70";
+  if (status === "completed") return "border-ink/15 bg-porcelain";
+  return "border-burgundy/20 bg-cream";
+}
+
+function statusAccentClass(status: string | null) {
+  if (status === "cancelled") return "bg-red-500";
+  if (status === "confirmed") return "bg-green-500";
+  if (status === "completed") return "bg-ink";
+  return "bg-burgundy";
+}
+
+function statusCount(bookings: AdminBooking[], status: string) {
+  if (status === "all") return bookings.length;
+  return bookings.filter((booking) => (booking.status || "new") === status).length;
 }
 
 function searchableText(booking: AdminBooking) {
@@ -103,6 +122,8 @@ export default function AdminPage() {
       return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
     });
   }, [bookings, filter, search, sortMode]);
+
+  const quickStats = useMemo(() => statuses.map((status) => ({ status, count: statusCount(bookings, status) })), [bookings]);
 
   async function getToken() {
     const supabase = getSupabase();
@@ -226,6 +247,16 @@ export default function AdminPage() {
           </div>
         </div>
 
+        <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+          {quickStats.map(({ status, count }) => (
+            <button key={status} onClick={() => setFilter(status)} className={`rounded-[1.4rem] border p-4 text-left transition hover:-translate-y-0.5 ${filter === status ? "border-burgundy bg-burgundy text-porcelain shadow-soft" : "border-burgundy/10 bg-porcelain text-ink shadow-sm"}`}>
+              <p className={`inline-flex rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-[.18em] ${filter === status ? "bg-gold text-ink" : statusPillClass(status)}`}>{status === "all" ? "Alla" : statusLabel(status)}</p>
+              <p className="display mt-5 text-4xl font-bold">{count}</p>
+              <p className={`mt-1 text-xs font-bold uppercase tracking-[.18em] ${filter === status ? "text-porcelain/65" : "text-ink/45"}`}>bokningar</p>
+            </button>
+          ))}
+        </div>
+
         <div className="mt-6 rounded-[2rem] bg-porcelain p-5 shadow-soft md:p-7">
           <div className="flex flex-col gap-4">
             <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
@@ -274,14 +305,15 @@ export default function AdminPage() {
                 const isUpdating = updatingId === booking.id;
 
                 return (
-                  <article key={booking.id} className="rounded-[2rem] border border-burgundy/10 bg-cream p-5">
-                    <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
-                      <div>
+                  <article key={booking.id} className={`relative overflow-hidden rounded-[2rem] border p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-soft ${statusCardClass(currentStatus)}`}>
+                    <span className={`absolute inset-y-0 left-0 w-1.5 ${statusAccentClass(currentStatus)}`} />
+                    <div className="flex flex-col gap-4 pl-1 xl:flex-row xl:items-start xl:justify-between">
+                      <div className="min-w-0">
                         <p className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-bold uppercase tracking-[.18em] ${statusPillClass(currentStatus)}`}><ShieldCheck className="h-3.5 w-3.5" /> {statusLabel(currentStatus)}</p>
-                        <h2 className="display mt-3 text-3xl font-bold text-burgundy">{booking.service}</h2>
-                        <p className="mt-2 leading-7 text-ink/70">{booking.area}{booking.address ? ` · ${booking.address}` : ""}</p>
+                        <h2 className="display mt-3 break-words text-3xl font-bold text-burgundy">{booking.service}</h2>
+                        <p className="mt-2 break-words leading-7 text-ink/70">{booking.area}{booking.address ? ` · ${booking.address}` : ""}</p>
                       </div>
-                      <select value={currentStatus} onChange={(event) => updateStatus(booking.id, event.target.value)} disabled={isUpdating} className="rounded-2xl border border-burgundy/10 bg-porcelain px-4 py-3 text-sm font-bold text-ink outline-none">
+                      <select value={currentStatus} onChange={(event) => updateStatus(booking.id, event.target.value)} disabled={isUpdating} className="w-full rounded-2xl border border-burgundy/10 bg-porcelain px-4 py-3 text-sm font-bold text-ink outline-none disabled:opacity-50 sm:w-auto">
                         <option value="new">Ny</option>
                         <option value="confirmed">Bekräftad</option>
                         <option value="completed">Klar</option>
@@ -289,22 +321,22 @@ export default function AdminPage() {
                       </select>
                     </div>
 
-                    <div className="mt-5 flex flex-wrap gap-2">
-                      <button disabled={isUpdating || currentStatus === "confirmed"} onClick={() => updateStatus(booking.id, "confirmed")} className="inline-flex items-center gap-2 rounded-full bg-green-100 px-4 py-2 text-sm font-bold text-green-800 disabled:opacity-40"><CheckCircle2 className="h-4 w-4" /> Bekräfta</button>
-                      <button disabled={isUpdating || currentStatus === "completed"} onClick={() => updateStatus(booking.id, "completed")} className="inline-flex items-center gap-2 rounded-full bg-ink px-4 py-2 text-sm font-bold text-porcelain disabled:opacity-40"><CheckCircle2 className="h-4 w-4" /> Klar</button>
-                      <button disabled={isUpdating || currentStatus === "cancelled"} onClick={() => updateStatus(booking.id, "cancelled")} className="inline-flex items-center gap-2 rounded-full bg-red-100 px-4 py-2 text-sm font-bold text-red-800 disabled:opacity-40"><XCircle className="h-4 w-4" /> Avboka</button>
+                    <div className="mt-5 flex flex-wrap gap-2 pl-1">
+                      <button disabled={isUpdating || currentStatus === "confirmed"} onClick={() => updateStatus(booking.id, "confirmed")} className="inline-flex items-center gap-2 rounded-full bg-green-100 px-4 py-2 text-sm font-bold text-green-800 ring-1 ring-green-200 disabled:opacity-40"><CheckCircle2 className="h-4 w-4" /> Bekräfta</button>
+                      <button disabled={isUpdating || currentStatus === "completed"} onClick={() => updateStatus(booking.id, "completed")} className="inline-flex items-center gap-2 rounded-full bg-ink px-4 py-2 text-sm font-bold text-porcelain ring-1 ring-ink/15 disabled:opacity-40"><CheckCircle2 className="h-4 w-4" /> Klar</button>
+                      <button disabled={isUpdating || currentStatus === "cancelled"} onClick={() => updateStatus(booking.id, "cancelled")} className="inline-flex items-center gap-2 rounded-full bg-red-100 px-4 py-2 text-sm font-bold text-red-800 ring-1 ring-red-200 disabled:opacity-40"><XCircle className="h-4 w-4" /> Avboka</button>
                       {isUpdating && <span className="inline-flex items-center gap-2 rounded-full bg-porcelain px-4 py-2 text-sm font-bold text-burgundy"><Loader2 className="h-4 w-4 animate-spin" /> Uppdaterar</span>}
                     </div>
 
-                    <div className="mt-5 grid gap-3 text-sm text-ink/65 md:grid-cols-2 xl:grid-cols-4">
-                      <p><strong>Kund:</strong> {booking.customer_name}</p>
-                      <p><strong>E-post:</strong> {booking.customer_email}</p>
-                      <p><strong>Telefon:</strong> {booking.customer_phone || "—"}</p>
-                      <p><strong>Datum:</strong> {booking.preferred_date || "—"}</p>
-                      <p><strong>Storlek:</strong> {booking.size_sqm ? `${booking.size_sqm} kvm` : "—"}</p>
-                      <p><strong>Frekvens:</strong> {booking.frequency || "—"}</p>
-                      <p><strong>Tid:</strong> {booking.time_window || "—"}</p>
-                      <p><strong>Skapad:</strong> {new Date(booking.created_at).toLocaleDateString("sv-SE")}</p>
+                    <div className="mt-5 grid gap-3 rounded-[1.5rem] bg-porcelain/70 p-4 text-sm text-ink/68 md:grid-cols-2 xl:grid-cols-4">
+                      <p><strong className="text-ink">Kund:</strong> {booking.customer_name}</p>
+                      <p className="break-words"><strong className="text-ink">E-post:</strong> {booking.customer_email}</p>
+                      <p><strong className="text-ink">Telefon:</strong> {booking.customer_phone || "—"}</p>
+                      <p><strong className="text-ink">Datum:</strong> {booking.preferred_date || "—"}</p>
+                      <p><strong className="text-ink">Storlek:</strong> {booking.size_sqm ? `${booking.size_sqm} kvm` : "—"}</p>
+                      <p><strong className="text-ink">Frekvens:</strong> {booking.frequency || "—"}</p>
+                      <p><strong className="text-ink">Tid:</strong> {booking.time_window || "—"}</p>
+                      <p><strong className="text-ink">Skapad:</strong> {new Date(booking.created_at).toLocaleDateString("sv-SE")}</p>
                     </div>
 
                     {booking.notes && <p className="mt-4 rounded-2xl bg-porcelain p-4 text-sm leading-7 text-ink/65"><strong>Kundens önskemål:</strong><br />{booking.notes}</p>}
