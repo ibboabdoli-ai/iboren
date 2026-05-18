@@ -66,6 +66,38 @@ const cinematicImagePatch = `
 })();
 `;
 
+const bookingAuthPatch = `
+(function () {
+  function getAccessToken() {
+    for (var i = 0; i < localStorage.length; i++) {
+      var key = localStorage.key(i) || '';
+      if (!key.includes('auth-token')) continue;
+      try {
+        var data = JSON.parse(localStorage.getItem(key) || '{}');
+        var token = data && data.access_token;
+        if (token) return token;
+      } catch (e) {}
+    }
+    return '';
+  }
+
+  var originalFetch = window.fetch;
+  window.fetch = function (input, init) {
+    var url = typeof input === 'string' ? input : (input && input.url) || '';
+    var method = ((init && init.method) || (input && input.method) || 'GET').toUpperCase();
+
+    if (url.includes('/api/bookings') && method === 'POST') {
+      var token = getAccessToken();
+      var headers = new Headers((init && init.headers) || (input && input.headers) || {});
+      if (token && !headers.has('Authorization')) headers.set('Authorization', 'Bearer ' + token);
+      init = Object.assign({}, init || {}, { headers: headers });
+    }
+
+    return originalFetch(input, init);
+  };
+})();
+`;
+
 const bookingLoginGuardPatch = `
 (function () {
   function isLoggedIn() {
@@ -146,6 +178,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         {children}
         <script dangerouslySetInnerHTML={{ __html: cinematicImagePatch }} />
+        <script dangerouslySetInnerHTML={{ __html: bookingAuthPatch }} />
         <script dangerouslySetInnerHTML={{ __html: bookingLoginGuardPatch }} />
       </body>
     </html>
