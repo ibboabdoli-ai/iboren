@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { FormEvent, useEffect, useRef, useState } from "react";
+import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { createClient, Session, User } from "@supabase/supabase-js";
 import { ArrowLeft, CalendarCheck2, Loader2, LogOut, Save, ShieldCheck, UserRound, XCircle } from "lucide-react";
 
@@ -79,6 +79,11 @@ export default function ProfilePage() {
   const [profile, setProfile] = useState<ProfileForm>(emptyProfile);
   const [message, setMessage] = useState("");
   const [profileMessage, setProfileMessage] = useState("");
+  const [showCancelled, setShowCancelled] = useState(false);
+
+  const visibleBookings = useMemo(() => showCancelled ? bookings : bookings.filter((booking) => booking.status !== "cancelled"), [bookings, showCancelled]);
+  const cancelledCount = useMemo(() => bookings.filter((booking) => booking.status === "cancelled").length, [bookings]);
+  const activeCount = bookings.length - cancelledCount;
 
   async function loadBookings(currentUser: User) {
     const supabase = getSupabase();
@@ -268,7 +273,7 @@ export default function ProfilePage() {
                 <h1 className="display mt-1 text-4xl font-bold">{fullName}</h1>
               </div>
             </div>
-            <div className="space-y-3 text-sm text-porcelain/74">
+            <div className="space-y-3 break-words text-sm text-porcelain/74">
               <p><strong className="text-gold">Email:</strong> {user.email}</p>
               <p><strong className="text-gold">Provider:</strong> {provider}</p>
               <p><strong className="text-gold">User ID:</strong> {user.id}</p>
@@ -282,9 +287,17 @@ export default function ProfilePage() {
                 <div>
                   <div className="mb-5 grid h-14 w-14 place-items-center rounded-full bg-burgundy text-porcelain"><CalendarCheck2 size={25} /></div>
                   <h2 className="display text-4xl font-bold text-burgundy">Mina bokningar</h2>
-                  <p className="mt-3 leading-8 text-ink/65">Här visas bokningsförfrågningar som sparats på ditt konto.</p>
+                  <p className="mt-3 leading-8 text-ink/65">Här visas aktiva bokningsförfrågningar. Avbokade bokningar är dolda som standard.</p>
+                  <p className="mt-2 text-sm font-bold text-ink/45">Aktiva: {activeCount} · Avbokade: {cancelledCount}</p>
                 </div>
-                <Link href="/booking" className="btn-secondary">Ny bokning</Link>
+                <div className="flex flex-col gap-3 sm:flex-row">
+                  {cancelledCount > 0 && (
+                    <button type="button" onClick={() => setShowCancelled((current) => !current)} className="rounded-full border border-burgundy/15 bg-cream px-5 py-3 text-sm font-bold text-burgundy">
+                      {showCancelled ? "Dölj avbokade" : "Visa avbokade"}
+                    </button>
+                  )}
+                  <Link href="/booking" className="btn-secondary">Ny bokning</Link>
+                </div>
               </div>
 
               {message && <p className="mb-5 rounded-2xl bg-burgundy/10 p-4 text-sm text-burgundy">{message}</p>}
@@ -296,26 +309,31 @@ export default function ProfilePage() {
                   <p>Du har inga sparade bokningar ännu.</p>
                   <Link href="/booking" className="mt-4 inline-flex font-bold text-burgundy">Skapa första bokningen →</Link>
                 </div>
+              ) : visibleBookings.length === 0 ? (
+                <div className="rounded-[2rem] border border-dashed border-burgundy/20 bg-cream p-6 text-ink/65">
+                  <p>Du har inga aktiva bokningar just nu.</p>
+                  {cancelledCount > 0 && <button type="button" onClick={() => setShowCancelled(true)} className="mt-4 font-bold text-burgundy">Visa avbokade bokningar →</button>}
+                </div>
               ) : (
                 <div className="grid gap-4">
-                  {bookings.map((booking) => {
+                  {visibleBookings.map((booking) => {
                     const isCancelled = booking.status === "cancelled";
                     return (
                       <article key={booking.id} className={`rounded-[2rem] border p-5 ${isCancelled ? "border-red-200 bg-red-50/60 opacity-75" : "border-burgundy/10 bg-cream"}`}>
                         <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-                          <div>
+                          <div className="min-w-0">
                             <p className={`inline-flex rounded-full border px-3 py-1 text-xs font-bold uppercase tracking-[.18em] ${statusClass(booking.status)}`}>{statusLabel(booking.status)}</p>
-                            <h3 className="display mt-3 text-3xl font-bold text-burgundy">{booking.service}</h3>
-                            <p className="mt-2 leading-7 text-ink/70">{booking.area}{booking.address ? ` · ${booking.address}` : ""}</p>
+                            <h3 className="display mt-3 break-words text-3xl font-bold text-burgundy">{booking.service}</h3>
+                            <p className="mt-2 break-words leading-7 text-ink/70">{booking.area}{booking.address ? ` · ${booking.address}` : ""}</p>
                           </div>
-                          <span className="rounded-full bg-burgundy px-4 py-2 text-xs font-bold uppercase tracking-[.18em] text-porcelain">{booking.preferred_date || "Datum saknas"}</span>
+                          <span className="w-fit rounded-full bg-burgundy px-4 py-2 text-xs font-bold uppercase tracking-[.18em] text-porcelain">{booking.preferred_date || "Datum saknas"}</span>
                         </div>
                         <div className="mt-5 grid gap-3 text-sm text-ink/62 md:grid-cols-3">
                           <p><strong>Storlek:</strong> {booking.size_sqm ? `${booking.size_sqm} kvm` : "—"}</p>
                           <p><strong>Frekvens:</strong> {booking.frequency || "—"}</p>
                           <p><strong>Tid:</strong> {booking.time_window || "—"}</p>
                         </div>
-                        {booking.notes && <p className="mt-4 rounded-2xl bg-porcelain p-4 text-sm leading-7 text-ink/62">{booking.notes}</p>}
+                        {booking.notes && <pre className="mt-4 whitespace-pre-wrap break-words rounded-2xl bg-porcelain p-4 font-sans text-sm leading-7 text-ink/68">{booking.notes}</pre>}
                         {!isCancelled && (
                           <button onClick={() => cancelBooking(booking.id)} disabled={cancelingId === booking.id} className="mt-5 inline-flex items-center gap-2 rounded-full border border-red-200 bg-white px-4 py-2 text-sm font-bold text-red-700 transition hover:bg-red-50 disabled:opacity-60">
                             {cancelingId === booking.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <XCircle className="h-4 w-4" />}
