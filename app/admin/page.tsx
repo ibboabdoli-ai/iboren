@@ -99,6 +99,8 @@ export default function AdminPage() {
   const [bookingsLoading, setBookingsLoading] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [bookings, setBookings] = useState<AdminBooking[]>([]);
+  const [rawCount, setRawCount] = useState<number | null>(null);
+  const [duplicateCount, setDuplicateCount] = useState(0);
   const [filter, setFilter] = useState("all");
   const [search, setSearch] = useState("");
   const [sortMode, setSortMode] = useState<SortMode>("newest");
@@ -141,7 +143,10 @@ export default function AdminPage() {
       const response = await fetch("/api/admin/bookings", { headers: { Authorization: `Bearer ${token}` } });
       const result = await response.json();
       if (!response.ok || !result.ok) throw new Error(result.message || "Kunde inte hämta bokningar.");
-      setBookings(result.bookings || []);
+      const nextBookings = result.bookings || [];
+      setBookings(nextBookings);
+      setRawCount(typeof result.rawCount === "number" ? result.rawCount : nextBookings.length);
+      setDuplicateCount(typeof result.duplicateCount === "number" ? result.duplicateCount : 0);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Något gick fel.");
     }
@@ -236,6 +241,14 @@ export default function AdminPage() {
               <p className="text-xs font-bold uppercase tracking-[.32em] text-gold">Iboren Admin</p>
               <h1 className="display mt-3 text-5xl font-bold leading-[.9] md:text-7xl">Booking dashboard</h1>
               <p className="mt-5 max-w-2xl leading-8 text-porcelain/70">Hantera inkommande bokningar, följ status och uppdatera orderflödet.</p>
+              {rawCount !== null && (
+                <div className="mt-5 grid gap-2 text-sm font-bold text-porcelain/75 sm:grid-cols-3">
+                  <p className="rounded-2xl border border-gold/15 bg-night/20 px-4 py-3">Visade: {bookings.length}</p>
+                  <p className="rounded-2xl border border-gold/15 bg-night/20 px-4 py-3">Databas: {rawCount}</p>
+                  <p className="rounded-2xl border border-gold/15 bg-night/20 px-4 py-3">Dolda dubletter: {duplicateCount}</p>
+                </div>
+              )}
+              {duplicateCount > 0 && <p className="mt-3 max-w-2xl text-sm leading-6 text-gold/85">Dubletter döljs automatiskt i adminlistan och exporten. Databasen är inte raderad.</p>}
             </div>
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
               <AdminCsvExport bookings={filteredBookings} />
