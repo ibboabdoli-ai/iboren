@@ -220,25 +220,7 @@ export default function HomePage() {
   }
 
   async function saveBookingToDatabase() {
-    const supabase = getSupabase();
-    if (!supabase) return;
-    const { data } = await supabase.auth.getUser();
-    const { error } = await supabase.from("bookings").insert({
-      user_id: data.user?.id ?? null,
-      service: draft.service,
-      area: draft.area,
-      address: draft.address || null,
-      size_sqm: Number.parseInt(draft.size, 10),
-      frequency: draft.frequency,
-      preferred_date: draft.date,
-      time_window: draft.timeWindow,
-      customer_name: draft.name,
-      customer_email: draft.email,
-      customer_phone: draft.phone || null,
-      notes: fullBookingNotes || null,
-      status: "new"
-    });
-    if (error) throw new Error(`Kunde inte spara bokningen i databasen: ${error.message}`);
+    return;
   }
 
   async function submit(event: FormEvent<HTMLFormElement>) {
