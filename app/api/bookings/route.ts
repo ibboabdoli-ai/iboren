@@ -22,6 +22,11 @@ type AuthContext = {
   token: string;
 };
 
+type SaveBookingResult = {
+  id: string;
+  duplicate: boolean;
+};
+
 const required: Array<keyof BookingPayload> = ["service", "area", "address", "size", "date", "name", "email", "phone"];
 
 function sanitize(value: unknown) {
@@ -76,7 +81,7 @@ function buildText(payload: Required<BookingPayload>, user: User) {
   ].join("\n");
 }
 
-async function saveBooking(payload: Required<BookingPayload>, auth: AuthContext) {
+async function saveBooking(payload: Required<BookingPayload>, auth: AuthContext): Promise<SaveBookingResult> {
   const supabase = getSupabase(auth.token);
   if (!supabase) throw new Error("Supabase saknas.");
 
@@ -88,14 +93,18 @@ async function saveBooking(payload: Required<BookingPayload>, auth: AuthContext)
     .select("id")
     .eq("user_id", auth.user.id)
     .eq("service", payload.service)
-    .eq("address", payload.address || "")
+    .eq("address", payload.address)
     .eq("preferred_date", payload.date)
+    .eq("size_sqm", sizeSqm)
+    .eq("frequency", payload.frequency)
+    .eq("time_window", payload.timeWindow)
     .eq("customer_email", payload.email)
+    .neq("status", "cancelled")
     .limit(1)
     .maybeSingle();
 
   if (lookupError) throw new Error(`Kunde inte kontrollera tidigare bokning: ${lookupError.message}`);
-  if (existing?.id) return existing.id as string;
+  if (existing?.id) return { id: existing.id as string, duplicate: true };
 
   const { data, error } = await supabase.from("bookings").insert({
     user_id: auth.user.id,
@@ -114,7 +123,7 @@ async function saveBooking(payload: Required<BookingPayload>, auth: AuthContext)
   }).select("id").single();
 
   if (error) throw new Error(`Kunde inte spara bokningen i databasen: ${error.message}`);
-  return data.id as string;
+  return { id: data.id as string, duplicate: false };
 }
 
 export async function POST(request: Request) {
@@ -152,12 +161,16 @@ export async function POST(request: Request) {
       return NextResponse.json({ ok: false, message: "Bokningens e-post måste matcha ditt inloggade konto." }, { status: 403 });
     }
 
-    const bookingId = await saveBooking(payload, auth);
+    const booking = await saveBooking(payload, auth);
+
+    if (booking.duplicate) {
+      return NextResponse.json({ ok: false, duplicate: true, bookingId: booking.id, message: "Den här bokningen finns redan. Ändra datum, tid eller uppgifter om du vill skapa en ny bokning." }, { status: 409 });
+    }
 
     const resendApiKey = process.env.RESEND_API_KEY;
     const toEmail = process.env.BOOKING_TO_EMAIL || "hej@iboren.se";
     const fromEmail = process.env.BOOKING_FROM_EMAIL || "Iboren <onboarding@resend.dev>";
-    const bookingText = `${buildText(payload, auth.user)}\n\nBooking ID: ${bookingId}`;
+    const bookingText = `${buildText(payload, auth.user)}\n\nBooking ID: ${booking.id}`;
 
     if (resendApiKey) {
       const response = await fetch("https://api.resend.com/emails", {
