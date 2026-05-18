@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { createClient, User } from "@supabase/supabase-js";
 
 export const runtime = "nodejs";
 
@@ -16,15 +17,42 @@ type BookingPayload = {
   notes?: string;
 };
 
-const required: Array<keyof BookingPayload> = ["service", "area", "size", "date", "name", "email"];
+const required: Array<keyof BookingPayload> = ["service", "area", "address", "size", "date", "name", "email", "phone"];
 
 function sanitize(value: unknown) {
   return String(value ?? "").replace(/[<>]/g, "").trim().slice(0, 1000);
 }
 
-function buildText(payload: Required<BookingPayload>) {
+function getSupabase() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (!url || !key) return null;
+  return createClient(url, key, {
+    auth: {
+      persistSession: false,
+      autoRefreshToken: false
+    }
+  });
+}
+
+async function getAuthenticatedUser(request: Request): Promise<User | null> {
+  const authHeader = request.headers.get("authorization") || "";
+  const token = authHeader.toLowerCase().startsWith("bearer ") ? authHeader.slice(7).trim() : "";
+  if (!token) return null;
+
+  const supabase = getSupabase();
+  if (!supabase) return null;
+
+  const { data, error } = await supabase.auth.getUser(token);
+  if (error || !data.user) return null;
+  return data.user;
+}
+
+function buildText(payload: Required<BookingPayload>, user: User) {
   return [
     "New Iboren booking request",
+    "",
+    `Authenticated user: ${user.email || user.id}`,
     "",
     `Service: ${payload.service}`,
     `Area: ${payload.area}`,
@@ -44,6 +72,11 @@ function buildText(payload: Required<BookingPayload>) {
 
 export async function POST(request: Request) {
   try {
+    const user = await getAuthenticatedUser(request);
+    if (!user) {
+      return NextResponse.json({ ok: false, message: "Du behöver logga in för att skicka en bokningsförfrågan." }, { status: 401 });
+    }
+
     const json = (await request.json()) as BookingPayload;
     const payload = {
       service: sanitize(json.service),
@@ -68,10 +101,14 @@ export async function POST(request: Request) {
       return NextResponse.json({ ok: false, message: "Invalid email address." }, { status: 400 });
     }
 
+    if (user.email && payload.email.toLowerCase() !== user.email.toLowerCase()) {
+      return NextResponse.json({ ok: false, message: "Bokningens e-post måste matcha ditt inloggade konto." }, { status: 403 });
+    }
+
     const resendApiKey = process.env.RESEND_API_KEY;
     const toEmail = process.env.BOOKING_TO_EMAIL || "hej@iboren.se";
     const fromEmail = process.env.BOOKING_FROM_EMAIL || "Iboren <onboarding@resend.dev>";
-    const bookingText = buildText(payload);
+    const bookingText = buildText(payload, user);
 
     if (resendApiKey) {
       const response = await fetch("https://api.resend.com/emails", {
