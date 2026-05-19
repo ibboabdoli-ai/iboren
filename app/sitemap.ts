@@ -14,6 +14,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: baseUrl + "/tjanster/storstadning", lastModified: now, priority: 0.8 },
     { url: baseUrl + "/tjanster/byggstadning", lastModified: now, priority: 0.74 },
     { url: baseUrl + "/tjanster/visningsstadning", lastModified: now, priority: 0.74 },
+    { url: baseUrl + "/hemstadning-sodertalje", lastModified: now, priority: 0.88 },
     { url: baseUrl + "/kontakt", lastModified: now, priority: 0.8 },
     { url: baseUrl + "/jobba-hos-oss", lastModified: now, priority: 0.75 },
     { url: baseUrl + "/om-oss", lastModified: now, priority: 0.9 },
