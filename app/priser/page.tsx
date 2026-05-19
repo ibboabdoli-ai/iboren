@@ -6,7 +6,28 @@ import { ArrowRight, Calculator, CheckCircle2, Info } from "lucide-react";
 
 type Service = "Hemstädning" | "Flyttstädning" | "Kontorsstädning" | "Fönsterputs";
 
+type EstimateResult = {
+  beforeRut: number;
+  afterRut: number;
+  note: string;
+  exact?: boolean;
+};
+
 const serviceOptions: Service[] = ["Hemstädning", "Flyttstädning", "Kontorsstädning", "Fönsterputs"];
+
+const flyttstadningAfterRut = [
+  { max: 49, price: 1500 },
+  { max: 59, price: 1650 },
+  { max: 69, price: 1900 },
+  { max: 79, price: 2100 },
+  { max: 89, price: 2300 },
+  { max: 99, price: 2500 },
+  { max: 109, price: 2700 },
+  { max: 119, price: 2900 },
+  { max: 129, price: 3100 },
+  { max: 139, price: 3300 },
+  { max: 149, price: 3500 }
+];
 
 function clampNumber(value: string, fallback: number) {
   const parsed = Number(value.replace(/[^0-9.]/g, ""));
@@ -17,28 +38,34 @@ function formatSek(value: number) {
   return new Intl.NumberFormat("sv-SE", { style: "currency", currency: "SEK", maximumFractionDigits: 0 }).format(Math.round(value));
 }
 
-function estimate(service: Service, sqm: number, rooms: number, bathrooms: number, windows: number, recurring: boolean) {
+function estimate(service: Service, sqm: number, rooms: number, bathrooms: number, windows: number, recurring: boolean): EstimateResult {
   if (service === "Hemstädning") {
-    const hours = Math.max(2, sqm / 38 + rooms * 0.18 + bathrooms * 0.35);
-    const hourlyAfterRut = recurring ? 285 : 315;
-    const afterRut = hours * hourlyAfterRut;
-    return { beforeRut: afterRut * 2, afterRut, note: recurring ? "Återkommande hemstädning har lägre timpris i kalkylen." : "Engångsstädning beräknas med högre timpris." };
+    const hours = Math.max(2, sqm / 42 + rooms * 0.15 + bathrooms * 0.3);
+    const hourlyAfterRut = recurring ? 255 : 315;
+    const afterRut = Math.max(recurring ? 510 : 630, hours * hourlyAfterRut);
+    return {
+      beforeRut: afterRut * 2,
+      afterRut,
+      note: recurring ? "Beräknat från marknadsnivå för återkommande hemstädning efter RUT. Efter första städningen kan tiden justeras." : "Engångsstädning ligger normalt högre än återkommande städning eftersom start och förberedelse tar mer tid."
+    };
   }
 
   if (service === "Flyttstädning") {
-    const rateAfterRut = sqm <= 49 ? 1500 / Math.max(sqm, 1) : sqm <= 79 ? 38 : sqm <= 119 ? 35 : 32;
-    const afterRut = Math.max(1500, sqm * rateAfterRut + Math.max(0, bathrooms - 1) * 250);
-    return { beforeRut: afterRut * 2, afterRut, note: "Fönsterputs kan ingå eller läggas till beroende på omfattning. Slutpris bekräftas alltid." };
+    const match = flyttstadningAfterRut.find((row) => sqm <= row.max);
+    if (!match) return { beforeRut: 0, afterRut: 0, exact: false, note: "För 150 kvm eller större bör priset lämnas som offert efter kontroll av yta, skick, antal våtrum och tillval." };
+    const bathroomAddon = Math.max(0, bathrooms - 1) * 250;
+    const afterRut = match.price + bathroomAddon;
+    return { beforeRut: afterRut * 2, afterRut, exact: true, note: "Flyttstädning följer en fast kvm-trappa som liknar lokala prislistor. Fönsterputs och tillval måste bekräftas i offerten." };
   }
 
   if (service === "Kontorsstädning") {
     const hours = Math.max(2, sqm / 55 + bathrooms * 0.25);
     const price = hours * 430;
-    return { beforeRut: price, afterRut: price, note: "RUT gäller normalt inte för företagsstädning. Priset visas som indikativt företagspris." };
+    return { beforeRut: price, afterRut: price, note: "Företagsstädning visas som indikativt pris exklusive RUT. Slutpris beror på frekvens, tider och lokalens krav." };
   }
 
-  const afterRut = Math.max(550, 450 + windows * 65 + sqm * 2.2);
-  return { beforeRut: afterRut * 2, afterRut, note: "Fönsterputs beror mycket på antal fönster, åtkomst och kombination med annan städning." };
+  const afterRut = Math.max(550, 390 + windows * 55 + sqm * 1.4);
+  return { beforeRut: afterRut * 2, afterRut, note: "Fönsterputs beror på antal fönster, åtkomst, skick och om tjänsten kombineras med annan städning." };
 }
 
 export default function PriserPage() {
@@ -50,6 +77,7 @@ export default function PriserPage() {
   const [recurring, setRecurring] = useState(false);
 
   const result = useMemo(() => estimate(service, clampNumber(sqm, 75), clampNumber(rooms, 3), clampNumber(bathrooms, 1), clampNumber(windows, 8), recurring), [service, sqm, rooms, bathrooms, windows, recurring]);
+  const showOffer = service === "Flyttstädning" && !result.exact && result.afterRut === 0;
 
   return (
     <main className="min-h-screen bg-cream text-ink">
@@ -62,7 +90,7 @@ export default function PriserPage() {
             <h1 className="display mt-4 text-6xl font-bold leading-[.88] text-burgundy md:text-8xl">Priser</h1>
             <p className="mt-7 max-w-2xl text-lg leading-8 text-ink/75 md:text-xl">Räkna fram ett ungefärligt pris för städning. Kalkylen visar en prisindikator, inte ett bindande slutpris.</p>
             <div className="mt-8 rounded-2xl border border-burgundy/10 bg-porcelain p-5 text-sm leading-7 text-ink/75">
-              <p className="flex gap-3"><Info className="mt-1 h-5 w-5 shrink-0 text-burgundy" /> Slutligt pris beror på yta, skick, åtkomst, extra tjänster och önskat datum. Bokningen är inte bindande förrän Iboren bekräftar pris och tid.</p>
+              <p className="flex gap-3"><Info className="mt-1 h-5 w-5 shrink-0 text-burgundy" /> Priset påverkas av yta, skick, extra tjänster, antal badrum, fönster, datum och åtkomst. Förfrågan är inte bindande förrän Iboren bekräftar pris och tid.</p>
             </div>
           </div>
 
@@ -85,10 +113,7 @@ export default function PriserPage() {
 
             <div className="mt-7 rounded-[2rem] bg-burgundy p-6 text-porcelain">
               <p className="text-xs font-black uppercase tracking-[.28em] text-gold">Ungefärligt pris</p>
-              <div className="mt-4 grid gap-4 sm:grid-cols-2">
-                <div><p className="text-sm text-porcelain/75">Före RUT / totalpris</p><p className="display mt-1 text-4xl font-bold">{formatSek(result.beforeRut)}</p></div>
-                <div><p className="text-sm text-porcelain/75">Efter RUT / kundpris</p><p className="display mt-1 text-4xl font-bold text-gold">{formatSek(result.afterRut)}</p></div>
-              </div>
+              {showOffer ? <p className="display mt-4 text-5xl font-bold text-gold">Offert</p> : <div className="mt-4 grid gap-4 sm:grid-cols-2"><div><p className="text-sm text-porcelain/75">Före RUT / totalpris</p><p className="display mt-1 text-4xl font-bold">{formatSek(result.beforeRut)}</p></div><div><p className="text-sm text-porcelain/75">Efter RUT / kundpris</p><p className="display mt-1 text-4xl font-bold text-gold">{formatSek(result.afterRut)}</p></div></div>}
               <p className="mt-5 text-sm leading-7 text-porcelain/75">{result.note}</p>
               <Link href="/#booking" className="mt-6 inline-flex rounded-full bg-gold px-5 py-3 text-sm font-black uppercase tracking-[.12em] text-ink">Gå vidare till bokning <ArrowRight className="ml-2 h-4 w-4" /></Link>
             </div>
