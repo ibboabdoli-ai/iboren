@@ -8,6 +8,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: baseUrl + "/hemstadning", lastModified: now, priority: 0.85 },
     { url: baseUrl + "/flyttstadning", lastModified: now, priority: 0.85 },
     { url: baseUrl + "/kontorsstadning", lastModified: now, priority: 0.8 },
+    { url: baseUrl + "/fonsterputs", lastModified: now, priority: 0.75 },
     { url: baseUrl + "/privacy", lastModified: now, priority: 0.3 },
     { url: baseUrl + "/terms", lastModified: now, priority: 0.3 }
   ];
