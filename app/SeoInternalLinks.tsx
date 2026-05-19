@@ -212,10 +212,32 @@ function enhanceBookingSuccess() {
   addBookingSuccessActions(form, message);
 }
 
+function applyAccessibilityLabels() {
+  const menuButton = document.querySelector<HTMLButtonElement>('header nav > button');
+  if (menuButton) {
+    const isOpen = Boolean(document.querySelector('header div.border-t'));
+    menuButton.setAttribute("aria-label", isOpen ? "Stäng meny" : "Öppna meny");
+    menuButton.setAttribute("aria-expanded", String(isOpen));
+    menuButton.setAttribute("type", "button");
+  }
+
+  const locationButton = document.querySelector<HTMLButtonElement>('#booking form button[type="button"]:has(svg)');
+  if (locationButton && !locationButton.textContent?.trim()) {
+    locationButton.setAttribute("aria-label", "Hämta adress från plats");
+  }
+
+  const copyButton = document.querySelector<HTMLButtonElement>('#booking aside button');
+  if (copyButton) {
+    copyButton.setAttribute("aria-label", "Kopiera bokningssammanfattning");
+    copyButton.setAttribute("type", "button");
+  }
+}
+
 function applyClientEnhancements() {
   patchBookingFetch();
   applyBookingLoginGuard();
   enhanceBookingSuccess();
+  applyAccessibilityLabels();
 }
 
 export default function SeoInternalLinks() {
