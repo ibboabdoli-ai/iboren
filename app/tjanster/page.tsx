@@ -4,7 +4,7 @@ import { ArrowRight, Building2, Home, Sparkles, Truck, Waves } from "lucide-reac
 
 export const metadata: Metadata = {
   title: "Tjänster – Städning i Södertälje och Stockholm | Iboren",
-  description: "Se Iborens städtjänster: hemstädning, flyttstädning, kontorsstädning och fönsterputs i Södertälje och Stockholm.",
+  description: "Se Iborens städtjänster: hemstädning, flyttstädning, kontorsstädning, fönsterputs, storstädning, byggstädning och visningsstädning.",
   alternates: { canonical: "https://iboren.se/tjanster" }
 };
 
@@ -12,7 +12,10 @@ const services = [
   { icon: Home, title: "Hemstädning", href: "/tjanster/hemstadning", text: "För återkommande eller enstaka städning hemma." },
   { icon: Truck, title: "Flyttstädning", href: "/tjanster/flyttstadning", text: "För flytt, överlämning och tydlig offertförfrågan." },
   { icon: Building2, title: "Kontorsstädning", href: "/tjanster/kontorsstadning", text: "För företag, kontor och återkommande service." },
-  { icon: Waves, title: "Fönsterputs", href: "/tjanster/fonsterputs", text: "Som separat tjänst eller tillval till annan städning." }
+  { icon: Waves, title: "Fönsterputs", href: "/tjanster/fonsterputs", text: "Som separat tjänst eller tillval till annan städning." },
+  { icon: Sparkles, title: "Storstädning", href: "/tjanster/storstadning", text: "För hem som behöver en mer omfattande genomgång." },
+  { icon: Building2, title: "Byggstädning", href: "/tjanster/byggstadning", text: "För ytor efter renovering, projekt eller arbete." },
+  { icon: Home, title: "Visningsstädning", href: "/tjanster/visningsstadning", text: "Inför visning, fotografering eller försäljning." }
 ];
 
 export default function TjansterPage() {
