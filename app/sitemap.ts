@@ -5,6 +5,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
   const now = new Date();
   return [
     { url: baseUrl, lastModified: now, priority: 1 },
+    { url: baseUrl + "/om-iboren", lastModified: now, priority: 0.9 },
     { url: baseUrl + "/stadning-sodertalje", lastModified: now, priority: 0.95 },
     { url: baseUrl + "/stadning-stockholm", lastModified: now, priority: 0.9 },
     { url: baseUrl + "/hemstadning", lastModified: now, priority: 0.85 },
