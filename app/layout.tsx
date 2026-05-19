@@ -1,15 +1,16 @@
 import type { Metadata, Viewport } from "next";
+import StructuredData from "./StructuredData";
 import "./globals.css";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://iboren.se"),
-  title: "Iboren – Smart städbokning med AI i Sverige",
-  description: "Boka hemstädning, flyttstädning och kontorsstädning med Iboren. CleanAI hjälper dig skapa en tydlig bokningsförfrågan steg för steg.",
+  title: "Iboren – Städning i Södertälje & Stockholm",
+  description: "Boka hemstädning, flyttstädning, kontorsstädning och fönsterputs i Södertälje och Stockholm. Iboren hjälper dig skapa en tydlig bokningsförfrågan steg för steg.",
   applicationName: "Iboren",
-  keywords: ["Iboren", "städbokning", "hemstädning", "flyttstädning", "kontorsstädning", "CleanAI"],
+  keywords: ["Iboren", "städning Södertälje", "hemstädning Södertälje", "flyttstädning Södertälje", "städning Stockholm", "kontorsstädning Stockholm", "fönsterputs", "städbokning"],
   openGraph: {
-    title: "Iboren – Smart städbokning med AI",
-    description: "En lyxig, enkel och AI-assisterad bokningsupplevelse för städtjänster i Sverige.",
+    title: "Iboren – Städning i Södertälje & Stockholm",
+    description: "Skapa en tydlig bokningsförfrågan för hemstädning, flyttstädning, kontorsstädning och fönsterputs.",
     url: "https://iboren.se",
     siteName: "Iboren",
     locale: "sv_SE",
@@ -18,8 +19,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Iboren – Smart städbokning med AI",
-    description: "Boka städning smartare med CleanAI by Iboren.",
+    title: "Iboren – Städning i Södertälje & Stockholm",
+    description: "Boka städning smartare med Iboren.",
     images: ["/og.svg"]
   },
   alternates: { canonical: "https://iboren.se" },
@@ -265,6 +266,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="sv">
       <body>
+        <StructuredData />
         {children}
         <script dangerouslySetInnerHTML={{ __html: brandHeaderPatch }} />
         <script dangerouslySetInnerHTML={{ __html: cinematicImagePatch }} />
