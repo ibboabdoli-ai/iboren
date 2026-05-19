@@ -10,14 +10,6 @@ const nextConfig: NextConfig = {
       { source: "/kontorsstadning", destination: "/tjanster/kontorsstadning", permanent: true },
       { source: "/fonsterputs", destination: "/tjanster/fonsterputs", permanent: true }
     ];
-  },
-  async rewrites() {
-    return [
-      { source: "/tjanster/hemstadning", destination: "/hemstadning" },
-      { source: "/tjanster/flyttstadning", destination: "/flyttstadning" },
-      { source: "/tjanster/kontorsstadning", destination: "/kontorsstadning" },
-      { source: "/tjanster/fonsterputs", destination: "/fonsterputs" }
-    ];
   }
 };
 
