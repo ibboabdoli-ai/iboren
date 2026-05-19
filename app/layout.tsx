@@ -88,6 +88,8 @@ const cinematicImagePatch = `
 
 const bookingAuthPatch = `
 (function () {
+  var bookingPostInFlight = false;
+
   function getSession() {
     for (var i = 0; i < localStorage.length; i++) {
       var key = localStorage.key(i) || '';
@@ -113,10 +115,22 @@ const bookingAuthPatch = `
     var method = ((init && init.method) || (input && input.method) || 'GET').toUpperCase();
 
     if (url.includes('/api/bookings') && method === 'POST') {
+      if (bookingPostInFlight) {
+        return Promise.resolve(new Response(JSON.stringify({ ok: false, message: 'Bokningen skickas redan. Vänta tills den första förfrågan är klar.' }), {
+          status: 429,
+          headers: { 'Content-Type': 'application/json' }
+        }));
+      }
+
+      bookingPostInFlight = true;
       var token = getAccessToken();
       var headers = new Headers((init && init.headers) || (input && input.headers) || {});
       if (token && !headers.has('Authorization')) headers.set('Authorization', 'Bearer ' + token);
       init = Object.assign({}, init || {}, { headers: headers });
+
+      return originalFetch(input, init).finally(function () {
+        window.setTimeout(function () { bookingPostInFlight = false; }, 1200);
+      });
     }
 
     return originalFetch(input, init);
