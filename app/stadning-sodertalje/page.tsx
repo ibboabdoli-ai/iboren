@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight, CheckCircle2, Home, Sparkles, Truck, Building2 } from "lucide-react";
+import FaqStructuredData from "../FaqStructuredData";
 
 export const metadata: Metadata = {
   title: "Städning i Södertälje – Hemstädning, flyttstädning & kontor | Iboren",
@@ -24,6 +25,7 @@ const faq = [
 export default function StadningSodertaljePage() {
   return (
     <main className="min-h-screen bg-cream text-ink">
+      <FaqStructuredData items={faq} />
       <section className="relative overflow-hidden py-20 md:py-28">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_20%,rgba(212,165,116,.35),transparent_32%),radial-gradient(circle_at_18%_75%,rgba(107,39,55,.14),transparent_34%)]" />
         <div className="luxe-container relative grid gap-10 md:grid-cols-[1fr_.9fr] md:items-center">
