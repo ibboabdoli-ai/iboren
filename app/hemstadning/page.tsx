@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight, CheckCircle2, Home, ShieldCheck, Sparkles } from "lucide-react";
+import FaqStructuredData from "../FaqStructuredData";
 
 export const metadata: Metadata = {
-  title: "Hemstädning – Iboren",
-  description: "Boka hemstädning med Iboren. CleanAI hjälper dig skapa en tydlig bokningsförfrågan för hemstädning i Sverige."
+  title: "Hemstädning i Södertälje och Stockholm – Iboren",
+  description: "Skicka en tydlig bokningsförfrågan för hemstädning i Södertälje och Stockholm. Iboren samlar adress, yta, rum, datum och önskemål.",
+  keywords: ["hemstädning", "hemstädning Södertälje", "hemstädning Stockholm", "städhjälp hemma", "Iboren hemstädning"]
 };
 
 const items = [
@@ -14,9 +16,24 @@ const items = [
   "Förberett för offert och RUT-information"
 ];
 
+const included = [
+  "Kök, badrum och vardagsytor enligt överenskommen omfattning",
+  "Dammsugning, avtorkning och allmän rengöring efter behov",
+  "Möjlighet att ange extra tjänster som ugn, skåp, balkong och fönsterputs",
+  "Tydligt underlag för offert innan bokningen bekräftas"
+];
+
+const faq = [
+  { q: "Kan jag boka hemstädning direkt online?", a: "Du kan skicka en bokningsförfrågan online. Bokningen bekräftas först när tid, omfattning och villkor har stämts av." },
+  { q: "Kan jag välja återkommande hemstädning?", a: "Ja, i formuläret kan du välja engång, varje vecka, varannan vecka eller varje månad." },
+  { q: "Vilka uppgifter behövs för hemstädning?", a: "Du fyller i adress, område, storlek, antal rum, antal badrum, datum, tidsfönster och särskilda önskemål." },
+  { q: "Är priset bindande direkt?", a: "Nej. Slutligt pris och eventuell RUT-information behöver bekräftas innan uppdrag utförs." }
+];
+
 export default function HemstadningPage() {
   return (
     <main className="min-h-screen bg-cream text-ink">
+      <FaqStructuredData items={faq} />
       <section className="relative overflow-hidden py-20 md:py-28">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_65%_20%,rgba(212,165,116,.35),transparent_32%),radial-gradient(circle_at_15%_70%,rgba(107,39,55,.14),transparent_34%)]" />
         <div className="luxe-container relative grid gap-10 md:grid-cols-[.95fr_1.05fr] md:items-center">
@@ -24,10 +41,10 @@ export default function HemstadningPage() {
             <Link href="/" className="mb-10 inline-flex text-sm font-bold text-burgundy">← Tillbaka</Link>
             <p className="eyebrow">Iboren Services</p>
             <h1 className="display mt-4 text-6xl font-bold leading-[.88] text-burgundy md:text-8xl">Hemstädning</h1>
-            <p className="mt-7 max-w-2xl text-lg leading-8 text-ink/70 md:text-xl">Skapa en tydlig förfrågan för hemstädning. CleanAI hjälper dig steg för steg med storlek, område, frekvens, datum och särskilda behov.</p>
+            <p className="mt-7 max-w-2xl text-lg leading-8 text-ink/70 md:text-xl">Skapa en tydlig förfrågan för hemstädning i Södertälje och Stockholm. Iboren hjälper dig steg för steg med storlek, område, frekvens, datum och särskilda behov.</p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <Link href="/#booking" className="btn-primary">Starta bokning <ArrowRight size={18} /></Link>
-              <Link href="/#services" className="btn-secondary">Se alla tjänster</Link>
+              <Link href="/stadning-sodertalje" className="btn-secondary">Städning i Södertälje</Link>
             </div>
           </div>
           <div className="rounded-[2.5rem] border border-burgundy/10 bg-porcelain/70 p-8 shadow-luxe backdrop-blur-xl">
@@ -42,7 +59,32 @@ export default function HemstadningPage() {
           </div>
         </div>
       </section>
+
       <section className="bg-porcelain py-16"><div className="luxe-container grid gap-5 md:grid-cols-3"><Info icon={<Sparkles />} title="Smart flow" text="Formuläret håller kundens svar strukturerade från första kontakt." /><Info icon={<ShieldCheck />} title="Tryggt underlag" text="Ingen bindande bokning innan pris, tid och omfattning bekräftas." /><Info icon={<Home />} title="Flexibelt" text="Passar både enstaka hemstädning och återkommande service." /></div></section>
+
+      <section className="bg-cream py-16">
+        <div className="luxe-container grid gap-10 md:grid-cols-[.9fr_1.1fr] md:items-start">
+          <div>
+            <p className="eyebrow">Vad ingår?</p>
+            <h2 className="display mt-3 text-4xl font-bold text-burgundy md:text-6xl">Hemstädning med tydligare offertunderlag.</h2>
+            <p className="mt-5 leading-8 text-ink/65">Iboren samlar de praktiska detaljerna innan bokningen bekräftas, så att omfattning, frekvens och önskemål blir enklare att förstå.</p>
+          </div>
+          <div className="grid gap-4">
+            {included.map((item) => <p key={item} className="flex gap-3 rounded-2xl bg-porcelain p-5 text-ink/70 shadow-sm"><CheckCircle2 className="mt-1 h-5 w-5 shrink-0 text-burgundy" /> {item}</p>)}
+          </div>
+        </div>
+      </section>
+
+      <section className="bg-porcelain py-16">
+        <div className="luxe-container max-w-4xl">
+          <p className="eyebrow">FAQ</p>
+          <h2 className="display mt-3 text-4xl font-bold text-burgundy md:text-6xl">Vanliga frågor om hemstädning.</h2>
+          <div className="mt-10 grid gap-4">
+            {faq.map((item) => <article key={item.q} className="rounded-[1.5rem] bg-cream p-6 shadow-sm"><h3 className="font-bold text-burgundy">{item.q}</h3><p className="mt-2 leading-7 text-ink/65">{item.a}</p></article>)}
+          </div>
+          <div className="mt-10 rounded-[2rem] bg-burgundy p-7 text-porcelain"><h2 className="display text-4xl font-bold">Redo att boka hemstädning?</h2><p className="mt-3 text-porcelain/70">Fyll i adress, storlek, rum och önskat datum så återkommer Iboren.</p><Link href="/#booking" className="mt-6 inline-flex rounded-full bg-gold px-5 py-3 text-sm font-black uppercase tracking-[.12em] text-ink">Starta bokning</Link></div>
+        </div>
+      </section>
     </main>
   );
 }
