@@ -24,13 +24,28 @@ body {
 ::selection { background: rgba(107, 39, 55, 0.18); }
 
 .luxe-container { width: min(1180px, calc(100% - 32px)); margin-inline: auto; }
-.eyebrow { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .34em; color: rgba(212,165,116,.88); }
+.eyebrow { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .34em; color: rgba(107,39,55,.88); }
 .display { font-family: Georgia, serif; letter-spacing: -0.05em; }
 .btn-primary { display: inline-flex; align-items: center; justify-content: center; gap: .5rem; border-radius: 999px; background: var(--gold); color: var(--night); padding: 1rem 1.5rem; font-weight: 800; box-shadow: 0 24px 70px rgba(212,165,116,.16); transition: .25s ease; }
 .btn-primary:hover { transform: translateY(-2px); background: var(--porcelain); }
 .btn-secondary { display: inline-flex; align-items: center; justify-content: center; gap: .5rem; border-radius: 999px; border: 1px solid rgba(212,165,116,.35); background: rgba(255,253,248,.06); color: var(--gold); padding: 1rem 1.5rem; font-weight: 800; transition: .25s ease; }
 .btn-secondary:hover { transform: translateY(-2px); background: var(--gold); color: var(--night); }
 .noise { display: none; }
+
+/* Accessibility contrast overrides for utility classes used in dense sections. */
+.text-burgundy\/55,
+.text-burgundy\/60 { color: rgba(107, 39, 55, .92) !important; }
+.text-ink\/60,
+.text-ink\/65,
+.text-ink\/68,
+.text-ink\/70 { color: rgba(32, 32, 32, .82) !important; }
+.text-porcelain\/45,
+.text-porcelain\/55,
+.text-porcelain\/60,
+.text-porcelain\/62,
+.text-porcelain\/65,
+.text-porcelain\/68,
+.text-porcelain\/70 { color: rgba(255, 253, 248, .82) !important; }
 
 input, textarea, select {
   color: var(--ink);
