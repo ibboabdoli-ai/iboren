@@ -25,6 +25,143 @@ const keywordLinks = [
   { href: "/stadning-stockholm", label: "Städfirma Stockholm" }
 ];
 
+type StoredSession = {
+  access_token?: string;
+  user?: { email?: string };
+};
+
+type IborenWindow = Window & {
+  __iborenFetchPatched?: boolean;
+  __iborenGetSession?: () => StoredSession | null;
+};
+
+function getStoredSession() {
+  for (let index = 0; index < localStorage.length; index += 1) {
+    const key = localStorage.key(index) || "";
+    if (!key.includes("auth-token")) continue;
+    try {
+      const data = JSON.parse(localStorage.getItem(key) || "{}") as StoredSession;
+      if (data?.access_token) return data;
+    } catch {
+      return null;
+    }
+  }
+  return null;
+}
+
+function getSessionEmail() {
+  return getStoredSession()?.user?.email?.toLowerCase() || "";
+}
+
+function patchBookingFetch() {
+  const scopedWindow = window as IborenWindow;
+  if (scopedWindow.__iborenFetchPatched) return;
+  scopedWindow.__iborenFetchPatched = true;
+  scopedWindow.__iborenGetSession = getStoredSession;
+
+  const originalFetch = window.fetch.bind(window);
+  let bookingPostInFlight = false;
+
+  window.fetch = (input: RequestInfo | URL, init?: RequestInit) => {
+    const url = typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
+    const method = ((init?.method || (input instanceof Request ? input.method : "GET")) || "GET").toUpperCase();
+
+    if (url.includes("/api/bookings") && method === "POST") {
+      if (bookingPostInFlight) {
+        return Promise.resolve(new Response(JSON.stringify({ ok: false, message: "Bokningen skickas redan. Vänta tills den första förfrågan är klar." }), { status: 429, headers: { "Content-Type": "application/json" } }));
+      }
+
+      bookingPostInFlight = true;
+      const token = getStoredSession()?.access_token;
+      const headers = new Headers(init?.headers || (input instanceof Request ? input.headers : undefined));
+      if (token && !headers.has("Authorization")) headers.set("Authorization", `Bearer ${token}`);
+
+      return originalFetch(input, { ...(init || {}), headers }).finally(() => {
+        window.setTimeout(() => { bookingPostInFlight = false; }, 1200);
+      });
+    }
+
+    return originalFetch(input, init);
+  };
+}
+
+function createLoginCard() {
+  const card = document.createElement("div");
+  card.id = "iboren-login-required";
+  card.className = "rounded-[2rem] border border-gold/20 bg-cream p-7 text-ink shadow-2xl md:p-9";
+
+  const eyebrow = document.createElement("p");
+  eyebrow.className = "text-xs font-black uppercase tracking-[.28em] text-burgundy";
+  eyebrow.textContent = "Logga in krävs";
+
+  const heading = document.createElement("h3");
+  heading.className = "display mt-3 text-4xl font-bold leading-none text-burgundy";
+  heading.textContent = "Logga in för att boka.";
+
+  const text = document.createElement("p");
+  text.className = "mt-5 leading-8 text-ink/75";
+  text.textContent = "För att undvika felaktiga bokningar behöver du logga in med Google, Microsoft eller LinkedIn innan du fyller i bokningsformuläret.";
+
+  const actions = document.createElement("div");
+  actions.className = "mt-6 flex flex-col gap-3 sm:flex-row";
+
+  const login = document.createElement("a");
+  login.href = "/login";
+  login.className = "inline-flex items-center justify-center rounded-full bg-burgundy px-5 py-3 text-sm font-black uppercase tracking-[.12em] text-porcelain";
+  login.textContent = "Logga in / Skapa konto";
+
+  const privacy = document.createElement("a");
+  privacy.href = "/privacy";
+  privacy.className = "inline-flex items-center justify-center rounded-full border border-burgundy/15 bg-porcelain px-5 py-3 text-sm font-bold text-burgundy";
+  privacy.textContent = "Privacy";
+
+  actions.append(login, privacy);
+  card.append(eyebrow, heading, text, actions);
+  return card;
+}
+
+function applyBookingLoginGuard() {
+  const section = document.querySelector("#booking");
+  const form = section?.querySelector("form") as HTMLFormElement | null;
+  const aside = section?.querySelector("aside") as HTMLElement | null;
+  if (!section || !form) return;
+
+  if (!form.dataset.loginGuarded) {
+    form.dataset.loginGuarded = "1";
+    form.addEventListener("submit", (event) => {
+      if (!getStoredSession()?.access_token) {
+        event.preventDefault();
+        event.stopPropagation();
+        window.location.href = "/login";
+        return;
+      }
+
+      const sessionEmail = getSessionEmail();
+      const emailInput = form.querySelector<HTMLInputElement>('input[type="email"]');
+      const formEmail = emailInput?.value.trim().toLowerCase() || "";
+      if (sessionEmail && formEmail && sessionEmail !== formEmail) {
+        event.preventDefault();
+        event.stopPropagation();
+        alert(`Bokningens e-post måste matcha ditt inloggade konto: ${sessionEmail}`);
+      }
+    }, true);
+  }
+
+  const existingCard = section.querySelector("#iboren-login-required");
+  const loggedIn = Boolean(getStoredSession()?.access_token) || Boolean(document.querySelector('a[href="/profile"]'));
+
+  if (loggedIn) {
+    form.style.display = "";
+    if (aside) aside.style.display = "";
+    existingCard?.remove();
+    return;
+  }
+
+  form.style.display = "none";
+  if (aside) aside.style.display = "none";
+  if (!existingCard) form.parentElement?.insertBefore(createLoginCard(), form);
+}
+
 function isBookingSuccessText(text: string) {
   const normalized = text.toLowerCase();
   return normalized.includes("bokningen är sparad") || normalized.includes("bokningsförfrågan är sparad") || normalized.includes("tack!");
@@ -45,17 +182,8 @@ function addBookingSuccessActions(form: Element, afterElement: Element) {
   wrapper.id = "iboren-booking-success-actions";
   wrapper.className = "mt-3 grid gap-2 sm:grid-cols-2";
 
-  const profileLink = createSuccessLink(
-    "/profile",
-    "Gå till min profil",
-    "inline-flex items-center justify-center rounded-full bg-gold px-4 py-3 text-sm font-black uppercase tracking-[.12em] text-ink"
-  );
-
-  const newBookingLink = createSuccessLink(
-    "/#booking",
-    "Ny bokning",
-    "inline-flex items-center justify-center rounded-full border border-gold/40 px-4 py-3 text-sm font-bold text-gold"
-  );
+  const profileLink = createSuccessLink("/profile", "Gå till min profil", "inline-flex items-center justify-center rounded-full bg-gold px-4 py-3 text-sm font-black uppercase tracking-[.12em] text-ink");
+  const newBookingLink = createSuccessLink("/#booking", "Ny bokning", "inline-flex items-center justify-center rounded-full border border-gold/40 px-4 py-3 text-sm font-bold text-gold");
   newBookingLink.addEventListener("click", (event) => {
     event.preventDefault();
     window.location.href = "/#booking";
@@ -67,8 +195,7 @@ function addBookingSuccessActions(form: Element, afterElement: Element) {
 }
 
 function enhanceBookingSuccess() {
-  const bookingSection = document.querySelector("#booking");
-  const form = bookingSection?.querySelector("form");
+  const form = document.querySelector("#booking form");
   if (!form) return;
 
   const message = Array.from(form.querySelectorAll("p")).find((node) => isBookingSuccessText(node.textContent || ""));
@@ -85,12 +212,18 @@ function enhanceBookingSuccess() {
   addBookingSuccessActions(form, message);
 }
 
+function applyClientEnhancements() {
+  patchBookingFetch();
+  applyBookingLoginGuard();
+  enhanceBookingSuccess();
+}
+
 export default function SeoInternalLinks() {
   const pathname = usePathname();
 
   useEffect(() => {
-    enhanceBookingSuccess();
-    const observer = new MutationObserver(enhanceBookingSuccess);
+    applyClientEnhancements();
+    const observer = new MutationObserver(applyClientEnhancements);
     observer.observe(document.documentElement, { childList: true, subtree: true, characterData: true });
     return () => observer.disconnect();
   }, []);
