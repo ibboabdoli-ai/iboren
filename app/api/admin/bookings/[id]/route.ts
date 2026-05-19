@@ -45,29 +45,44 @@ function sanitize(value: unknown) {
   return String(value ?? "").replace(/[<>]/g, "").trim().slice(0, 1200);
 }
 
-function statusEmailContent(status: string, booking: BookingRow) {
+function bookingSummary(booking: BookingRow) {
   const service = sanitize(booking.service);
   const area = sanitize(booking.area);
   const address = sanitize(booking.address || "");
   const date = sanitize(booking.preferred_date || "");
   const timeWindow = sanitize(booking.time_window || "");
+  const size = booking.size_sqm ? `${booking.size_sqm} kvm` : "Ej angivet";
+
+  return [
+    `Boknings-ID: ${booking.id}`,
+    `Tjänst: ${service}`,
+    `Område: ${area}`,
+    `Adress: ${address || "Ej angiven"}`,
+    `Storlek: ${size}`,
+    `Datum: ${date || "Ej angivet"}`,
+    `Tid: ${timeWindow || "Ej angivet"}`
+  ].join("\n");
+}
+
+function statusEmailContent(status: string, booking: BookingRow) {
+  const service = sanitize(booking.service);
   const name = sanitize(booking.customer_name || "");
+  const greeting = `Hej ${name || "kund"},`;
+  const summary = bookingSummary(booking);
 
   if (status === "confirmed") {
     return {
       subject: `Din bokning är bekräftad – ${service}`,
       text: [
-        `Hej ${name || ""},`,
+        greeting,
         "",
         "Din bokning hos Iboren är bekräftad.",
         "",
-        `Tjänst: ${service}`,
-        `Område: ${area}`,
-        `Adress: ${address || "Ej angiven"}`,
-        `Datum: ${date || "Ej angivet"}`,
-        `Tid: ${timeWindow || "Ej angivet"}`,
+        summary,
         "",
-        "Tack för din bokning.",
+        "Vi återkommer om vi behöver kompletterande information inför städningen.",
+        "",
+        "Vänliga hälsningar,",
         "Iboren"
       ].join("\n")
     };
@@ -77,17 +92,15 @@ function statusEmailContent(status: string, booking: BookingRow) {
     return {
       subject: `Din bokning är avbokad – ${service}`,
       text: [
-        `Hej ${name || ""},`,
+        greeting,
         "",
         "Din bokning hos Iboren är markerad som avbokad.",
         "",
-        `Tjänst: ${service}`,
-        `Område: ${area}`,
-        `Adress: ${address || "Ej angiven"}`,
-        `Datum: ${date || "Ej angivet"}`,
-        `Tid: ${timeWindow || "Ej angivet"}`,
+        summary,
         "",
-        "Kontakta Iboren om du har frågor.",
+        "Kontakta oss på hej@iboren.se om något inte stämmer eller om du vill boka en ny tid.",
+        "",
+        "Vänliga hälsningar,",
         "Iboren"
       ].join("\n")
     };
@@ -97,16 +110,15 @@ function statusEmailContent(status: string, booking: BookingRow) {
     return {
       subject: `Tack – din städning är markerad som klar`,
       text: [
-        `Hej ${name || ""},`,
+        greeting,
         "",
         "Tack! Din bokning hos Iboren är markerad som klar.",
         "",
-        `Tjänst: ${service}`,
-        `Område: ${area}`,
-        `Adress: ${address || "Ej angiven"}`,
-        `Datum: ${date || "Ej angivet"}`,
+        summary,
         "",
         "Tack för att du valde Iboren.",
+        "",
+        "Vänliga hälsningar,",
         "Iboren"
       ].join("\n")
     };
@@ -119,6 +131,7 @@ async function sendStatusEmail(status: string, booking: BookingRow) {
   const content = statusEmailContent(status, booking);
   const resendApiKey = process.env.RESEND_API_KEY;
   const fromEmail = process.env.BOOKING_FROM_EMAIL || "Iboren <onboarding@resend.dev>";
+  const replyTo = process.env.BOOKING_TO_EMAIL || "hej@iboren.se";
   const toEmail = sanitize(booking.customer_email);
 
   if (!content || !resendApiKey || !toEmail || !/^\S+@\S+\.\S+$/.test(toEmail)) {
@@ -131,6 +144,7 @@ async function sendStatusEmail(status: string, booking: BookingRow) {
     body: JSON.stringify({
       from: fromEmail,
       to: [toEmail],
+      reply_to: replyTo,
       subject: content.subject,
       text: content.text
     })
@@ -174,8 +188,20 @@ export async function PATCH(request: Request, { params }: { params: { id: string
     if (!allowedStatuses.includes(body.status)) {
       return NextResponse.json({ ok: false, message: "Invalid status." }, { status: 400 });
     }
+
+    const { data: previous, error: previousError } = await admin.supabase
+      .from("bookings")
+      .select("status")
+      .eq("id", params.id)
+      .single<{ status: string | null }>();
+
+    if (previousError) {
+      return NextResponse.json({ ok: false, message: previousError.message }, { status: 500 });
+    }
+
+    const previousStatus = previous.status || "new";
     update.status = body.status;
-    shouldSendStatusEmail = body.status !== "new";
+    shouldSendStatusEmail = body.status !== "new" && body.status !== previousStatus;
   }
 
   if (typeof body?.admin_notes === "string") {
