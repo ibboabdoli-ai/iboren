@@ -27,10 +27,23 @@ type SaveBookingResult = {
   duplicate: boolean;
 };
 
+class DuplicateBookingError extends Error {
+  constructor() {
+    super("Den här bokningen finns redan. Ändra datum, tid eller uppgifter om du vill skapa en ny bokning.");
+    this.name = "DuplicateBookingError";
+  }
+}
+
 const required: Array<keyof BookingPayload> = ["service", "area", "address", "size", "date", "name", "email", "phone"];
 
 function sanitize(value: unknown) {
   return String(value ?? "").replace(/[<>]/g, "").trim().slice(0, 3000);
+}
+
+function isUniqueDuplicateError(error: unknown) {
+  const candidate = error as { code?: string; message?: string; details?: string } | null;
+  const text = `${candidate?.message || ""} ${candidate?.details || ""}`.toLowerCase();
+  return candidate?.code === "23505" || text.includes("bookings_unique_active_request_idx") || text.includes("duplicate key value violates unique constraint");
 }
 
 function getSupabase(token?: string) {
@@ -146,7 +159,10 @@ async function saveBooking(payload: Required<BookingPayload>, auth: AuthContext)
     status: "new"
   }).select("id").single();
 
-  if (error) throw new Error(`Kunde inte spara bokningen i databasen: ${error.message}`);
+  if (error) {
+    if (isUniqueDuplicateError(error)) throw new DuplicateBookingError();
+    throw new Error(`Kunde inte spara bokningen i databasen: ${error.message}`);
+  }
   return { id: data.id as string, duplicate: false };
 }
 
@@ -246,6 +262,9 @@ export async function POST(request: Request) {
     console.info("IBOREN_BOOKING_REQUEST", adminText);
     return NextResponse.json({ ok: true, message: "Bokningen är sparad. Demo-läge: lägg till RESEND_API_KEY i Vercel för riktig e-post." });
   } catch (error) {
+    if (error instanceof DuplicateBookingError) {
+      return NextResponse.json({ ok: false, duplicate: true, message: error.message }, { status: 409 });
+    }
     return NextResponse.json({ ok: false, message: error instanceof Error ? error.message : "Invalid request." }, { status: 400 });
   }
 }
