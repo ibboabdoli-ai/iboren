@@ -110,26 +110,44 @@ async function sendControlledBooking(form: HTMLFormElement, button: HTMLButtonEl
   }
 }
 
+function run(form: HTMLFormElement, button: HTMLButtonElement | null) {
+  if (form.dataset.iborenSubmitting === "1") return;
+  form.dataset.iborenSubmitting = "1";
+  if (button) {
+    button.disabled = true;
+    button.textContent = "Skickar bokningsförfrågan...";
+  }
+  sendControlledBooking(form, button).finally(() => {
+    const success = Boolean(form.querySelector("#iboren-submit-message")?.textContent?.toLowerCase().includes("tack"));
+    if (!success && button) {
+      button.disabled = false;
+      button.textContent = "Skicka bokningsförfrågan";
+    }
+    if (!success) delete form.dataset.iborenSubmitting;
+  });
+}
+
 function attach() {
   const form = document.querySelector<HTMLFormElement>("#booking form");
-  if (!form || form.dataset.iborenControlledSubmit === "1") return;
-  form.dataset.iborenControlledSubmit = "1";
+  if (!form) return;
+  const button = form.querySelector<HTMLButtonElement>('button[type="submit"], button:not([type])');
+  if (!button || button.dataset.iborenButtonReady === "1") return;
+
+  button.dataset.iborenButtonReady = "1";
+  button.type = "button";
+
+  button.addEventListener("click", (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    event.stopImmediatePropagation();
+    run(form, button);
+  }, true);
 
   form.addEventListener("submit", (event) => {
     event.preventDefault();
     event.stopPropagation();
-    const button = form.querySelector<HTMLButtonElement>('button[type="submit"], button:not([type])');
-    if (button) {
-      button.disabled = true;
-      button.textContent = "Skickar bokningsförfrågan...";
-    }
-    sendControlledBooking(form, button).finally(() => {
-      const success = Boolean(form.querySelector("#iboren-submit-message")?.textContent?.toLowerCase().includes("tack"));
-      if (!success && button) {
-        button.disabled = false;
-        button.textContent = "Skicka bokningsförfrågan";
-      }
-    });
+    event.stopImmediatePropagation();
+    run(form, button);
   }, true);
 }
 
