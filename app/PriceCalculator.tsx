@@ -38,11 +38,11 @@ function frequencyDiscount(frequency: Frequency) {
 }
 
 function addOnBeforeRutPrice(addOn: AddOn) {
-  if (addOn === "Fönsterputs") return 900;
-  if (addOn === "Ugnsrengöring") return 450;
-  if (addOn === "Kyl/frys") return 450;
-  if (addOn === "Balkong") return 400;
-  if (addOn === "Extra smutsigt") return 700;
+  if (addOn === "Fönsterputs") return 700;
+  if (addOn === "Ugnsrengöring") return 350;
+  if (addOn === "Kyl/frys") return 350;
+  if (addOn === "Balkong") return 300;
+  if (addOn === "Extra smutsigt") return 500;
   return 0;
 }
 
@@ -51,62 +51,65 @@ function estimatePrice(service: Service, sqm: number, frequency: Frequency, bath
   const rutFactor = rut ? 0.5 : 1;
 
   if (service === "Hemstädning") {
-    const hours = Math.max(2, sqm / 35 + Math.max(0, bathrooms - 1) * 0.35);
-    const baseBeforeRut = hours * 560;
+    const hours = Math.max(2, sqm / 38 + Math.max(0, bathrooms - 1) * 0.3);
+    const hourlyBeforeRut = frequency === "Engång" ? 590 : 520;
+    const baseBeforeRut = hours * hourlyBeforeRut;
     const discountedBeforeRut = baseBeforeRut * (1 - frequencyDiscount(frequency));
-    const beforeRut = discountedBeforeRut + addOnBeforeRut;
+    const beforeRut = Math.max(frequency === "Engång" ? 1180 : 1040, discountedBeforeRut + addOnBeforeRut);
     return {
       title: "Uppskattat pris för hemstädning",
       beforeRut,
       afterRut: beforeRut * rutFactor,
       hours,
-      note: "Hemstädning beräknas på uppskattad tid, bostadens storlek, antal badrum, frekvens och tillval. Slutligt pris bekräftas efter bokningsförfrågan."
+      note: "Konkurrenskraftig prisindikation: återkommande hemstädning räknas från cirka 260 kr/tim efter RUT innan frekvensrabatt. Engångsstädning ligger högre eftersom start och genomgång tar mer tid."
     };
   }
 
   if (service === "Flyttstädning") {
-    const beforeRut = Math.max(2500, sqm * 45 + Math.max(0, bathrooms - 1) * 500 + addOnBeforeRut);
+    const basePerSqmBeforeRut = sqm <= 80 ? 42 : sqm <= 140 ? 40 : 38;
+    const bathroomAddonBeforeRut = Math.max(0, bathrooms - 1) * 400;
+    const beforeRut = Math.max(2300, sqm * basePerSqmBeforeRut + bathroomAddonBeforeRut + addOnBeforeRut);
     return {
       title: "Uppskattat pris för flyttstädning",
       beforeRut,
       afterRut: beforeRut * rutFactor,
-      note: "Flyttstädning beräknas främst per kvadratmeter. Skick, våtrum, fönster, balkong och särskilda krav kan påverka slutpriset."
+      note: "Flyttstädning räknas med fast kvm-modell från cirka 21 kr/kvm efter RUT. Slutpris påverkas av bostadens skick, tillval, fönster, balkong och åtkomst."
     };
   }
 
   if (service === "Storstädning") {
-    const hours = Math.max(3, sqm / 25 + Math.max(0, bathrooms - 1) * 0.45);
-    const beforeRut = hours * 620 + addOnBeforeRut;
+    const hours = Math.max(3, sqm / 27 + Math.max(0, bathrooms - 1) * 0.4);
+    const beforeRut = Math.max(1770, hours * 590 + addOnBeforeRut);
     return {
       title: "Uppskattat pris för storstädning",
       beforeRut,
       afterRut: beforeRut * rutFactor,
       hours,
-      note: "Storstädning tar normalt längre tid än återkommande hemstädning och beror på bostadens skick och valda tillval."
+      note: "Storstädning beräknas från cirka 295 kr/tim efter RUT. Tiden påverkas mer av bostadens skick än vid återkommande hemstädning."
     };
   }
 
   if (service === "Kontorsstädning") {
-    const factor = frequency === "Varje vecka" ? 65 : frequency === "Varannan vecka" ? 48 : 35;
-    const monthly = Math.max(1800, sqm * factor + Math.max(0, bathrooms - 1) * 350);
+    const factor = frequency === "Varje vecka" ? 49 : frequency === "Varannan vecka" ? 39 : 29;
+    const monthly = Math.max(1500, sqm * factor + Math.max(0, bathrooms - 1) * 250);
     return {
       title: "Prisindikation för kontorsstädning",
       beforeRut: monthly,
       afterRut: monthly,
       monthly: true,
-      note: "Kontorsstädning offereras normalt per månad. RUT gäller inte företagsstädning. Slutpris beror på frekvens, lokaltyp och önskade tider."
+      note: "Kontorsstädning visas som konkurrenskraftig månadsindikation från cirka 29–49 kr/kvm/mån. RUT gäller inte företagsstädning."
     };
   }
 
-  let afterRutFrom = 795;
-  if (sqm > 80) afterRutFrom = 1195;
-  if (sqm > 140) afterRutFrom = 1695;
+  let afterRutFrom = 695;
+  if (sqm > 80) afterRutFrom = 995;
+  if (sqm > 140) afterRutFrom = 1495;
   const beforeRut = afterRutFrom * 2 + selectedAddOns.filter((item) => item !== "Fönsterputs").reduce((sum, item) => sum + addOnBeforeRutPrice(item), 0);
   return {
     title: "Uppskattat pris för fönsterputs",
     beforeRut,
     afterRut: beforeRut * rutFactor,
-    note: "Fönsterputs beror på antal fönster, åtkomst, våningsplan, skick och om tjänsten kombineras med annan städning."
+    note: "Fönsterputs visas från 695 kr efter RUT för mindre bostäder. Exakt pris beror på antal fönster, åtkomst, våningsplan och skick."
   };
 }
 
