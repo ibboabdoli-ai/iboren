@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
-import EnglishHomeTranslator from "../EnglishHomeTranslator";
-import HomePage from "../page";
+import EnglishHomePage from "../EnglishHomePage";
 
 export const metadata: Metadata = {
   title: "Iboren – Cleaning request in Södertälje and Stockholm",
@@ -9,10 +8,5 @@ export const metadata: Metadata = {
 };
 
 export default function EnglishPage() {
-  return (
-    <>
-      <EnglishHomeTranslator />
-      <HomePage />
-    </>
-  );
+  return <EnglishHomePage />;
 }
