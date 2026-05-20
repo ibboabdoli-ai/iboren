@@ -1,31 +1,38 @@
 import type { MetadataRoute } from "next";
 
+const baseUrl = "https://iboren.se";
+
+const routes = [
+  { path: "", priority: 1, changeFrequency: "weekly" as const },
+  { path: "/priser", priority: 0.95, changeFrequency: "weekly" as const },
+  { path: "/hemstadning", priority: 0.86, changeFrequency: "monthly" as const },
+  { path: "/flyttstadning", priority: 0.86, changeFrequency: "monthly" as const },
+  { path: "/kontorsstadning", priority: 0.82, changeFrequency: "monthly" as const },
+  { path: "/fonsterputs", priority: 0.8, changeFrequency: "monthly" as const },
+  { path: "/stadning-sodertalje", priority: 0.95, changeFrequency: "monthly" as const },
+  { path: "/stadning-stockholm", priority: 0.92, changeFrequency: "monthly" as const },
+  { path: "/hemstadning-sodertalje", priority: 0.9, changeFrequency: "monthly" as const },
+  { path: "/flyttstadning-sodertalje", priority: 0.88, changeFrequency: "monthly" as const },
+  { path: "/fonsterputs-sodertalje", priority: 0.86, changeFrequency: "monthly" as const },
+  { path: "/kontorsstadning-sodertalje", priority: 0.84, changeFrequency: "monthly" as const },
+  { path: "/hemstadning-stockholm", priority: 0.9, changeFrequency: "monthly" as const },
+  { path: "/flyttstadning-stockholm", priority: 0.88, changeFrequency: "monthly" as const },
+  { path: "/fonsterputs-stockholm", priority: 0.86, changeFrequency: "monthly" as const },
+  { path: "/kontorsstadning-stockholm", priority: 0.84, changeFrequency: "monthly" as const },
+  { path: "/om-iboren", priority: 0.75, changeFrequency: "monthly" as const },
+  { path: "/jobb", priority: 0.7, changeFrequency: "monthly" as const },
+  { path: "/en", priority: 0.65, changeFrequency: "monthly" as const },
+  { path: "/privacy", priority: 0.25, changeFrequency: "yearly" as const },
+  { path: "/terms", priority: 0.25, changeFrequency: "yearly" as const }
+];
+
 export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl = "https://iboren.se";
   const now = new Date();
-  return [
-    { url: baseUrl, lastModified: now, priority: 1 },
-    { url: baseUrl + "/priser", lastModified: now, priority: 0.92 },
-    { url: baseUrl + "/tjanster", lastModified: now, priority: 0.9 },
-    { url: baseUrl + "/tjanster/hemstadning", lastModified: now, priority: 0.86 },
-    { url: baseUrl + "/tjanster/flyttstadning", lastModified: now, priority: 0.86 },
-    { url: baseUrl + "/tjanster/kontorsstadning", lastModified: now, priority: 0.82 },
-    { url: baseUrl + "/tjanster/fonsterputs", lastModified: now, priority: 0.78 },
-    { url: baseUrl + "/tjanster/storstadning", lastModified: now, priority: 0.8 },
-    { url: baseUrl + "/tjanster/byggstadning", lastModified: now, priority: 0.74 },
-    { url: baseUrl + "/tjanster/visningsstadning", lastModified: now, priority: 0.74 },
-    { url: baseUrl + "/hemstadning-sodertalje", lastModified: now, priority: 0.88 },
-    { url: baseUrl + "/blogg", lastModified: now, priority: 0.72 },
-    { url: baseUrl + "/blogg/vad-kostar-hemstadning", lastModified: now, priority: 0.7 },
-    { url: baseUrl + "/blogg/rut-avdrag-stadning", lastModified: now, priority: 0.68 },
-    { url: baseUrl + "/blogg/checklista-infor-flytt", lastModified: now, priority: 0.68 },
-    { url: baseUrl + "/kontakt", lastModified: now, priority: 0.8 },
-    { url: baseUrl + "/jobba-hos-oss", lastModified: now, priority: 0.75 },
-    { url: baseUrl + "/om-oss", lastModified: now, priority: 0.9 },
-    { url: baseUrl + "/en", lastModified: now, priority: 0.85 },
-    { url: baseUrl + "/stadning-sodertalje", lastModified: now, priority: 0.95 },
-    { url: baseUrl + "/stadning-stockholm", lastModified: now, priority: 0.9 },
-    { url: baseUrl + "/privacy", lastModified: now, priority: 0.3 },
-    { url: baseUrl + "/terms", lastModified: now, priority: 0.3 }
-  ];
+
+  return routes.map((route) => ({
+    url: `${baseUrl}${route.path}`,
+    lastModified: now,
+    changeFrequency: route.changeFrequency,
+    priority: route.priority
+  }));
 }
