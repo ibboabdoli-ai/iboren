@@ -17,32 +17,27 @@ export default function OpenGraphImage() {
           alignItems: "center",
           justifyContent: "center",
           background: "linear-gradient(135deg, #050706 0%, #0B0E0C 52%, #131816 100%)",
-          color: "#FFF8EF"
+          color: "#FFF8EF",
+          padding: "58px 72px"
         }}
       >
+        <div style={{ fontFamily: "Georgia", fontSize: 138, fontWeight: 700, lineHeight: 1, marginBottom: 26 }}>
+          Iboren
+        </div>
         <div
           style={{
-            width: 220,
-            height: 220,
-            borderRadius: 999,
-            border: "4px solid rgba(212,165,116,0.35)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            color: "#D4A574",
-            fontFamily: "Georgia",
-            fontSize: 110,
-            fontWeight: 700,
-            marginBottom: 36
+            width: 680,
+            height: 2,
+            background: "rgba(212,165,116,0.45)",
+            marginBottom: 32
           }}
-        >
-          I
-        </div>
-        <div style={{ fontFamily: "Georgia", fontSize: 104, fontWeight: 700, marginBottom: 22 }}>Iboren</div>
-        <div style={{ fontFamily: "Arial", fontSize: 28, fontWeight: 700, letterSpacing: 8, color: "#D4A574", marginBottom: 22 }}>
+        />
+        <div style={{ fontFamily: "Arial", fontSize: 30, fontWeight: 700, letterSpacing: 8, color: "#D4A574", marginBottom: 28 }}>
           PRIS DIREKT & ENKEL BOKNING
         </div>
-        <div style={{ fontFamily: "Arial", fontSize: 24, color: "#E6D0B0" }}>Städning i Södertälje och Stockholm</div>
+        <div style={{ fontFamily: "Arial", fontSize: 32, color: "#E6D0B0", textAlign: "center", maxWidth: 860, lineHeight: 1.35 }}>
+          Hemstädning, flyttstädning, kontorsstädning och fönsterputs i Södertälje och Stockholm
+        </div>
       </div>
     ),
     size
