@@ -3,8 +3,9 @@
 import { useEffect, useRef } from "react";
 
 const FRAME_COUNT = 6;
-const WHEEL_LOCK_MS = 620;
-const TOUCH_THRESHOLD_PX = 42;
+const WHEEL_LOCK_MS = 320;
+const WHEEL_MIN_DELTA = 3;
+const TOUCH_THRESHOLD_PX = 34;
 
 function getCurrentFrameIndex(section: HTMLElement) {
   const counter = Array.from(section.querySelectorAll("p"))
@@ -35,23 +36,25 @@ function clickFrameButton(section: HTMLElement, direction: 1 | -1) {
 export default function CinematicFrameLock() {
   const wheelLocked = useRef(false);
   const touchStartY = useRef<number | null>(null);
-  const touchDirection = useRef<1 | -1 | null>(null);
 
   useEffect(() => {
     const foundSection = document.querySelector<HTMLElement>("main > #cinematic-scroll");
     if (!foundSection) return;
     const section: HTMLElement = foundSection;
 
-    section.style.overscrollBehavior = "contain";
-
-    function canStep(direction: 1 | -1) {
+    function getBoundary(direction: 1 | -1) {
       const index = getCurrentFrameIndex(section);
-      if (direction === 1) return index < FRAME_COUNT - 1;
-      return index > 0;
+      return {
+        index,
+        atFirst: index <= 0,
+        atLast: index >= FRAME_COUNT - 1,
+        canStep: direction === 1 ? index < FRAME_COUNT - 1 : index > 0
+      };
     }
 
     function step(direction: 1 | -1) {
-      if (wheelLocked.current || !canStep(direction)) return false;
+      const boundary = getBoundary(direction);
+      if (wheelLocked.current || !boundary.canStep) return false;
       wheelLocked.current = true;
       const clicked = clickFrameButton(section, direction);
       window.setTimeout(() => {
@@ -61,10 +64,12 @@ export default function CinematicFrameLock() {
     }
 
     function onWheel(event: WheelEvent) {
+      if (Math.abs(event.deltaY) < WHEEL_MIN_DELTA) return;
       const direction: 1 | -1 = event.deltaY > 0 ? 1 : -1;
-      if (Math.abs(event.deltaY) < 8) return;
+      const boundary = getBoundary(direction);
 
-      if (!canStep(direction)) return;
+      // At frame 1 + scroll up, or frame 6 + scroll down: release the page normally.
+      if (!boundary.canStep) return;
 
       event.preventDefault();
       event.stopImmediatePropagation();
@@ -73,7 +78,6 @@ export default function CinematicFrameLock() {
 
     function onTouchStart(event: TouchEvent) {
       touchStartY.current = event.touches[0]?.clientY ?? null;
-      touchDirection.current = null;
     }
 
     function onTouchMove(event: TouchEvent) {
@@ -83,9 +87,9 @@ export default function CinematicFrameLock() {
       if (Math.abs(delta) < 10) return;
 
       const direction: 1 | -1 = delta > 0 ? 1 : -1;
-      touchDirection.current = direction;
+      const boundary = getBoundary(direction);
+      if (!boundary.canStep) return;
 
-      if (!canStep(direction)) return;
       event.preventDefault();
       event.stopImmediatePropagation();
     }
@@ -98,7 +102,8 @@ export default function CinematicFrameLock() {
 
       if (Math.abs(delta) < TOUCH_THRESHOLD_PX) return;
       const direction: 1 | -1 = delta > 0 ? 1 : -1;
-      if (!canStep(direction)) return;
+      const boundary = getBoundary(direction);
+      if (!boundary.canStep) return;
 
       event.preventDefault();
       event.stopImmediatePropagation();
@@ -115,7 +120,6 @@ export default function CinematicFrameLock() {
       section.removeEventListener("touchstart", onTouchStart, { capture: true });
       section.removeEventListener("touchmove", onTouchMove, { capture: true });
       section.removeEventListener("touchend", onTouchEnd, { capture: true });
-      section.style.overscrollBehavior = "";
     };
   }, []);
 
