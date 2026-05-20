@@ -50,23 +50,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="sv">
       <head>
         <link rel="preload" as="image" href="/cinematic/03-home-after.webp" fetchPriority="high" />
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              (function () {
-                var mark = function () {
-                  var hero = document.querySelector('img[src="/cinematic/03-home-after.webp"][alt="Rent hem"]');
-                  if (!hero) return;
-                  hero.setAttribute('loading', 'eager');
-                  hero.setAttribute('fetchpriority', 'high');
-                  hero.setAttribute('decoding', 'async');
-                };
-                mark();
-                document.addEventListener('DOMContentLoaded', mark, { once: true });
-              })();
-            `
-          }}
-        />
       </head>
       <body>
         <StructuredData />
