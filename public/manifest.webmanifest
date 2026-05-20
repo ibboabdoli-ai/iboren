@@ -1,1 +1,16 @@
-{"name":"Iboren","short_name":"Iboren","description":"Smart städbokning med CleanAI","start_url":"/","display":"standalone","background_color":"#F5F0E8","theme_color":"#F5F0E8","icons":[{"src":"/favicon.svg","sizes":"any","type":"image/svg+xml"}]}
+{
+  "name": "Iboren",
+  "short_name": "Iboren",
+  "description": "Enkel städbokning i Södertälje och Stockholm",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0B0E0C",
+  "theme_color": "#0B0E0C",
+  "icons": [
+    {
+      "src": "/favicon.svg?v=iboren-clean-2",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}
