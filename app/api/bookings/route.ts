@@ -15,17 +15,28 @@ type BookingPayload = {
   email?: string;
   phone?: string;
   notes?: string;
+  customerType?: string;
+  rutRequested?: boolean;
 };
 
-type AuthContext = {
-  user: User;
-  token: string;
+type NormalizedBookingPayload = {
+  service: string;
+  area: string;
+  address: string;
+  size: string;
+  frequency: string;
+  date: string;
+  timeWindow: string;
+  name: string;
+  email: string;
+  phone: string;
+  notes: string;
+  customerType: string;
+  rutRequested: boolean;
 };
 
-type SaveBookingResult = {
-  id: string;
-  duplicate: boolean;
-};
+type AuthContext = { user: User; token: string };
+type SaveBookingResult = { id: string; duplicate: boolean };
 
 class DuplicateBookingError extends Error {
   constructor() {
@@ -41,6 +52,16 @@ function sanitize(value: unknown) {
   return String(value ?? "").replace(/[<>]/g, "").trim().slice(0, 3000);
 }
 
+function normalizeCustomerType(value: unknown) {
+  const clean = sanitize(value);
+  return clean === "Företag" ? "Företag" : "Privatperson";
+}
+
+function normalizeRutRequested(value: unknown, customerType: string, service: string) {
+  if (customerType !== "Privatperson" || service === "Kontorsstädning") return false;
+  return value === true || value === "true" || value === "Ja" || value === "ja";
+}
+
 function isUniqueDuplicateError(error: unknown) {
   const candidate = error as { code?: string; message?: string; details?: string } | null;
   const text = `${candidate?.message || ""} ${candidate?.details || ""}`.toLowerCase();
@@ -52,10 +73,7 @@ function getSupabase(token?: string) {
   const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   if (!url || !key) return null;
   return createClient(url, key, {
-    auth: {
-      persistSession: false,
-      autoRefreshToken: false
-    },
+    auth: { persistSession: false, autoRefreshToken: false },
     global: token ? { headers: { Authorization: `Bearer ${token}` } } : undefined
   });
 }
@@ -64,21 +82,30 @@ async function getAuthContext(request: Request): Promise<AuthContext | null> {
   const authHeader = request.headers.get("authorization") || "";
   const token = authHeader.toLowerCase().startsWith("bearer ") ? authHeader.slice(7).trim() : "";
   if (!token) return null;
-
   const supabase = getSupabase();
   if (!supabase) return null;
-
   const { data, error } = await supabase.auth.getUser(token);
   if (error || !data.user) return null;
   return { user: data.user, token };
 }
 
-function buildAdminText(payload: Required<BookingPayload>, user: User, bookingId: string) {
+function buildRutText(payload: NormalizedBookingPayload) {
+  if (payload.customerType !== "Privatperson") return "Kundtyp: Företag. RUT gäller inte.";
+  if (payload.service === "Kontorsstädning") return "RUT: Nej. Kontorsstädning hanteras som företagspris/offert.";
+  return payload.rutRequested
+    ? "RUT: Ja. Kunden har valt RUT och intygar att villkoren hos Skatteverket uppfylls. Om RUT inte godkänns kan resterande belopp faktureras."
+    : "RUT: Nej. Kunden har inte valt RUT-avdrag.";
+}
+
+function buildAdminText(payload: NormalizedBookingPayload, user: User, bookingId: string) {
   return [
     "New Iboren booking request",
     "",
     `Booking ID: ${bookingId}`,
     `Authenticated user: ${user.email || user.id}`,
+    "",
+    `Customer type: ${payload.customerType}`,
+    buildRutText(payload),
     "",
     `Service: ${payload.service}`,
     `Area: ${payload.area}`,
@@ -96,7 +123,7 @@ function buildAdminText(payload: Required<BookingPayload>, user: User, bookingId
   ].join("\n");
 }
 
-function buildCustomerText(payload: Required<BookingPayload>, bookingId: string) {
+function buildCustomerText(payload: NormalizedBookingPayload, bookingId: string) {
   return [
     `Hej ${payload.name},`,
     "",
@@ -111,6 +138,8 @@ function buildCustomerText(payload: Required<BookingPayload>, bookingId: string)
     `Frekvens: ${payload.frequency}`,
     `Datum: ${payload.date}`,
     `Tid: ${payload.timeWindow}`,
+    `Kundtyp: ${payload.customerType}`,
+    buildRutText(payload),
     "",
     "Om något inte stämmer kan du svara på det här mejlet eller kontakta oss på hej@iboren.se.",
     "",
@@ -119,10 +148,9 @@ function buildCustomerText(payload: Required<BookingPayload>, bookingId: string)
   ].join("\n");
 }
 
-async function saveBooking(payload: Required<BookingPayload>, auth: AuthContext): Promise<SaveBookingResult> {
+async function saveBooking(payload: NormalizedBookingPayload, auth: AuthContext): Promise<SaveBookingResult> {
   const supabase = getSupabase(auth.token);
   if (!supabase) throw new Error("Supabase saknas.");
-
   const size = Number.parseInt(payload.size, 10);
   const sizeSqm = Number.isFinite(size) ? size : null;
 
@@ -144,6 +172,14 @@ async function saveBooking(payload: Required<BookingPayload>, auth: AuthContext)
   if (lookupError) throw new Error(`Kunde inte kontrollera tidigare bokning: ${lookupError.message}`);
   if (existing?.id) return { id: existing.id as string, duplicate: true };
 
+  const notesWithRut = [
+    payload.notes || "",
+    "",
+    "--- Kundtyp & RUT ---",
+    `Kundtyp: ${payload.customerType}`,
+    `RUT önskas: ${payload.rutRequested ? "Ja" : "Nej"}`
+  ].join("\n").trim();
+
   const { data, error } = await supabase.from("bookings").insert({
     user_id: auth.user.id,
     service: payload.service,
@@ -156,7 +192,7 @@ async function saveBooking(payload: Required<BookingPayload>, auth: AuthContext)
     customer_name: payload.name,
     customer_email: payload.email,
     customer_phone: payload.phone || null,
-    notes: payload.notes || null,
+    notes: notesWithRut || null,
     status: "new"
   }).select("id").single();
 
@@ -171,13 +207,7 @@ async function sendEmail(params: { apiKey: string; from: string; to: string; rep
   return fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: { Authorization: `Bearer ${params.apiKey}`, "Content-Type": "application/json" },
-    body: JSON.stringify({
-      from: params.from,
-      to: [params.to],
-      reply_to: params.replyTo,
-      subject: params.subject,
-      text: params.text
-    })
+    body: JSON.stringify({ from: params.from, to: [params.to], reply_to: params.replyTo, subject: params.subject, text: params.text })
   });
 }
 
@@ -188,13 +218,13 @@ function wait(ms: number) {
 export async function POST(request: Request) {
   try {
     const auth = await getAuthContext(request);
-    if (!auth) {
-      return NextResponse.json({ ok: false, message: "Du behöver logga in för att skicka en bokningsförfrågan." }, { status: 401 });
-    }
+    if (!auth) return NextResponse.json({ ok: false, message: "Du behöver logga in för att skicka en bokningsförfrågan." }, { status: 401 });
 
     const json = (await request.json()) as BookingPayload;
-    const payload = {
-      service: sanitize(json.service),
+    const customerType = normalizeCustomerType(json.customerType);
+    const service = sanitize(json.service);
+    const payload: NormalizedBookingPayload = {
+      service,
       area: sanitize(json.area),
       address: sanitize(json.address),
       size: sanitize(json.size),
@@ -204,27 +234,18 @@ export async function POST(request: Request) {
       name: sanitize(json.name),
       email: sanitize(json.email),
       phone: sanitize(json.phone),
-      notes: sanitize(json.notes)
-    } satisfies Required<BookingPayload>;
+      notes: sanitize(json.notes),
+      customerType,
+      rutRequested: normalizeRutRequested(json.rutRequested, customerType, service)
+    };
 
-    const missing = required.filter((key) => !payload[key]);
-    if (missing.length) {
-      return NextResponse.json({ ok: false, message: `Missing required fields: ${missing.join(", ")}` }, { status: 400 });
-    }
-
-    if (!/^\S+@\S+\.\S+$/.test(payload.email)) {
-      return NextResponse.json({ ok: false, message: "Invalid email address." }, { status: 400 });
-    }
-
-    if (auth.user.email && payload.email.toLowerCase() !== auth.user.email.toLowerCase()) {
-      return NextResponse.json({ ok: false, message: "Bokningens e-post måste matcha ditt inloggade konto." }, { status: 403 });
-    }
+    const missing = required.filter((key) => !payload[key as keyof NormalizedBookingPayload]);
+    if (missing.length) return NextResponse.json({ ok: false, message: `Missing required fields: ${missing.join(", ")}` }, { status: 400 });
+    if (!/^\S+@\S+\.\S+$/.test(payload.email)) return NextResponse.json({ ok: false, message: "Invalid email address." }, { status: 400 });
+    if (auth.user.email && payload.email.toLowerCase() !== auth.user.email.toLowerCase()) return NextResponse.json({ ok: false, message: "Bokningens e-post måste matcha ditt inloggade konto." }, { status: 403 });
 
     const booking = await saveBooking(payload, auth);
-
-    if (booking.duplicate) {
-      return NextResponse.json({ ok: false, duplicate: true, bookingId: booking.id, message: "Den här bokningen finns redan. Ändra datum, tid eller uppgifter om du vill skapa en ny bokning." }, { status: 409 });
-    }
+    if (booking.duplicate) return NextResponse.json({ ok: false, duplicate: true, bookingId: booking.id, message: "Den här bokningen finns redan. Ändra datum, tid eller uppgifter om du vill skapa en ny bokning." }, { status: 409 });
 
     const resendApiKey = process.env.RESEND_API_KEY;
     const toEmail = process.env.BOOKING_TO_EMAIL || "hej@iboren.se";
@@ -233,46 +254,17 @@ export async function POST(request: Request) {
     const customerText = buildCustomerText(payload, booking.id);
 
     if (resendApiKey) {
-      const adminEmail = sendEmail({
-        apiKey: resendApiKey,
-        from: fromEmail,
-        to: toEmail,
-        replyTo: payload.email,
-        subject: `New Iboren booking: ${payload.service} · ${payload.area}`,
-        text: adminText
-      });
-
-      const customerEmail = sendEmail({
-        apiKey: resendApiKey,
-        from: fromEmail,
-        to: payload.email,
-        replyTo: toEmail,
-        subject: `Iboren har tagit emot din bokning · ${payload.service}`,
-        text: customerText
-      });
-
-      const emailResult = await Promise.race([
-        Promise.allSettled([adminEmail, customerEmail]),
-        wait(EMAIL_WAIT_LIMIT_MS)
-      ]);
-
-      if (emailResult === "timeout") {
-        console.warn("IBOREN_BOOKING_EMAIL_WAIT_TIMEOUT", { bookingId: booking.id });
-      }
-
-      return NextResponse.json({
-        ok: true,
-        bookingId: booking.id,
-        message: "Tack! Din bokningsförfrågan är sparad. Iboren återkommer så snart som möjligt."
-      });
+      const adminEmail = sendEmail({ apiKey: resendApiKey, from: fromEmail, to: toEmail, replyTo: payload.email, subject: `New Iboren booking: ${payload.service} · ${payload.area}`, text: adminText });
+      const customerEmail = sendEmail({ apiKey: resendApiKey, from: fromEmail, to: payload.email, replyTo: toEmail, subject: `Iboren har tagit emot din bokning · ${payload.service}`, text: customerText });
+      const emailResult = await Promise.race([Promise.allSettled([adminEmail, customerEmail]), wait(EMAIL_WAIT_LIMIT_MS)]);
+      if (emailResult === "timeout") console.warn("IBOREN_BOOKING_EMAIL_WAIT_TIMEOUT", { bookingId: booking.id });
+      return NextResponse.json({ ok: true, bookingId: booking.id, message: "Tack! Din bokningsförfrågan är sparad. Iboren återkommer så snart som möjligt." });
     }
 
     console.info("IBOREN_BOOKING_REQUEST", adminText);
     return NextResponse.json({ ok: true, bookingId: booking.id, message: "Bokningen är sparad. Demo-läge: lägg till RESEND_API_KEY i Vercel för riktig e-post." });
   } catch (error) {
-    if (error instanceof DuplicateBookingError) {
-      return NextResponse.json({ ok: false, duplicate: true, message: error.message }, { status: 409 });
-    }
+    if (error instanceof DuplicateBookingError) return NextResponse.json({ ok: false, duplicate: true, message: error.message }, { status: 409 });
     return NextResponse.json({ ok: false, message: error instanceof Error ? error.message : "Invalid request." }, { status: 400 });
   }
 }
