@@ -47,6 +47,13 @@ function getSubmitButton(form: HTMLFormElement) {
   }) || null;
 }
 
+function isButtonLoading(button: HTMLButtonElement | null) {
+  if (!button) return false;
+  const text = (button.textContent || "").toLowerCase();
+  const hasSpinner = Boolean(button.querySelector("svg.animate-spin"));
+  return hasSpinner || text.includes("skickar");
+}
+
 function ensureSuccessMessage(form: HTMLFormElement) {
   const messages = Array.from(form.querySelectorAll("p"));
   const existingSuccess = messages.find((node) => isBookingSuccessText(node.textContent || ""));
@@ -83,18 +90,16 @@ function enhanceBookingSuccess() {
   if (!form) return;
 
   const submitButton = getSubmitButton(form);
-  const buttonText = (submitButton?.textContent || "").toLowerCase();
 
   const messages = Array.from(form.querySelectorAll("p"));
   const successMessage = messages.find((node) => isBookingSuccessText(node.textContent || ""));
   if (successMessage) lockFormAsSuccess(form);
 
-  if (buttonText.includes("skickar") && !fallbackTimers.has(form)) {
+  if (isButtonLoading(submitButton) && !fallbackTimers.has(form)) {
     const timer = window.setTimeout(() => {
       fallbackTimers.delete(form);
       const latestButton = getSubmitButton(form);
-      const latestText = (latestButton?.textContent || "").toLowerCase();
-      if (latestText.includes("skickar")) lockFormAsSuccess(form);
+      if (isButtonLoading(latestButton)) lockFormAsSuccess(form);
     }, 7000);
     fallbackTimers.set(form, timer);
   }
