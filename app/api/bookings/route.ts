@@ -167,17 +167,25 @@ async function saveBooking(payload: Required<BookingPayload>, auth: AuthContext)
 }
 
 async function sendEmail(params: { apiKey: string; from: string; to: string; replyTo?: string; subject: string; text: string }) {
-  return fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: { Authorization: `Bearer ${params.apiKey}`, "Content-Type": "application/json" },
-    body: JSON.stringify({
-      from: params.from,
-      to: [params.to],
-      reply_to: params.replyTo,
-      subject: params.subject,
-      text: params.text
-    })
-  });
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 6000);
+
+  try {
+    return await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      signal: controller.signal,
+      headers: { Authorization: `Bearer ${params.apiKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        from: params.from,
+        to: [params.to],
+        reply_to: params.replyTo,
+        subject: params.subject,
+        text: params.text
+      })
+    });
+  } finally {
+    clearTimeout(timeout);
+  }
 }
 
 export async function POST(request: Request) {
@@ -228,39 +236,42 @@ export async function POST(request: Request) {
     const customerText = buildCustomerText(payload, booking.id);
 
     if (resendApiKey) {
-      const adminResponse = await sendEmail({
-        apiKey: resendApiKey,
-        from: fromEmail,
-        to: toEmail,
-        replyTo: payload.email,
-        subject: `New Iboren booking: ${payload.service} · ${payload.area}`,
-        text: adminText
-      });
+      let adminOk = false;
 
-      const customerResponse = await sendEmail({
+      try {
+        const adminResponse = await sendEmail({
+          apiKey: resendApiKey,
+          from: fromEmail,
+          to: toEmail,
+          replyTo: payload.email,
+          subject: `New Iboren booking: ${payload.service} · ${payload.area}`,
+          text: adminText
+        });
+        adminOk = adminResponse.ok;
+      } catch (error) {
+        console.error("IBOREN_ADMIN_EMAIL_FAILED", { bookingId: booking.id, error });
+      }
+
+      sendEmail({
         apiKey: resendApiKey,
         from: fromEmail,
         to: payload.email,
         replyTo: toEmail,
         subject: `Iboren har tagit emot din bokning · ${payload.service}`,
         text: customerText
-      });
+      }).catch((error) => console.error("IBOREN_CUSTOMER_EMAIL_FAILED", { bookingId: booking.id, error }));
 
-      if (!adminResponse.ok && !customerResponse.ok) {
-        return NextResponse.json({ ok: true, message: "Bokningen är sparad, men e-post kunde inte skickas. Kontrollera Resend-inställningar." }, { status: 202 });
-      }
-      if (!customerResponse.ok) {
-        return NextResponse.json({ ok: true, message: "Bokningen är sparad och skickad till Iboren, men bekräftelsemejlet till kunden kunde inte skickas." }, { status: 202 });
-      }
-      if (!adminResponse.ok) {
-        return NextResponse.json({ ok: true, message: "Bokningen är sparad och kunden har fått bekräftelse, men mejlet till Iboren kunde inte skickas." }, { status: 202 });
-      }
-
-      return NextResponse.json({ ok: true, message: "Tack! Din bokningsförfrågan är sparad. En bekräftelse har skickats till din e-post." });
+      return NextResponse.json({
+        ok: true,
+        bookingId: booking.id,
+        message: adminOk
+          ? "Tack! Din bokningsförfrågan är sparad. Iboren återkommer så snart som möjligt."
+          : "Bokningen är sparad. Om bekräftelsemejl saknas följer Iboren upp förfrågan."
+      }, { status: adminOk ? 200 : 202 });
     }
 
     console.info("IBOREN_BOOKING_REQUEST", adminText);
-    return NextResponse.json({ ok: true, message: "Bokningen är sparad. Demo-läge: lägg till RESEND_API_KEY i Vercel för riktig e-post." });
+    return NextResponse.json({ ok: true, bookingId: booking.id, message: "Bokningen är sparad. Demo-läge: lägg till RESEND_API_KEY i Vercel för riktig e-post." });
   } catch (error) {
     if (error instanceof DuplicateBookingError) {
       return NextResponse.json({ ok: false, duplicate: true, message: error.message }, { status: 409 });
