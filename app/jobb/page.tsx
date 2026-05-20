@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { FormEvent, useState } from "react";
-import { BriefcaseBusiness, CheckCircle2, Loader2, Send } from "lucide-react";
+import { BriefcaseBusiness, CheckCircle2, Loader2, Send, Upload } from "lucide-react";
 
 const experienceOptions = ["Ingen erfarenhet", "Mindre än 1 år", "1–3 år", "Mer än 3 år"];
 const availabilityOptions = ["Vardagar dagtid", "Kvällar", "Helger", "Flexibelt", "Deltid", "Heltid"];
@@ -15,23 +15,22 @@ export default function JobbPage() {
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    const form = event.currentTarget;
+    const formData = new FormData(form);
+
     setStatus("loading");
     setMessage("");
-
-    const formData = new FormData(event.currentTarget);
-    const payload = Object.fromEntries(formData.entries());
 
     try {
       const response = await fetch("/api/job-applications", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
+        body: formData
       });
       const result = await response.json();
       if (!response.ok || !result.ok) throw new Error(result.message || "Kunde inte skicka ansökan.");
       setStatus("success");
       setMessage(result.message || "Tack! Din ansökan är skickad.");
-      event.currentTarget.reset();
+      form.reset();
     } catch (error) {
       setStatus("error");
       setMessage(error instanceof Error ? error.message : "Kunde inte skicka ansökan just nu.");
@@ -49,7 +48,7 @@ export default function JobbPage() {
             <h1 className="display mt-4 text-6xl font-bold leading-[.88] text-burgundy md:text-8xl">Jobba med Iboren</h1>
             <p className="mt-7 max-w-2xl text-lg leading-8 text-ink/75 md:text-xl">Skicka en intresseanmälan om du vill arbeta med hemstädning, flyttstädning, kontorsstädning eller fönsterputs.</p>
             <div className="mt-8 rounded-2xl border border-burgundy/10 bg-porcelain p-5 text-sm leading-7 text-ink/75">
-              <p className="flex gap-3"><BriefcaseBusiness className="mt-1 h-5 w-5 shrink-0 text-burgundy" /> Berätta om din erfarenhet, vilka tider du kan arbeta och i vilka områden du kan ta uppdrag.</p>
+              <p className="flex gap-3"><BriefcaseBusiness className="mt-1 h-5 w-5 shrink-0 text-burgundy" /> Berätta om din erfarenhet, vilka tider du kan arbeta och i vilka områden du kan ta uppdrag. Du kan bifoga CV som PDF, DOC, DOCX eller TXT.</p>
             </div>
           </div>
 
@@ -66,7 +65,12 @@ export default function JobbPage() {
               <label className="block"><span className="mb-2 block text-sm font-bold">När kan du arbeta?</span><select name="availability" className="w-full rounded-2xl border border-burgundy/10 bg-cream px-4 py-4">{availabilityOptions.map((item) => <option key={item}>{item}</option>)}</select></label>
               <Field label="Språk" name="languages" placeholder="Svenska, engelska, persiska..." />
               <label className="block"><span className="mb-2 block text-sm font-bold">Kort presentation</span><textarea name="message" className="min-h-36 w-full rounded-2xl border border-burgundy/10 bg-cream px-4 py-4" placeholder="Erfarenhet, tidigare jobb, referenser och tider du kan arbeta..." /></label>
-              <Field label="CV eller profillänk" name="resume" placeholder="LinkedIn, Google Drive eller skriv att CV skickas via e-post" />
+              <Field label="CV eller profillänk" name="resume" placeholder="LinkedIn, Google Drive eller annan profillänk" />
+              <label className="block rounded-2xl border border-dashed border-burgundy/25 bg-cream p-4">
+                <span className="mb-2 flex items-center gap-2 text-sm font-bold"><Upload className="h-4 w-4 text-burgundy" /> Ladda upp CV</span>
+                <input name="cv" type="file" accept=".pdf,.doc,.docx,.txt,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain" className="w-full text-sm file:mr-4 file:rounded-full file:border-0 file:bg-burgundy file:px-4 file:py-2 file:text-sm file:font-bold file:text-porcelain" />
+                <span className="mt-2 block text-xs leading-5 text-ink/60">Max 5 MB. PDF, DOC, DOCX eller TXT.</span>
+              </label>
               <button disabled={status === "loading"} className="inline-flex items-center justify-center rounded-full bg-burgundy px-5 py-4 text-sm font-black uppercase tracking-[.12em] text-porcelain disabled:opacity-70">{status === "loading" ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />} Skicka ansökan</button>
               {message && <p className={`rounded-2xl p-4 text-sm font-bold ${status === "success" ? "bg-burgundy/10 text-burgundy" : "bg-red-100 text-red-800"}`}>{message}</p>}
             </div>
