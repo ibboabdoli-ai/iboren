@@ -6,6 +6,7 @@ import { BriefcaseBusiness, CheckCircle2, Loader2, Send, Upload } from "lucide-r
 
 const experienceOptions = ["Ingen erfarenhet", "Mindre än 1 år", "1–3 år", "Mer än 3 år"];
 const availabilityOptions = ["Vardagar dagtid", "Kvällar", "Helger", "Flexibelt", "Deltid", "Heltid"];
+const yesNoOptions = ["Ja", "Nej"];
 
 type Status = "idle" | "loading" | "success" | "error";
 
@@ -30,7 +31,7 @@ export default function JobbPage() {
       if (!response.ok || !result.ok) throw new Error(result.message || "Kunde inte skicka ansökan.");
       setStatus("success");
       setMessage(result.message || "Tack! Din ansökan är skickad.");
-      form.reset();
+      form?.reset();
     } catch (error) {
       setStatus("error");
       setMessage(error instanceof Error ? error.message : "Kunde inte skicka ansökan just nu.");
@@ -45,8 +46,8 @@ export default function JobbPage() {
           <div>
             <Link href="/" className="mb-10 inline-flex text-sm font-bold text-burgundy">← Tillbaka</Link>
             <p className="eyebrow">Karriär</p>
-            <h1 className="display mt-4 text-6xl font-bold leading-[.88] text-burgundy md:text-8xl">Jobba med Iboren</h1>
-            <p className="mt-7 max-w-2xl text-lg leading-8 text-ink/75 md:text-xl">Skicka en intresseanmälan om du vill arbeta med hemstädning, flyttstädning, kontorsstädning eller fönsterputs.</p>
+            <h1 className="display mt-4 text-6xl font-bold leading-[.88] text-burgundy md:text-8xl">Jobba som städare hos Iboren</h1>
+            <p className="mt-7 max-w-2xl text-lg leading-8 text-ink/75 md:text-xl">Vi söker noggranna och pålitliga personer som vill arbeta med hemstädning, flyttstädning och kontorsstädning i Södertälje och Stockholm.</p>
             <div className="mt-8 rounded-2xl border border-burgundy/10 bg-porcelain p-5 text-sm leading-7 text-ink/75">
               <p className="flex gap-3"><BriefcaseBusiness className="mt-1 h-5 w-5 shrink-0 text-burgundy" /> Berätta om din erfarenhet, vilka tider du kan arbeta och i vilka områden du kan ta uppdrag. Du kan bifoga CV som PDF, DOC, DOCX eller TXT.</p>
             </div>
@@ -61,9 +62,23 @@ export default function JobbPage() {
                 <Field label="Telefon" name="phone" required />
                 <Field label="Stad / område" name="area" placeholder="Södertälje, Stockholm..." required />
               </div>
-              <label className="block"><span className="mb-2 block text-sm font-bold">Erfarenhet</span><select name="experience" className="w-full rounded-2xl border border-burgundy/10 bg-cream px-4 py-4">{experienceOptions.map((item) => <option key={item}>{item}</option>)}</select></label>
-              <label className="block"><span className="mb-2 block text-sm font-bold">När kan du arbeta?</span><select name="availability" className="w-full rounded-2xl border border-burgundy/10 bg-cream px-4 py-4">{availabilityOptions.map((item) => <option key={item}>{item}</option>)}</select></label>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Select label="Erfarenhet" name="experience" options={experienceOptions} />
+                <Select label="När kan du arbeta?" name="availability" options={availabilityOptions} />
+                <Select label="Körkort" name="drivingLicense" options={yesNoOptions} />
+                <Select label="Tillgång till bil" name="hasCar" options={yesNoOptions} />
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Select label="Kan arbeta i Södertälje?" name="canWorkSodertalje" options={yesNoOptions} />
+                <Select label="Kan arbeta i Stockholm?" name="canWorkStockholm" options={yesNoOptions} />
+              </div>
+
               <Field label="Språk" name="languages" placeholder="Svenska, engelska, persiska..." />
+              <Field label="Tillgängliga dagar" name="availableDays" placeholder="Måndag–fredag, helger..." />
+              <Field label="Tillgängliga tider" name="availableTimes" placeholder="08:00–16:00, kvällar..." />
+
               <label className="block"><span className="mb-2 block text-sm font-bold">Kort presentation</span><textarea name="message" className="min-h-36 w-full rounded-2xl border border-burgundy/10 bg-cream px-4 py-4" placeholder="Erfarenhet, tidigare jobb, referenser och tider du kan arbeta..." /></label>
               <Field label="CV eller profillänk" name="resume" placeholder="LinkedIn, Google Drive eller annan profillänk" />
               <label className="block rounded-2xl border border-dashed border-burgundy/25 bg-cream p-4">
@@ -85,4 +100,8 @@ export default function JobbPage() {
 
 function Field({ label, name, type = "text", required = false, placeholder }: { label: string; name: string; type?: string; required?: boolean; placeholder?: string }) {
   return <label className="block"><span className="mb-2 block text-sm font-bold">{label}</span><input name={name} type={type} required={required} placeholder={placeholder} className="w-full rounded-2xl border border-burgundy/10 bg-cream px-4 py-4" /></label>;
+}
+
+function Select({ label, name, options }: { label: string; name: string; options: string[] }) {
+  return <label className="block"><span className="mb-2 block text-sm font-bold">{label}</span><select name={name} className="w-full rounded-2xl border border-burgundy/10 bg-cream px-4 py-4">{options.map((item) => <option key={item} value={item}>{item}</option>)}</select></label>;
 }
