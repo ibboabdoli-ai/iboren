@@ -3,8 +3,8 @@ import Link from "next/link";
 import { ArrowRight, Building2, CheckCircle2, Home, Languages, Sparkles, Truck } from "lucide-react";
 
 export const metadata: Metadata = {
-  title: "Iboren – Cleaning in Södertälje and Stockholm",
-  description: "Book home cleaning, move-out cleaning, office cleaning and window cleaning in Södertälje and Stockholm with Iboren.",
+  title: "Iboren – Cleaning request in Södertälje and Stockholm",
+  description: "Send a cleaning request for home cleaning, move-out cleaning, office cleaning and window cleaning in Södertälje and Stockholm with Iboren.",
   alternates: { canonical: "https://iboren.se/en", languages: { sv: "https://iboren.se/", en: "https://iboren.se/en" } }
 };
 
@@ -12,6 +12,13 @@ const services = [
   { icon: <Home />, title: "Home cleaning", text: "For one-time or recurring cleaning at home." },
   { icon: <Truck />, title: "Move-out cleaning", text: "For moving, handover and structured cleaning requests." },
   { icon: <Building2 />, title: "Office cleaning", text: "For offices, workplaces and recurring business cleaning." }
+];
+
+const requestSteps = [
+  "Choose service",
+  "Enter address and size",
+  "Select preferred date and time window",
+  "Iboren checks availability and gets back to you"
 ];
 
 export default function EnglishPage() {
@@ -25,8 +32,9 @@ export default function EnglishPage() {
             <p className="eyebrow">Iboren cleaning</p>
             <h1 className="display mt-4 text-6xl font-bold leading-[.88] text-burgundy md:text-8xl">Cleaning in Södertälje and Stockholm</h1>
             <p className="mt-7 max-w-2xl text-lg leading-8 text-ink/75 md:text-xl">Iboren helps customers send clear booking requests for home cleaning, move-out cleaning, office cleaning and window cleaning.</p>
+            <p className="mt-5 max-w-2xl rounded-2xl border border-burgundy/10 bg-porcelain p-4 text-sm leading-7 text-ink/70">Choose your preferred date and time. We check availability and get back to you with confirmation.</p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-              <Link href="/#booking" className="btn-primary">Start booking <ArrowRight size={18} /></Link>
+              <Link href="/#booking" className="btn-primary">Send request <ArrowRight size={18} /></Link>
               <Link href="/priser" className="btn-secondary">Price calculator</Link>
             </div>
           </div>
@@ -34,7 +42,7 @@ export default function EnglishPage() {
             <div className="mb-12 grid h-16 w-16 place-items-center rounded-full bg-burgundy text-porcelain"><Languages size={30} /></div>
             <h2 className="display text-4xl font-bold text-burgundy">A clearer first step.</h2>
             <div className="mt-7 grid gap-4">
-              {["Choose service", "Enter address and size", "Select date and time window", "Send your request"].map((item) => <p key={item} className="flex gap-3 text-ink/75"><CheckCircle2 className="mt-1 h-5 w-5 shrink-0 text-burgundy" /> {item}</p>)}
+              {requestSteps.map((item) => <p key={item} className="flex gap-3 text-ink/75"><CheckCircle2 className="mt-1 h-5 w-5 shrink-0 text-burgundy" /> {item}</p>)}
             </div>
           </aside>
         </div>
@@ -54,8 +62,9 @@ export default function EnglishPage() {
         <div className="luxe-container max-w-4xl rounded-[2rem] bg-burgundy p-8 text-porcelain shadow-luxe">
           <p className="text-xs font-black uppercase tracking-[.28em] text-gold">Iboren</p>
           <h2 className="display mt-3 text-4xl font-bold md:text-6xl">Ready to send a request?</h2>
-          <p className="mt-5 max-w-2xl leading-8 text-porcelain/80">Fill in service, address, size, date and contact details. Iboren will get back to you.</p>
-          <div className="mt-8 flex flex-col gap-3 sm:flex-row"><Link href="/#booking" className="inline-flex rounded-full bg-gold px-5 py-3 text-sm font-black uppercase tracking-[.12em] text-ink">Book cleaning</Link><Link href="/jobb" className="inline-flex rounded-full border border-gold/35 px-5 py-3 text-sm font-bold text-gold">Work with Iboren</Link></div>
+          <p className="mt-5 max-w-2xl leading-8 text-porcelain/80">Fill in service, address, size, preferred date and contact details. Iboren will check availability and get back to you.</p>
+          <p className="mt-4 text-sm leading-7 text-porcelain/70">RUT deductions may apply according to Skatteverket rules when the conditions are fulfilled.</p>
+          <div className="mt-8 flex flex-col gap-3 sm:flex-row"><Link href="/#booking" className="inline-flex rounded-full bg-gold px-5 py-3 text-sm font-black uppercase tracking-[.12em] text-ink">Send request</Link><Link href="/jobb" className="inline-flex rounded-full border border-gold/35 px-5 py-3 text-sm font-bold text-gold">Work with Iboren</Link></div>
         </div>
       </section>
     </main>
