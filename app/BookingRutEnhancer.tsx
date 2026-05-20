@@ -43,7 +43,7 @@ function BookingRutPanel() {
       {rutAllowed ? (
         <label className="mt-3 flex items-start gap-3 rounded-2xl border border-porcelain/10 bg-porcelain/6 p-3 text-sm leading-6 text-porcelain/82">
           <input type="checkbox" checked={rutRequested} onChange={(event) => setRutRequested(event.target.checked)} className="mt-1 h-5 w-5" />
-          <span>Jag vill använda RUT-avdrag och intygar att jag uppfyller Skatteverkets villkor.<span className="mt-1 block text-xs text-porcelain/58">Om RUT inte godkänns kan resterande belopp faktureras.</span></span>
+          <span>Jag vill att RUT-avdrag prövas enligt Skatteverkets regler.<span className="mt-1 block text-xs text-porcelain/58">RUT-avdrag kan tillämpas när villkoren är uppfyllda. Om RUT inte godkänns kan resterande belopp faktureras.</span></span>
         </label>
       ) : (
         <p className="mt-3 rounded-2xl border border-porcelain/10 bg-porcelain/6 p-3 text-sm leading-6 text-porcelain/70">RUT gäller inte för företagsbokningar. Priset hanteras som företagspris/offert.</p>
