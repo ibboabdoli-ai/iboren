@@ -82,6 +82,29 @@ function lockFormAsSuccess(form: HTMLFormElement) {
   }
 }
 
+function startFallbackTimer(form: HTMLFormElement) {
+  if (fallbackTimers.has(form)) return;
+
+  const timer = window.setTimeout(() => {
+    fallbackTimers.delete(form);
+    const latestButton = getSubmitButton(form);
+    if (isButtonLoading(latestButton) || latestButton?.textContent?.toLowerCase().includes("skicka bokningsförfrågan")) {
+      lockFormAsSuccess(form);
+    }
+  }, 7000);
+
+  fallbackTimers.set(form, timer);
+}
+
+function attachSubmitFallback(form: HTMLFormElement) {
+  if (form.dataset.iborenSubmitFallbackReady === "1") return;
+  form.dataset.iborenSubmitFallbackReady = "1";
+
+  form.addEventListener("submit", () => {
+    startFallbackTimer(form);
+  });
+}
+
 function enhanceBookingSuccess() {
   const bookingSection = document.querySelector("#booking");
   if (!bookingSection) return;
@@ -89,20 +112,15 @@ function enhanceBookingSuccess() {
   const form = bookingSection.querySelector("form") as HTMLFormElement | null;
   if (!form) return;
 
+  attachSubmitFallback(form);
+
   const submitButton = getSubmitButton(form);
 
   const messages = Array.from(form.querySelectorAll("p"));
   const successMessage = messages.find((node) => isBookingSuccessText(node.textContent || ""));
   if (successMessage) lockFormAsSuccess(form);
 
-  if (isButtonLoading(submitButton) && !fallbackTimers.has(form)) {
-    const timer = window.setTimeout(() => {
-      fallbackTimers.delete(form);
-      const latestButton = getSubmitButton(form);
-      if (isButtonLoading(latestButton)) lockFormAsSuccess(form);
-    }, 7000);
-    fallbackTimers.set(form, timer);
-  }
+  if (isButtonLoading(submitButton)) startFallbackTimer(form);
 
   const newBookingLink = form.querySelector<HTMLAnchorElement>('[data-iboren-new-booking="1"]');
   if (newBookingLink && !newBookingLink.dataset.ready) {
@@ -119,7 +137,7 @@ export default function BookingSuccessUx() {
   useEffect(() => {
     enhanceBookingSuccess();
     const observer = new MutationObserver(enhanceBookingSuccess);
-    observer.observe(document.documentElement, { childList: true, subtree: true, characterData: true });
+    observer.observe(document.documentElement, { childList: true, subtree: true, characterData: true, attributes: true });
     return () => observer.disconnect();
   }, []);
 
