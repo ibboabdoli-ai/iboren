@@ -48,6 +48,9 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="sv">
+      <head>
+        <link rel="preload" as="image" href="/cinematic/03-home-after.webp" fetchPriority="high" />
+      </head>
       <body>
         <StructuredData />
         {children}
