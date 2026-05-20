@@ -68,7 +68,7 @@ function CinematicSection() {
       const rect = section.getBoundingClientRect();
       const scrollable = Math.max(1, section.offsetHeight - window.innerHeight);
       const nextProgress = clamp(-rect.top / scrollable, 0, 1);
-      const nextIndex = clamp(Math.floor(nextProgress * scenes.length), 0, scenes.length - 1);
+      const nextIndex = clamp(Math.round(nextProgress * (scenes.length - 1)), 0, scenes.length - 1);
 
       setProgress(nextProgress);
       setActiveIndex(nextIndex);
@@ -93,7 +93,13 @@ function CinematicSection() {
   const sceneProgress = (activeIndex + 1) / scenes.length;
 
   return (
-    <section ref={sectionRef} id="cinematic-scroll" className="relative h-[620vh] bg-night text-porcelain" aria-label="Cinematic före och efter">
+    <section
+      ref={sectionRef}
+      id="iboren-story-scroll"
+      className="relative bg-night text-porcelain"
+      style={{ height: "620vh", minHeight: "620vh", overflow: "visible" }}
+      aria-label="Cinematic före och efter"
+    >
       <div className="sticky top-0 h-screen min-h-screen overflow-hidden bg-night">
         {scenes.map((scene, index) => {
           const active = index === activeIndex;
@@ -155,7 +161,7 @@ function CinematicSection() {
 
 export default function CinematicPortal() {
   useEffect(() => {
-    const original = document.querySelector<HTMLElement>("#cinematic-scroll");
+    const original = document.querySelector<HTMLElement>("main > #cinematic-scroll");
     if (!original || document.querySelector("#iboren-cinematic-portal")) return;
 
     const host = document.createElement("div");
