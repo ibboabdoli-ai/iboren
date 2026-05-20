@@ -2,8 +2,9 @@ import { CheckCircle2, Info } from "lucide-react";
 
 const rutPoints = [
   "RUT-avdrag gäller normalt för hushållsnära tjänster som hemstädning, flyttstädning, storstädning och fönsterputs.",
-  "Som privatkund betalar du normalt priset efter RUT direkt på fakturan.",
-  "Iboren hanterar ansökan om RUT-utbetalning hos Skatteverket efter att arbetet är utfört och fakturan är betald.",
+  "Om kunden har rätt till RUT betalar kunden normalt den reducerade delen av arbetskostnaden direkt på fakturan.",
+  "Iboren ansöker sedan om resterande del från Skatteverket efter att arbetet är utfört och fakturan är betald.",
+  "Exempel: om arbetskostnaden är 2 000 kr betalar kunden normalt 1 000 kr efter RUT och Iboren ansöker om resterande 1 000 kr från Skatteverket.",
   "RUT gäller arbetskostnaden. Material, resekostnader och vissa tillägg kan hanteras separat.",
   "RUT gäller inte kontorsstädning för företag. Där visas priset som företagspris/offert."
 ];
@@ -21,7 +22,7 @@ export default function RutInfo() {
         <div className="rounded-[2rem] border border-burgundy/10 bg-porcelain p-6 shadow-soft md:p-8">
           <div className="mb-6 flex items-start gap-3 rounded-2xl bg-cream p-4 text-sm leading-7 text-ink/72">
             <Info className="mt-1 h-5 w-5 shrink-0 text-burgundy" />
-            <p>RUT är en skattereduktion. Det betyder att avdraget normalt dras direkt från arbetskostnaden på fakturan, och kunden betalar den reducerade delen.</p>
+            <p>RUT är en skattereduktion på arbetskostnaden. Det betyder att kunden normalt betalar priset efter RUT, medan Iboren ansöker om resterande del från Skatteverket.</p>
           </div>
           <div className="grid gap-3">
             {rutPoints.map((point) => (
