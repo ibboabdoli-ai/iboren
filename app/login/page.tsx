@@ -11,6 +11,8 @@ const providers = [
   { id: "azure", label: "Fortsätt med Microsoft" }
 ] as const;
 
+type ProviderId = (typeof providers)[number]["id"];
+
 function getSupabase() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -29,7 +31,7 @@ export default function LoginPage() {
   const [loading, setLoading] = useState<string | null>(null);
   const [message, setMessage] = useState("");
 
-  async function signIn(provider: "google" | "linkedin_oidc" | "azure") {
+  async function signIn(provider: ProviderId) {
     const supabase = getSupabase();
     if (!supabase) {
       setMessage("Supabase saknas. Lägg till NEXT_PUBLIC_SUPABASE_URL och NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY i Vercel.");
@@ -42,7 +44,10 @@ export default function LoginPage() {
     const redirectBase = window.location.origin;
     const { error } = await supabase.auth.signInWithOAuth({
       provider,
-      options: { redirectTo: `${redirectBase}/profile` }
+      options: {
+        redirectTo: `${redirectBase}/profile`,
+        ...(provider === "azure" ? { scopes: "email" } : {})
+      }
     });
 
     if (error) {
