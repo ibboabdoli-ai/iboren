@@ -41,7 +41,7 @@ export default function EnglishPricesPage() {
             <div className="mt-6 grid gap-3">
               {notes.map((item) => <p key={item} className="flex gap-3 rounded-2xl bg-cream p-4 text-sm leading-7 text-ink/75"><CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-burgundy" /> {item}</p>)}
             </div>
-            <div className="mt-7 flex flex-col gap-3 sm:flex-row"><Link href="/priser" className="btn-primary">Open calculator <ArrowRight size={18} /></Link><Link href="/#booking" className="btn-secondary">Send request</Link></div>
+            <div className="mt-7 flex flex-col gap-3 sm:flex-row"><Link href="/en#booking" className="btn-primary">Send request <ArrowRight size={18} /></Link><Link href="/priser" className="btn-secondary">Swedish calculator</Link></div>
           </div>
         </div>
       </section>
