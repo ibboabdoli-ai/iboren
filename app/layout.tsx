@@ -4,6 +4,7 @@ import "./globals.css";
 
 const title = "Iboren – Städning i Södertälje och Stockholm";
 const description = "Boka hemstädning, flyttstädning, kontorsstädning och fönsterputs med Iboren. Enkel bokning, tydliga priser och snabb återkoppling i Södertälje och Stockholm.";
+const previewImage = "/og.svg?v=iboren-clean-2";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://iboren.se"),
@@ -18,17 +19,17 @@ export const metadata: Metadata = {
     siteName: "Iboren",
     locale: "sv_SE",
     type: "website",
-    images: [{ url: "/og.svg", width: 1200, height: 630, alt: "Iboren" }]
+    images: [{ url: previewImage, width: 1200, height: 630, alt: "Iboren" }]
   },
   twitter: {
     card: "summary_large_image",
     title,
     description,
-    images: ["/og.svg"]
+    images: [previewImage]
   },
   alternates: { canonical: "https://iboren.se" },
-  manifest: "/manifest.webmanifest",
-  icons: { icon: "/favicon.svg", apple: "/favicon.svg" }
+  manifest: "/manifest.webmanifest?v=iboren-clean-2",
+  icons: { icon: "/favicon.svg?v=iboren-clean-2", apple: "/favicon.svg?v=iboren-clean-2" }
 };
 
 export const viewport: Viewport = {
