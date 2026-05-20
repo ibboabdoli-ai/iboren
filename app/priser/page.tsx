@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowRight, CheckCircle2, Info } from "lucide-react";
 import PriceCalculator from "../PriceCalculator";
+import RutInfo from "../RutInfo";
 
 export const metadata = {
   title: "Priser städning Södertälje & Stockholm | Iboren",
@@ -52,6 +53,8 @@ export default function PriserPage() {
           <PriceCalculator />
         </div>
       </section>
+
+      <RutInfo />
 
       <section className="bg-porcelain py-16">
         <div className="luxe-container">
