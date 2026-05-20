@@ -1,3 +1,4 @@
+import CinematicPortal from "./CinematicPortal";
 import HeaderLogo from "./HeaderLogo";
 import InternalLinkNormalizer from "./InternalLinkNormalizer";
 import SeoInternalLinks from "./SeoInternalLinks";
@@ -7,6 +8,7 @@ export default function Template({ children }: { children: React.ReactNode }) {
     <>
       <InternalLinkNormalizer />
       <HeaderLogo />
+      <CinematicPortal />
       {children}
       <SeoInternalLinks />
     </>
