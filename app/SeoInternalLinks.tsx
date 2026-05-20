@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect } from "react";
+import BookingSubmitController from "./BookingSubmitController";
 
 const hiddenPrefixes = ["/admin", "/profile", "/login"];
 
@@ -253,7 +254,9 @@ export default function SeoInternalLinks() {
   if (hiddenPrefixes.some((prefix) => pathname?.startsWith(prefix))) return null;
 
   return (
-    <section aria-label="Populära städsidor" className="border-t border-gold/10 bg-night py-10 text-porcelain">
+    <>
+      <BookingSubmitController />
+      <section aria-label="Populära städsidor" className="border-t border-gold/10 bg-night py-10 text-porcelain">
       <div className="luxe-container grid gap-8 md:grid-cols-[1fr_1.2fr] md:items-start">
         <div>
           <p className="text-[10px] font-bold uppercase tracking-[.32em] text-gold/70">Lokala städtjänster</p>
@@ -283,6 +286,7 @@ export default function SeoInternalLinks() {
           </div>
         </div>
       </div>
-    </section>
+      </section>
+    </>
   );
 }
