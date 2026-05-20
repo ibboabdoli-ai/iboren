@@ -1,22 +1,15 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 240" role="img" aria-label="Iboren logo">
   <defs>
     <radialGradient id="bg" cx="42%" cy="30%" r="72%">
-      <stop offset="0" stop-color="#1D4D5A"/>
-      <stop offset="0.55" stop-color="#081A22"/>
-      <stop offset="1" stop-color="#02070B"/>
+      <stop offset="0" stop-color="#101513"/>
+      <stop offset="0.58" stop-color="#060807"/>
+      <stop offset="1" stop-color="#020303"/>
     </radialGradient>
-    <linearGradient id="cyan" x1="120" y1="40" x2="560" y2="210">
-      <stop offset="0" stop-color="#FFFFFF"/>
-      <stop offset="0.45" stop-color="#BFEFFF"/>
-      <stop offset="1" stop-color="#44D5E8"/>
-    </linearGradient>
   </defs>
   <rect width="720" height="240" rx="48" fill="url(#bg)"/>
-  <circle cx="140" cy="120" r="78" fill="none" stroke="#44D5E8" stroke-width="4" opacity=".45"/>
-  <circle cx="140" cy="120" r="58" fill="none" stroke="url(#cyan)" stroke-width="5" opacity=".95"/>
-  <path d="M113 82v76" stroke="url(#cyan)" stroke-width="11" stroke-linecap="round"/>
-  <path d="M136 82h25c20 0 32 10 32 25 0 10-5 17-15 22 13 4 21 13 21 25 0 17-14 27-37 27h-26V82z" fill="none" stroke="url(#cyan)" stroke-width="9" stroke-linejoin="round"/>
-  <text x="260" y="126" font-family="Georgia, serif" font-size="72" font-weight="700" fill="url(#cyan)">Iboren</text>
-  <text x="265" y="168" font-family="Arial, sans-serif" font-size="18" font-weight="700" letter-spacing="6" fill="#D8F4FF" opacity=".78">CLEANAI BOOKING</text>
-  <text x="265" y="196" font-family="Arial, sans-serif" font-size="16" fill="#49D8EA" opacity=".82">Smart städbokning med AI i Sverige</text>
+  <circle cx="140" cy="120" r="78" fill="none" stroke="#D4A574" stroke-width="4" opacity=".28"/>
+  <text x="140" y="140" text-anchor="middle" font-family="Georgia, serif" font-size="66" font-weight="700" fill="#D4A574">I</text>
+  <text x="260" y="126" font-family="Georgia, serif" font-size="72" font-weight="700" fill="#FFF8EF">Iboren</text>
+  <text x="265" y="168" font-family="Arial, sans-serif" font-size="18" font-weight="700" letter-spacing="6" fill="#D4A574" opacity=".92">PRIS DIREKT &amp; ENKEL BOKNING</text>
+  <text x="265" y="196" font-family="Arial, sans-serif" font-size="16" fill="#E6D0B0" opacity=".88">Städning i Södertälje och Stockholm</text>
 </svg>
