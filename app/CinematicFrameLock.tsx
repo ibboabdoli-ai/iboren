@@ -38,8 +38,9 @@ export default function CinematicFrameLock() {
   const touchDirection = useRef<1 | -1 | null>(null);
 
   useEffect(() => {
-    const section = document.querySelector<HTMLElement>("main > #cinematic-scroll");
-    if (!section) return;
+    const foundSection = document.querySelector<HTMLElement>("main > #cinematic-scroll");
+    if (!foundSection) return;
+    const section: HTMLElement = foundSection;
 
     section.style.overscrollBehavior = "contain";
 
