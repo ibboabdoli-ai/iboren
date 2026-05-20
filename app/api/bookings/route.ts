@@ -35,6 +35,7 @@ class DuplicateBookingError extends Error {
 }
 
 const required: Array<keyof BookingPayload> = ["service", "area", "address", "size", "date", "name", "email", "phone"];
+const EMAIL_WAIT_LIMIT_MS = 4500;
 
 function sanitize(value: unknown) {
   return String(value ?? "").replace(/[<>]/g, "").trim().slice(0, 3000);
@@ -180,6 +181,10 @@ async function sendEmail(params: { apiKey: string; from: string; to: string; rep
   });
 }
 
+function wait(ms: number) {
+  return new Promise<"timeout">((resolve) => setTimeout(() => resolve("timeout"), ms));
+}
+
 export async function POST(request: Request) {
   try {
     const auth = await getAuthContext(request);
@@ -228,7 +233,7 @@ export async function POST(request: Request) {
     const customerText = buildCustomerText(payload, booking.id);
 
     if (resendApiKey) {
-      const adminResponse = await sendEmail({
+      const adminEmail = sendEmail({
         apiKey: resendApiKey,
         from: fromEmail,
         to: toEmail,
@@ -237,7 +242,7 @@ export async function POST(request: Request) {
         text: adminText
       });
 
-      const customerResponse = await sendEmail({
+      const customerEmail = sendEmail({
         apiKey: resendApiKey,
         from: fromEmail,
         to: payload.email,
@@ -246,21 +251,24 @@ export async function POST(request: Request) {
         text: customerText
       });
 
-      if (!adminResponse.ok && !customerResponse.ok) {
-        return NextResponse.json({ ok: true, message: "Bokningen är sparad, men e-post kunde inte skickas. Kontrollera Resend-inställningar." }, { status: 202 });
-      }
-      if (!customerResponse.ok) {
-        return NextResponse.json({ ok: true, message: "Bokningen är sparad och skickad till Iboren, men bekräftelsemejlet till kunden kunde inte skickas." }, { status: 202 });
-      }
-      if (!adminResponse.ok) {
-        return NextResponse.json({ ok: true, message: "Bokningen är sparad och kunden har fått bekräftelse, men mejlet till Iboren kunde inte skickas." }, { status: 202 });
+      const emailResult = await Promise.race([
+        Promise.allSettled([adminEmail, customerEmail]),
+        wait(EMAIL_WAIT_LIMIT_MS)
+      ]);
+
+      if (emailResult === "timeout") {
+        console.warn("IBOREN_BOOKING_EMAIL_WAIT_TIMEOUT", { bookingId: booking.id });
       }
 
-      return NextResponse.json({ ok: true, message: "Tack! Din bokningsförfrågan är sparad. En bekräftelse har skickats till din e-post." });
+      return NextResponse.json({
+        ok: true,
+        bookingId: booking.id,
+        message: "Tack! Din bokningsförfrågan är sparad. Iboren återkommer så snart som möjligt."
+      });
     }
 
     console.info("IBOREN_BOOKING_REQUEST", adminText);
-    return NextResponse.json({ ok: true, message: "Bokningen är sparad. Demo-läge: lägg till RESEND_API_KEY i Vercel för riktig e-post." });
+    return NextResponse.json({ ok: true, bookingId: booking.id, message: "Bokningen är sparad. Demo-läge: lägg till RESEND_API_KEY i Vercel för riktig e-post." });
   } catch (error) {
     if (error instanceof DuplicateBookingError) {
       return NextResponse.json({ ok: false, duplicate: true, message: error.message }, { status: 409 });
