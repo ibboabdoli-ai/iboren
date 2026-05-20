@@ -38,7 +38,7 @@ export default function LanguageSwitcher() {
   const enHref = isEnglish ? pathname : svToEn[pathname] || "/en";
 
   return (
-    <nav aria-label="Language" className="fixed right-4 top-24 z-[70] flex overflow-hidden rounded-full border border-gold/30 bg-night/90 text-xs font-black uppercase tracking-[.16em] text-porcelain shadow-xl backdrop-blur md:right-8 md:top-24">
+    <nav aria-label="Language" className="fixed right-20 top-5 z-[80] flex overflow-hidden rounded-full border border-gold/30 bg-night/90 text-[11px] font-black uppercase tracking-[.14em] text-porcelain shadow-xl backdrop-blur md:right-8 md:top-5">
       <Link href={svHref} className={`px-3 py-2 transition ${!isEnglish ? "bg-gold text-night" : "text-porcelain/72 hover:text-gold"}`}>SV</Link>
       <Link href={enHref} className={`px-3 py-2 transition ${isEnglish ? "bg-gold text-night" : "text-porcelain/72 hover:text-gold"}`}>EN</Link>
     </nav>
