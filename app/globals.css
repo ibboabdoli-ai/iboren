@@ -32,6 +32,23 @@ body {
 .btn-secondary:hover { transform: translateY(-2px); background: var(--gold); color: var(--night); }
 .noise { display: none; }
 
+/* Header logo: use the real brand asset, not text-only fallback. */
+header nav a[href="#top"].group {
+  width: 180px !important;
+  height: 60px !important;
+  display: block !important;
+  flex: 0 0 auto !important;
+  background-image: url('/logo.svg') !important;
+  background-repeat: no-repeat !important;
+  background-position: left center !important;
+  background-size: contain !important;
+}
+
+header nav a[href="#top"].group > span:not(.sr-only),
+header nav a[href="#top"].group .iboren-header-logo {
+  display: none !important;
+}
+
 /* Accessibility contrast overrides for utility classes used in dense sections. */
 .text-burgundy\/55,
 .text-burgundy\/60 { color: rgba(107, 39, 55, .92) !important; }
@@ -154,24 +171,19 @@ select:-webkit-autofill:focus {
     height: 4.5rem !important;
   }
 
+  header nav a[href="#top"].group {
+    width: 150px !important;
+    height: 50px !important;
+    background-position: left center !important;
+  }
+
   header nav a.group {
     gap: .65rem !important;
   }
 
-  header nav a.group > span:first-child,
   header nav > button {
     width: 3.25rem !important;
     height: 3.25rem !important;
-  }
-
-  header nav a.group .display {
-    font-size: 2rem !important;
-    line-height: 1 !important;
-  }
-
-  header nav a.group span span:last-child {
-    font-size: 8px !important;
-    letter-spacing: .28em !important;
   }
 
   #top {
