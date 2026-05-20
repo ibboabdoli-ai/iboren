@@ -1,5 +1,6 @@
 import BookingRutEnhancer from "./BookingRutEnhancer";
 import CinematicFrameLock from "./CinematicFrameLock";
+import CopySafetyPatcher from "./CopySafetyPatcher";
 import HeaderLogo from "./HeaderLogo";
 import InternalLinkNormalizer from "./InternalLinkNormalizer";
 import PerformanceHints from "./PerformanceHints";
@@ -13,6 +14,7 @@ export default function Template({ children }: { children: React.ReactNode }) {
       <CinematicFrameLock />
       <BookingRutEnhancer />
       <PerformanceHints />
+      <CopySafetyPatcher />
       {children}
       <SeoInternalLinks />
     </>
