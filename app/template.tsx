@@ -1,3 +1,4 @@
+import BookingRutEnhancer from "./BookingRutEnhancer";
 import CinematicFrameLock from "./CinematicFrameLock";
 import HeaderLogo from "./HeaderLogo";
 import InternalLinkNormalizer from "./InternalLinkNormalizer";
@@ -9,6 +10,7 @@ export default function Template({ children }: { children: React.ReactNode }) {
       <InternalLinkNormalizer />
       <HeaderLogo />
       <CinematicFrameLock />
+      <BookingRutEnhancer />
       {children}
       <SeoInternalLinks />
     </>
