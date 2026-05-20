@@ -2,15 +2,18 @@ import type { Metadata, Viewport } from "next";
 import StructuredData from "./StructuredData";
 import "./globals.css";
 
+const title = "Iboren – Städning i Södertälje och Stockholm";
+const description = "Boka hemstädning, flyttstädning, kontorsstädning och fönsterputs med Iboren. Enkel bokning, tydliga priser och snabb återkoppling i Södertälje och Stockholm.";
+
 export const metadata: Metadata = {
   metadataBase: new URL("https://iboren.se"),
-  title: "Iboren – Städning i Södertälje & Stockholm",
-  description: "Boka hemstädning, flyttstädning, kontorsstädning och fönsterputs i Södertälje och Stockholm. Iboren hjälper dig skapa en tydlig bokningsförfrågan steg för steg.",
+  title,
+  description,
   applicationName: "Iboren",
   keywords: ["Iboren", "städning Södertälje", "hemstädning Södertälje", "flyttstädning Södertälje", "städning Stockholm", "kontorsstädning Stockholm", "fönsterputs", "städbokning"],
   openGraph: {
-    title: "Iboren – Städning i Södertälje & Stockholm",
-    description: "Skapa en tydlig bokningsförfrågan för hemstädning, flyttstädning, kontorsstädning och fönsterputs.",
+    title,
+    description,
     url: "https://iboren.se",
     siteName: "Iboren",
     locale: "sv_SE",
@@ -19,8 +22,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Iboren – Städning i Södertälje & Stockholm",
-    description: "Boka städning smartare med Iboren.",
+    title,
+    description,
     images: ["/og.svg"]
   },
   alternates: { canonical: "https://iboren.se" },
@@ -32,7 +35,7 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 5,
-  themeColor: "#F5F0E8"
+  themeColor: "#0B0E0C"
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
