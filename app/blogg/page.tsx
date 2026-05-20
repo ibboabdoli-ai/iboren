@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 const posts = [
   { href: "/blogg/vad-kostar-hemstadning", title: "Vad kostar hemstädning?", text: "Faktorer som påverkar priset för hemstädning." },
   { href: "/blogg/rut-avdrag-stadning", title: "RUT-avdrag för städning", text: "Kort guide om hur RUT påverkar priset." },
-  { href: "/blogg/flyttstadning-checklista", title: "Checklista inför flyttstädning", text: "Praktiska punkter inför flytt och städning." }
+  { href: "/blogg/checklista-infor-flytt", title: "Checklista inför flytt", text: "Praktiska punkter inför flytt och städning." }
 ];
 
 export default function Page() {
