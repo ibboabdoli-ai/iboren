@@ -250,9 +250,12 @@ export default function HomePage() {
     <main className="min-h-screen overflow-x-hidden bg-night text-porcelain">
       <header className="fixed inset-x-0 top-0 z-50 border-b border-gold/10 bg-night/80 backdrop-blur-2xl">
         <nav className="luxe-container flex h-20 items-center justify-between">
-          <a href="#top" className="group flex items-center gap-3" onClick={() => setMenuOpen(false)}>
-            <span className="grid h-11 w-11 place-items-center rounded-full border border-gold/35 bg-porcelain/5 text-gold"><span className="display text-2xl font-bold">I</span></span>
-            <span><span className="display block text-3xl font-semibold tracking-wide text-porcelain">Iboren</span><span className="block text-[10px] font-bold uppercase tracking-[0.36em] text-gold/75">Pris direkt & enkel bokning</span></span>
+          <a href="#top" className="group flex items-center" onClick={() => setMenuOpen(false)} aria-label="Iboren startsida">
+            <span className="sr-only">Iboren</span>
+            <span className="flex flex-col leading-none">
+              <span className="display block text-4xl font-semibold tracking-wide text-porcelain md:text-5xl">Iboren</span>
+              <span className="mt-1 block text-[10px] font-bold uppercase tracking-[0.36em] text-gold/75 md:text-[11px]">Pris direkt & enkel bokning</span>
+            </span>
           </a>
           <div className="hidden items-center gap-6 text-sm font-semibold text-porcelain/68 md:flex">
             <a href="#services" className="hover:text-gold">Tjänster</a>
