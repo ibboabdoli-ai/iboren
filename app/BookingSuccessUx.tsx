@@ -2,6 +2,8 @@
 
 import { useEffect } from "react";
 
+const fallbackTimers = new WeakMap<HTMLFormElement, number>();
+
 function isBookingSuccessText(text: string) {
   const normalized = text.toLowerCase();
   return normalized.includes("bokningen är sparad") || normalized.includes("bokningsförfrågan är sparad") || normalized.includes("tack!");
@@ -37,18 +39,29 @@ function buildSuccessActions() {
   return wrapper;
 }
 
-function enhanceBookingSuccess() {
-  const bookingSection = document.querySelector("#booking");
-  if (!bookingSection) return;
+function getSubmitButton(form: HTMLFormElement) {
+  const buttons = Array.from(form.querySelectorAll<HTMLButtonElement>("button"));
+  return buttons.find((button) => {
+    const text = (button.textContent || "").toLowerCase();
+    return text.includes("skicka bokningsförfrågan") || text.includes("skickar") || text.includes("bokning skickad");
+  }) || null;
+}
 
-  const form = bookingSection.querySelector("form");
-  if (!form) return;
-
+function ensureSuccessMessage(form: HTMLFormElement) {
   const messages = Array.from(form.querySelectorAll("p"));
-  const successMessage = messages.find((node) => isBookingSuccessText(node.textContent || ""));
-  if (!successMessage) return;
+  const existingSuccess = messages.find((node) => isBookingSuccessText(node.textContent || ""));
+  if (existingSuccess) return existingSuccess;
 
-  const submitButton = form.querySelector<HTMLButtonElement>('button[type="submit"], button:not([type])');
+  const message = document.createElement("p");
+  message.id = "iboren-booking-success-message";
+  message.className = "rounded-2xl bg-gold/20 px-4 py-3 text-sm text-gold";
+  message.textContent = "Tack! Din bokningsförfrågan är skickad. Iboren återkommer så snart som möjligt.";
+  form.appendChild(message);
+  return message;
+}
+
+function lockFormAsSuccess(form: HTMLFormElement) {
+  const submitButton = getSubmitButton(form);
   if (submitButton) {
     submitButton.disabled = true;
     submitButton.setAttribute("aria-disabled", "true");
@@ -56,8 +69,34 @@ function enhanceBookingSuccess() {
     submitButton.textContent = "Bokning skickad";
   }
 
+  const successMessage = ensureSuccessMessage(form);
   if (!form.querySelector("#iboren-booking-success-actions")) {
     successMessage.insertAdjacentElement("afterend", buildSuccessActions());
+  }
+}
+
+function enhanceBookingSuccess() {
+  const bookingSection = document.querySelector("#booking");
+  if (!bookingSection) return;
+
+  const form = bookingSection.querySelector("form") as HTMLFormElement | null;
+  if (!form) return;
+
+  const submitButton = getSubmitButton(form);
+  const buttonText = (submitButton?.textContent || "").toLowerCase();
+
+  const messages = Array.from(form.querySelectorAll("p"));
+  const successMessage = messages.find((node) => isBookingSuccessText(node.textContent || ""));
+  if (successMessage) lockFormAsSuccess(form);
+
+  if (buttonText.includes("skickar") && !fallbackTimers.has(form)) {
+    const timer = window.setTimeout(() => {
+      fallbackTimers.delete(form);
+      const latestButton = getSubmitButton(form);
+      const latestText = (latestButton?.textContent || "").toLowerCase();
+      if (latestText.includes("skickar")) lockFormAsSuccess(form);
+    }, 7000);
+    fallbackTimers.set(form, timer);
   }
 
   const newBookingLink = form.querySelector<HTMLAnchorElement>('[data-iboren-new-booking="1"]');
