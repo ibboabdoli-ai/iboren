@@ -1,6 +1,6 @@
 # Iboren Cinematic Landing
 
-Luxury single-page website for **Iboren.se** — AI-assisted cleaning booking for Sweden.
+Luxury single-page website for **Iboren.se** — digital cleaning booking for Sweden.
 
 ## Stack
 
