@@ -4,7 +4,7 @@ import "./globals.css";
 
 const title = "Iboren – Städning i Södertälje och Stockholm";
 const description = "Boka hemstädning, flyttstädning, kontorsstädning och fönsterputs med Iboren. Enkel bokning, tydliga priser och snabb återkoppling i Södertälje och Stockholm.";
-const previewImage = "/og.svg?v=iboren-clean-2";
+const previewImage = "/opengraph-image";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://iboren.se"),
@@ -15,7 +15,7 @@ export const metadata: Metadata = {
   openGraph: {
     title,
     description,
-    url: "https://iboren.se",
+    url: "https://iboren.se/",
     siteName: "Iboren",
     locale: "sv_SE",
     type: "website",
@@ -25,11 +25,17 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title,
     description,
-    images: [previewImage]
+    images: ["/twitter-image"]
   },
   alternates: { canonical: "https://iboren.se" },
-  manifest: "/manifest.webmanifest?v=iboren-clean-2",
-  icons: { icon: "/favicon.svg?v=iboren-clean-2", apple: "/favicon.svg?v=iboren-clean-2" }
+  manifest: "/manifest.webmanifest",
+  icons: {
+    icon: [
+      { url: "/icon", type: "image/png" },
+      { url: "/favicon.svg", type: "image/svg+xml" }
+    ],
+    apple: [{ url: "/apple-icon", type: "image/png" }]
+  }
 };
 
 export const viewport: Viewport = {
