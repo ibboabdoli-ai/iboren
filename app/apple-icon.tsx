@@ -1,6 +1,6 @@
 import { ImageResponse } from "next/og";
 
-export const size = { width: 180, height: 180 };
+export const size = { width: 256, height: 256 };
 export const contentType = "image/png";
 
 export default function AppleIcon() {
@@ -11,27 +11,18 @@ export default function AppleIcon() {
           width: "100%",
           height: "100%",
           display: "flex",
+          flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
-          background: "#050706"
+          background: "radial-gradient(circle at 50% 35%, #101513 0%, #060807 62%, #020303 100%)",
+          color: "#FFF8EF"
         }}
       >
-        <div
-          style={{
-            width: 138,
-            height: 138,
-            borderRadius: 999,
-            border: "4px solid rgba(212,165,116,0.45)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            color: "#D4A574",
-            fontFamily: "Georgia",
-            fontSize: 78,
-            fontWeight: 700
-          }}
-        >
-          I
+        <div style={{ fontFamily: "Georgia", fontSize: 54, fontWeight: 700, lineHeight: 1 }}>
+          Iboren
+        </div>
+        <div style={{ marginTop: 14, fontFamily: "Arial", fontSize: 11, fontWeight: 700, letterSpacing: 4, color: "#D4A574" }}>
+          ENKEL BOKNING
         </div>
       </div>
     ),
