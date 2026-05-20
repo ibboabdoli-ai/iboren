@@ -58,13 +58,13 @@ export default function LoginPage() {
           <div className="bg-[#06131A] p-8 text-porcelain md:p-10">
             <Link href="/" className="mb-10 inline-flex items-center gap-2 text-sm font-bold text-porcelain/80"><ArrowLeft size={17} /> Tillbaka</Link>
             <img src="/logo.svg" alt="Iboren" className="mb-10 h-auto w-full max-w-[320px] rounded-[1.6rem] shadow-2xl" />
-            <p className="mb-4 text-[11px] font-bold uppercase tracking-[.38em] text-[#49D8EA]">Iboren Account</p>
+            <p className="mb-4 text-[11px] font-bold uppercase tracking-[.38em] text-gold">Iboren Account</p>
             <h1 className="display text-5xl font-bold leading-[.9] md:text-7xl">Logga in med verifierad e-post.</h1>
             <p className="mt-6 leading-8 text-porcelain/72">För tryggare bokningar använder Iboren inloggning via etablerade konton där e-postadressen verifieras av leverantören.</p>
           </div>
           <div className="p-8 md:p-10">
-            <div className="mb-8 flex h-16 w-16 items-center justify-center overflow-hidden rounded-2xl bg-[#06131A] shadow-lg">
-              <img src="/favicon.svg" alt="IB" className="h-12 w-12" />
+            <div className="mb-8 max-w-[260px] overflow-hidden rounded-[1.35rem] bg-[#06131A] shadow-lg">
+              <img src="/logo.svg" alt="Iboren" className="h-auto w-full" />
             </div>
             <h2 className="display text-4xl font-bold text-burgundy">Välj inloggning</h2>
             <p className="mt-3 leading-7 text-ink/65">Konto skapas automatiskt första gången. Din e-post kommer från Google, LinkedIn eller Microsoft.</p>
