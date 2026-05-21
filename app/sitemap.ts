@@ -21,9 +21,26 @@ const routes = [
   { path: "/kontorsstadning-stockholm", priority: 0.84, changeFrequency: "monthly" as const },
   { path: "/om-iboren", priority: 0.75, changeFrequency: "monthly" as const },
   { path: "/jobb", priority: 0.7, changeFrequency: "monthly" as const },
-  { path: "/en", priority: 0.65, changeFrequency: "monthly" as const },
   { path: "/privacy", priority: 0.25, changeFrequency: "yearly" as const },
-  { path: "/terms", priority: 0.25, changeFrequency: "yearly" as const }
+  { path: "/terms", priority: 0.25, changeFrequency: "yearly" as const },
+  { path: "/en", priority: 0.75, changeFrequency: "monthly" as const },
+  { path: "/en/prices", priority: 0.76, changeFrequency: "monthly" as const },
+  { path: "/en/jobs", priority: 0.56, changeFrequency: "monthly" as const },
+  { path: "/en/about", priority: 0.6, changeFrequency: "monthly" as const },
+  { path: "/en/privacy", priority: 0.2, changeFrequency: "yearly" as const },
+  { path: "/en/terms", priority: 0.2, changeFrequency: "yearly" as const },
+  { path: "/en/home-cleaning", priority: 0.68, changeFrequency: "monthly" as const },
+  { path: "/en/move-out-cleaning", priority: 0.68, changeFrequency: "monthly" as const },
+  { path: "/en/office-cleaning", priority: 0.62, changeFrequency: "monthly" as const },
+  { path: "/en/window-cleaning", priority: 0.62, changeFrequency: "monthly" as const },
+  { path: "/en/home-cleaning-sodertalje", priority: 0.72, changeFrequency: "monthly" as const },
+  { path: "/en/move-out-cleaning-sodertalje", priority: 0.7, changeFrequency: "monthly" as const },
+  { path: "/en/window-cleaning-sodertalje", priority: 0.66, changeFrequency: "monthly" as const },
+  { path: "/en/office-cleaning-sodertalje", priority: 0.64, changeFrequency: "monthly" as const },
+  { path: "/en/home-cleaning-stockholm", priority: 0.72, changeFrequency: "monthly" as const },
+  { path: "/en/move-out-cleaning-stockholm", priority: 0.7, changeFrequency: "monthly" as const },
+  { path: "/en/window-cleaning-stockholm", priority: 0.66, changeFrequency: "monthly" as const },
+  { path: "/en/office-cleaning-stockholm", priority: 0.64, changeFrequency: "monthly" as const }
 ];
 
 export default function sitemap(): MetadataRoute.Sitemap {
