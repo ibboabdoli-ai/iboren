@@ -30,7 +30,7 @@ type BookingDraft = {
 type ReverseGeocodeResponse = { ok: boolean; address?: string; area?: string; message?: string };
 type Option = { value: string; label: string };
 
-const FORM_VERSION = "EN-COPY-SV-1";
+const FORM_VERSION = "EN-COPY-SV-2";
 
 const initialDraft: BookingDraft = {
   service: "Hemstädning",
