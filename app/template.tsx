@@ -1,4 +1,3 @@
-import AuthHashCleaner from "./AuthHashCleaner";
 import BookingAuthEnhancer from "./BookingAuthEnhancer";
 import BookingRutEnhancer from "./BookingRutEnhancer";
 import CinematicFrameLock from "./CinematicFrameLock";
@@ -13,7 +12,6 @@ import SwedishBookingCopyFix from "./SwedishBookingCopyFix";
 export default function Template({ children }: { children: React.ReactNode }) {
   return (
     <>
-      <AuthHashCleaner />
       <InternalLinkNormalizer />
       <EnglishLinkNormalizer />
       <SwedishBookingCopyFix />
