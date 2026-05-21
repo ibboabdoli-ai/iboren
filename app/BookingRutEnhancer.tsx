@@ -48,11 +48,26 @@ function getSupabase() {
   return createClient(url, key, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true } });
 }
 
+function missingFromSummary() {
+  const summary = document.querySelector("#booking aside pre")?.textContent || "";
+  const missing: string[] = [];
+  if (summary.includes("Size: Not filled in")) missing.push("Size sqm");
+  if (summary.includes("Name: Not filled in")) missing.push("Name");
+  if (summary.includes("Email: Not filled in")) missing.push("Email");
+  if (summary.includes("Phone: Not filled in")) missing.push("Phone");
+  if (summary.includes("Address: Not filled in")) missing.push("Address");
+  if (summary.includes("Date: Not selected")) missing.push("Preferred date");
+  return missing;
+}
+
 function fixEnglishBookingText(form: HTMLElement) {
   form.querySelectorAll<HTMLButtonElement>("button").forEach((button) => {
     const text = button.textContent?.trim() || "";
     if (text.includes("boknings") || text.includes("förfrågan")) button.textContent = "Send booking request";
   });
+
+  const fallbackMissing = missingFromSummary();
+  const fallbackMessage = fallbackMissing.length ? `Please fill in: ${fallbackMissing.join(", ")}.` : "Fill in all required fields before sending.";
 
   const walker = document.createTreeWalker(form, NodeFilter.SHOW_TEXT);
   const nodes: Text[] = [];
@@ -60,7 +75,7 @@ function fixEnglishBookingText(form: HTMLElement) {
 
   nodes.forEach((node) => {
     const text = node.nodeValue || "";
-    if (text.includes("obligatoriska") || text.includes("innan du skickar")) node.nodeValue = "Fill in all required fields before sending.";
+    if (text.includes("obligatoriska") || text.includes("innan du skickar") || text.includes("Fill in all required fields before sending")) node.nodeValue = fallbackMessage;
   });
 }
 
