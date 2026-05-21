@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { createClient, User } from "@supabase/supabase-js";
-import { ArrowLeft, CheckCircle2, Loader2, Send } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Loader2, Save, Send } from "lucide-react";
 
 type BookingDraft = {
   service: string;
@@ -127,25 +127,37 @@ export default function BookingPage() {
     setDraft((current) => ({ ...current, [key]: value }));
   };
 
-  async function getAccessToken() {
+  async function saveBookingToDatabase() {
     const supabase = getSupabase();
-    if (!supabase) return "";
-    const { data } = await supabase.auth.getSession();
-    return data.session?.access_token || "";
+    if (!supabase) throw new Error("Supabase saknas.");
+
+    const { data } = await supabase.auth.getUser();
+    const currentUser = data.user;
+
+    const { error } = await supabase.from("bookings").insert({
+      user_id: currentUser?.id ?? null,
+      service: draft.service,
+      area: draft.area,
+      address: draft.address || null,
+      size_sqm: Number.parseInt(draft.size, 10),
+      frequency: draft.frequency,
+      preferred_date: draft.date,
+      time_window: draft.timeWindow,
+      customer_name: draft.name,
+      customer_email: draft.email,
+      customer_phone: draft.phone || null,
+      notes: draft.notes || null,
+      status: "new"
+    });
+
+    if (error) throw new Error(error.message);
   }
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-
-    if (!user) {
+    if (!draft.name || !draft.email || !draft.area || !draft.size || !draft.date) {
       setStatus("error");
-      setMessage("Du behöver logga in innan du kan skicka en bokningsförfrågan.");
-      return;
-    }
-
-    if (!draft.name || !draft.email || !draft.phone || !draft.area || !draft.address || !draft.size || !draft.date) {
-      setStatus("error");
-      setMessage("Fyll i namn, e-post, telefon, område, adress, storlek och datum innan du skickar.");
+      setMessage("Fyll i namn, e-post, område, storlek och datum innan du skickar.");
       return;
     }
 
@@ -154,18 +166,16 @@ export default function BookingPage() {
     setStatus("idle");
 
     try {
-      const accessToken = await getAccessToken();
-      if (!accessToken) throw new Error("Du behöver logga in igen innan du skickar bokningen.");
-
+      await saveBookingToDatabase();
       const response = await fetch("/api/bookings", {
         method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(draft)
       });
       const result = await response.json();
       if (!response.ok || !result.ok) throw new Error(result.message || "Kunde inte skicka bokningen.");
       setStatus("success");
-      setMessage("Bokningen är sparad på din profil och skickad till Iboren.");
+      setMessage(user ? "Bokningen är sparad på din profil och skickad till Iboren." : "Bokningsförfrågan skickad.");
     } catch (error) {
       setStatus("error");
       setMessage(error instanceof Error ? error.message : "Något gick fel.");
@@ -179,69 +189,69 @@ export default function BookingPage() {
   }
 
   return (
-    <main className="min-h-screen overflow-x-hidden bg-cream py-8 text-ink md:py-16">
-      <section className="luxe-container max-w-full overflow-hidden px-4 sm:px-6">
-        <Link href="/" className="mb-6 inline-flex items-center gap-2 text-sm font-bold text-burgundy md:mb-8"><ArrowLeft size={17} /> Tillbaka</Link>
+    <main className="min-h-screen bg-cream py-12 text-ink md:py-16">
+      <section className="luxe-container">
+        <Link href="/profile" className="mb-8 inline-flex items-center gap-2 text-sm font-bold text-burgundy"><ArrowLeft size={17} /> Tillbaka till profil</Link>
 
-        <div className="grid min-w-0 gap-6 lg:grid-cols-[1.08fr_.92fr]">
-          <form onSubmit={submit} className="min-w-0 overflow-hidden rounded-[2rem] bg-porcelain p-5 shadow-soft sm:p-7 md:rounded-[2.5rem] md:p-9">
-            <p className="eyebrow">Boka städning</p>
-            <h1 className="display mt-4 max-w-full text-[2.85rem] font-bold leading-[.92] text-burgundy sm:text-5xl md:text-7xl [overflow-wrap:anywhere] hyphens-auto">Skicka bokningsförfrågan</h1>
-            <p className="mt-5 max-w-full text-base leading-7 text-ink/65 sm:text-lg sm:leading-8">Logga in, kontrollera dina uppgifter och skicka en bokningsförfrågan till Iboren.</p>
+        <div className="grid gap-6 lg:grid-cols-[1.08fr_.92fr]">
+          <form onSubmit={submit} className="rounded-[2.5rem] bg-porcelain p-7 shadow-soft md:p-9">
+            <p className="eyebrow">Iboren Booking</p>
+            <h1 className="display mt-4 text-5xl font-bold leading-[.9] text-burgundy md:text-7xl">Ny bokning</h1>
+            <p className="mt-5 leading-8 text-ink/65">Uppgifter från din profil fylls i automatiskt. Kontrollera och komplettera innan du skickar.</p>
 
             {user ? (
-              <p className="mt-5 inline-flex max-w-full rounded-full bg-burgundy/10 px-4 py-2 text-sm font-bold text-burgundy [overflow-wrap:anywhere]">Inloggad som {user.email}</p>
+              <p className="mt-5 inline-flex rounded-full bg-burgundy/10 px-4 py-2 text-sm font-bold text-burgundy">Inloggad som {user.email}</p>
             ) : (
-              <div className="mt-5 rounded-2xl bg-gold/20 p-4 text-sm leading-6 text-ink/70">Du behöver logga in för att boka. <Link href="/login" className="font-bold text-burgundy">Logga in här</Link>.</div>
+              <div className="mt-5 rounded-2xl bg-gold/20 p-4 text-sm leading-6 text-ink/70">Du är inte inloggad. Bokningen skickas, men sparas inte på en profil. <Link href="/login" className="font-bold text-burgundy">Logga in här</Link>.</div>
             )}
 
-            <div className="mt-8 grid min-w-0 gap-5">
-              <div className="min-w-0">
+            <div className="mt-8 grid gap-5">
+              <div>
                 <label className="mb-2 block text-sm font-bold text-ink/70">Tjänst</label>
-                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                <div className="grid grid-cols-2 gap-2">
                   {serviceOptions.map((service) => (
-                    <button disabled={!user} type="button" key={service} onClick={() => setField("service", service)} className={`min-w-0 rounded-2xl border px-3 py-3 text-sm font-bold transition disabled:cursor-not-allowed disabled:opacity-55 sm:text-base ${draft.service === service ? "border-burgundy bg-burgundy text-porcelain" : "border-burgundy/10 bg-cream text-ink/70"}`}>{service}</button>
+                    <button type="button" key={service} onClick={() => setField("service", service)} className={`rounded-2xl border px-3 py-3 text-sm font-bold transition ${draft.service === service ? "border-burgundy bg-burgundy text-porcelain" : "border-burgundy/10 bg-cream text-ink/70"}`}>{service}</button>
                   ))}
                 </div>
               </div>
 
-              <div className="grid min-w-0 gap-4 md:grid-cols-2">
-                <Field disabled={!user} label="Namn" value={draft.name} onChange={(value) => setField("name", value)} required />
-                <Field disabled={!user} label="E-post" value={draft.email} onChange={(value) => setField("email", value)} type="email" required />
+              <div className="grid gap-4 md:grid-cols-2">
+                <Field label="Namn" value={draft.name} onChange={(value) => setField("name", value)} />
+                <Field label="E-post" value={draft.email} onChange={(value) => setField("email", value)} type="email" />
               </div>
-              <div className="grid min-w-0 gap-4 md:grid-cols-2">
-                <Field disabled={!user} label="Telefon" value={draft.phone} onChange={(value) => setField("phone", value)} required />
-                <Field disabled={!user} label="Storlek kvm" value={draft.size} onChange={(value) => setField("size", value.replace(/[^0-9]/g, ""))} placeholder="75" required />
+              <div className="grid gap-4 md:grid-cols-2">
+                <Field label="Telefon" value={draft.phone} onChange={(value) => setField("phone", value)} />
+                <Field label="Storlek kvm" value={draft.size} onChange={(value) => setField("size", value.replace(/[^0-9]/g, ""))} placeholder="75" />
               </div>
-              <div className="grid min-w-0 gap-4 md:grid-cols-2">
-                <Field disabled={!user} label="Område" value={draft.area} onChange={(value) => setField("area", value)} placeholder="Södertälje" required />
-                <Field disabled={!user} label="Adress" value={draft.address} onChange={(value) => setField("address", value)} placeholder="Gatuadress" required />
+              <div className="grid gap-4 md:grid-cols-2">
+                <Field label="Område" value={draft.area} onChange={(value) => setField("area", value)} placeholder="Södertälje" />
+                <Field label="Adress" value={draft.address} onChange={(value) => setField("address", value)} placeholder="Gatuadress" />
               </div>
-              <div className="grid min-w-0 gap-4 md:grid-cols-3">
-                <Field disabled={!user} label="Datum" value={draft.date} onChange={(value) => setField("date", value)} type="date" required />
-                <Select disabled={!user} label="Frekvens" value={draft.frequency} options={frequencyOptions} onChange={(value) => setField("frequency", value)} />
-                <Select disabled={!user} label="Tid" value={draft.timeWindow} options={timeOptions} onChange={(value) => setField("timeWindow", value)} />
+              <div className="grid gap-4 md:grid-cols-3">
+                <Field label="Datum" value={draft.date} onChange={(value) => setField("date", value)} type="date" />
+                <Select label="Frekvens" value={draft.frequency} options={frequencyOptions} onChange={(value) => setField("frequency", value)} />
+                <Select label="Tid" value={draft.timeWindow} options={timeOptions} onChange={(value) => setField("timeWindow", value)} />
               </div>
-              <label className="block min-w-0">
+              <label className="block">
                 <span className="mb-2 block text-sm font-bold text-ink/70">Önskemål</span>
-                <textarea disabled={!user} value={draft.notes} onChange={(event) => setField("notes", event.target.value)} className="min-h-28 w-full min-w-0 rounded-2xl border border-burgundy/10 bg-cream px-4 py-3 text-ink outline-none focus:border-burgundy/40 disabled:cursor-not-allowed disabled:opacity-55" placeholder="Särskilda instruktioner, portkod, nyckel, husdjur..." />
+                <textarea value={draft.notes} onChange={(event) => setField("notes", event.target.value)} className="min-h-28 w-full rounded-2xl border border-burgundy/10 bg-cream px-4 py-3 text-ink outline-none focus:border-burgundy/40" placeholder="Särskilda instruktioner, portkod, nyckel, husdjur..." />
               </label>
 
-              <button disabled={submitting || !user} className="btn-primary w-full disabled:cursor-not-allowed disabled:opacity-55 md:w-fit">
+              <button disabled={submitting} className="btn-primary w-full md:w-fit">
                 {submitting ? <Loader2 className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5" />}
                 Skicka bokningsförfrågan
               </button>
 
-              {message && <p className={`max-w-full rounded-2xl p-4 text-sm [overflow-wrap:anywhere] ${status === "success" ? "bg-green-100 text-green-800" : "bg-burgundy/10 text-burgundy"}`}>{message}</p>}
+              {message && <p className={`rounded-2xl p-4 text-sm ${status === "success" ? "bg-green-100 text-green-800" : "bg-burgundy/10 text-burgundy"}`}>{message}</p>}
             </div>
           </form>
 
-          <aside className="min-w-0 overflow-hidden rounded-[2rem] bg-burgundy p-5 text-porcelain shadow-luxe sm:p-7 md:rounded-[2.5rem] md:p-9">
+          <aside className="rounded-[2.5rem] bg-burgundy p-7 text-porcelain shadow-luxe md:p-9">
             <div className="mb-6 grid h-14 w-14 place-items-center rounded-full bg-gold text-ink"><CheckCircle2 size={25} /></div>
-            <h2 className="display text-4xl font-bold [overflow-wrap:anywhere]">Sammanfattning</h2>
-            <p className="mt-4 leading-8 text-porcelain/70">Kontrollera uppgifterna innan du skickar. Iboren återkommer med bekräftelse och slutligt pris.</p>
-            <pre className="mt-7 max-h-[480px] max-w-full overflow-auto whitespace-pre-wrap rounded-[1.5rem] bg-porcelain/10 p-5 text-sm leading-7 text-porcelain/80 [overflow-wrap:anywhere]">{summary}</pre>
-            <Link href="/priser" className="mt-6 inline-flex items-center gap-2 rounded-full bg-porcelain px-5 py-3 text-sm font-bold text-burgundy">Beräkna pris</Link>
+            <h2 className="display text-4xl font-bold">Sammanfattning</h2>
+            <p className="mt-4 leading-8 text-porcelain/70">Den här informationen sparas i din profilhistorik och skickas till Iboren.</p>
+            <pre className="mt-7 max-h-[480px] overflow-auto whitespace-pre-wrap rounded-[1.5rem] bg-porcelain/10 p-5 text-sm leading-7 text-porcelain/80">{summary}</pre>
+            <Link href="/profile" className="mt-6 inline-flex items-center gap-2 rounded-full bg-porcelain px-5 py-3 text-sm font-bold text-burgundy"><Save size={17} /> Visa profil</Link>
           </aside>
         </div>
       </section>
@@ -249,20 +259,20 @@ export default function BookingPage() {
   );
 }
 
-function Field({ label, value, onChange, placeholder, type = "text", required = false, disabled = false }: { label: string; value: string; onChange: (value: string) => void; placeholder?: string; type?: string; required?: boolean; disabled?: boolean }) {
+function Field({ label, value, onChange, placeholder, type = "text" }: { label: string; value: string; onChange: (value: string) => void; placeholder?: string; type?: string }) {
   return (
-    <label className="block min-w-0">
-      <span className="mb-2 block text-sm font-bold text-ink/70">{label}{required ? " *" : ""}</span>
-      <input disabled={disabled} required={required} type={type} value={value} onChange={(event) => onChange(event.target.value)} className="w-full min-w-0 rounded-2xl border border-burgundy/10 bg-cream px-4 py-3 text-ink outline-none focus:border-burgundy/40 disabled:cursor-not-allowed disabled:opacity-55" placeholder={placeholder} />
+    <label className="block">
+      <span className="mb-2 block text-sm font-bold text-ink/70">{label}</span>
+      <input type={type} value={value} onChange={(event) => onChange(event.target.value)} className="w-full rounded-2xl border border-burgundy/10 bg-cream px-4 py-3 text-ink outline-none focus:border-burgundy/40" placeholder={placeholder} />
     </label>
   );
 }
 
-function Select({ label, value, options, onChange, disabled = false }: { label: string; value: string; options: string[]; onChange: (value: string) => void; disabled?: boolean }) {
+function Select({ label, value, options, onChange }: { label: string; value: string; options: string[]; onChange: (value: string) => void }) {
   return (
-    <label className="block min-w-0">
+    <label className="block">
       <span className="mb-2 block text-sm font-bold text-ink/70">{label}</span>
-      <select disabled={disabled} value={value} onChange={(event) => onChange(event.target.value)} className="w-full min-w-0 rounded-2xl border border-burgundy/10 bg-cream px-4 py-3 text-ink outline-none focus:border-burgundy/40 disabled:cursor-not-allowed disabled:opacity-55">
+      <select value={value} onChange={(event) => onChange(event.target.value)} className="w-full rounded-2xl border border-burgundy/10 bg-cream px-4 py-3 text-ink outline-none focus:border-burgundy/40">
         {options.map((option) => <option key={option} value={option}>{option}</option>)}
       </select>
     </label>
