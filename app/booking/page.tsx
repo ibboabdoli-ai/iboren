@@ -64,6 +64,8 @@ export default function BookingPage() {
     async function loadDefaults() {
       const supabase = getSupabase();
       if (!supabase) {
+        setMessage("Supabase saknas. Kontrollera environment variables i Vercel.");
+        setStatus("error");
         setLoading(false);
         return;
       }
@@ -134,6 +136,13 @@ export default function BookingPage() {
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+
+    if (!user) {
+      setStatus("error");
+      setMessage("Du behöver logga in innan du kan skicka en bokningsförfrågan.");
+      return;
+    }
+
     if (!draft.name || !draft.email || !draft.phone || !draft.area || !draft.address || !draft.size || !draft.date) {
       setStatus("error");
       setMessage("Fyll i namn, e-post, telefon, område, adress, storlek och datum innan du skickar.");
@@ -146,18 +155,17 @@ export default function BookingPage() {
 
     try {
       const accessToken = await getAccessToken();
-      const headers: HeadersInit = { "Content-Type": "application/json" };
-      if (accessToken) headers.Authorization = `Bearer ${accessToken}`;
+      if (!accessToken) throw new Error("Du behöver logga in igen innan du skickar bokningen.");
 
       const response = await fetch("/api/bookings", {
         method: "POST",
-        headers,
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
         body: JSON.stringify(draft)
       });
       const result = await response.json();
       if (!response.ok || !result.ok) throw new Error(result.message || "Kunde inte skicka bokningen.");
       setStatus("success");
-      setMessage(user ? "Bokningen är sparad på din profil och skickad till Iboren." : "Tack! Din bokningsförfrågan är skickad till Iboren.");
+      setMessage("Bokningen är sparad på din profil och skickad till Iboren.");
     } catch (error) {
       setStatus("error");
       setMessage(error instanceof Error ? error.message : "Något gick fel.");
@@ -179,12 +187,12 @@ export default function BookingPage() {
           <form onSubmit={submit} className="rounded-[2.5rem] bg-porcelain p-7 shadow-soft md:p-9">
             <p className="eyebrow">Boka städning</p>
             <h1 className="display mt-4 text-5xl font-bold leading-[.9] text-burgundy md:text-7xl">Skicka bokningsförfrågan</h1>
-            <p className="mt-5 leading-8 text-ink/65">Fyll i dina uppgifter så återkommer Iboren med bekräftelse, tid och slutligt pris.</p>
+            <p className="mt-5 leading-8 text-ink/65">Logga in, kontrollera dina uppgifter och skicka en bokningsförfrågan till Iboren.</p>
 
             {user ? (
               <p className="mt-5 inline-flex rounded-full bg-burgundy/10 px-4 py-2 text-sm font-bold text-burgundy">Inloggad som {user.email}</p>
             ) : (
-              <div className="mt-5 rounded-2xl bg-gold/20 p-4 text-sm leading-6 text-ink/70">Du kan skicka en bokningsförfrågan utan konto. Vill du spara historik på en profil kan du <Link href="/login" className="font-bold text-burgundy">logga in här</Link>.</div>
+              <div className="mt-5 rounded-2xl bg-gold/20 p-4 text-sm leading-6 text-ink/70">Du behöver logga in för att boka. <Link href="/login" className="font-bold text-burgundy">Logga in här</Link>.</div>
             )}
 
             <div className="mt-8 grid gap-5">
@@ -192,34 +200,34 @@ export default function BookingPage() {
                 <label className="mb-2 block text-sm font-bold text-ink/70">Tjänst</label>
                 <div className="grid grid-cols-2 gap-2">
                   {serviceOptions.map((service) => (
-                    <button type="button" key={service} onClick={() => setField("service", service)} className={`rounded-2xl border px-3 py-3 text-sm font-bold transition ${draft.service === service ? "border-burgundy bg-burgundy text-porcelain" : "border-burgundy/10 bg-cream text-ink/70"}`}>{service}</button>
+                    <button disabled={!user} type="button" key={service} onClick={() => setField("service", service)} className={`rounded-2xl border px-3 py-3 text-sm font-bold transition disabled:cursor-not-allowed disabled:opacity-55 ${draft.service === service ? "border-burgundy bg-burgundy text-porcelain" : "border-burgundy/10 bg-cream text-ink/70"}`}>{service}</button>
                   ))}
                 </div>
               </div>
 
               <div className="grid gap-4 md:grid-cols-2">
-                <Field label="Namn" value={draft.name} onChange={(value) => setField("name", value)} required />
-                <Field label="E-post" value={draft.email} onChange={(value) => setField("email", value)} type="email" required />
+                <Field disabled={!user} label="Namn" value={draft.name} onChange={(value) => setField("name", value)} required />
+                <Field disabled={!user} label="E-post" value={draft.email} onChange={(value) => setField("email", value)} type="email" required />
               </div>
               <div className="grid gap-4 md:grid-cols-2">
-                <Field label="Telefon" value={draft.phone} onChange={(value) => setField("phone", value)} required />
-                <Field label="Storlek kvm" value={draft.size} onChange={(value) => setField("size", value.replace(/[^0-9]/g, ""))} placeholder="75" required />
+                <Field disabled={!user} label="Telefon" value={draft.phone} onChange={(value) => setField("phone", value)} required />
+                <Field disabled={!user} label="Storlek kvm" value={draft.size} onChange={(value) => setField("size", value.replace(/[^0-9]/g, ""))} placeholder="75" required />
               </div>
               <div className="grid gap-4 md:grid-cols-2">
-                <Field label="Område" value={draft.area} onChange={(value) => setField("area", value)} placeholder="Södertälje" required />
-                <Field label="Adress" value={draft.address} onChange={(value) => setField("address", value)} placeholder="Gatuadress" required />
+                <Field disabled={!user} label="Område" value={draft.area} onChange={(value) => setField("area", value)} placeholder="Södertälje" required />
+                <Field disabled={!user} label="Adress" value={draft.address} onChange={(value) => setField("address", value)} placeholder="Gatuadress" required />
               </div>
               <div className="grid gap-4 md:grid-cols-3">
-                <Field label="Datum" value={draft.date} onChange={(value) => setField("date", value)} type="date" required />
-                <Select label="Frekvens" value={draft.frequency} options={frequencyOptions} onChange={(value) => setField("frequency", value)} />
-                <Select label="Tid" value={draft.timeWindow} options={timeOptions} onChange={(value) => setField("timeWindow", value)} />
+                <Field disabled={!user} label="Datum" value={draft.date} onChange={(value) => setField("date", value)} type="date" required />
+                <Select disabled={!user} label="Frekvens" value={draft.frequency} options={frequencyOptions} onChange={(value) => setField("frequency", value)} />
+                <Select disabled={!user} label="Tid" value={draft.timeWindow} options={timeOptions} onChange={(value) => setField("timeWindow", value)} />
               </div>
               <label className="block">
                 <span className="mb-2 block text-sm font-bold text-ink/70">Önskemål</span>
-                <textarea value={draft.notes} onChange={(event) => setField("notes", event.target.value)} className="min-h-28 w-full rounded-2xl border border-burgundy/10 bg-cream px-4 py-3 text-ink outline-none focus:border-burgundy/40" placeholder="Särskilda instruktioner, portkod, nyckel, husdjur..." />
+                <textarea disabled={!user} value={draft.notes} onChange={(event) => setField("notes", event.target.value)} className="min-h-28 w-full rounded-2xl border border-burgundy/10 bg-cream px-4 py-3 text-ink outline-none focus:border-burgundy/40 disabled:cursor-not-allowed disabled:opacity-55" placeholder="Särskilda instruktioner, portkod, nyckel, husdjur..." />
               </label>
 
-              <button disabled={submitting} className="btn-primary w-full md:w-fit">
+              <button disabled={submitting || !user} className="btn-primary w-full disabled:cursor-not-allowed disabled:opacity-55 md:w-fit">
                 {submitting ? <Loader2 className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5" />}
                 Skicka bokningsförfrågan
               </button>
@@ -241,20 +249,20 @@ export default function BookingPage() {
   );
 }
 
-function Field({ label, value, onChange, placeholder, type = "text", required = false }: { label: string; value: string; onChange: (value: string) => void; placeholder?: string; type?: string; required?: boolean }) {
+function Field({ label, value, onChange, placeholder, type = "text", required = false, disabled = false }: { label: string; value: string; onChange: (value: string) => void; placeholder?: string; type?: string; required?: boolean; disabled?: boolean }) {
   return (
     <label className="block">
       <span className="mb-2 block text-sm font-bold text-ink/70">{label}{required ? " *" : ""}</span>
-      <input required={required} type={type} value={value} onChange={(event) => onChange(event.target.value)} className="w-full rounded-2xl border border-burgundy/10 bg-cream px-4 py-3 text-ink outline-none focus:border-burgundy/40" placeholder={placeholder} />
+      <input disabled={disabled} required={required} type={type} value={value} onChange={(event) => onChange(event.target.value)} className="w-full rounded-2xl border border-burgundy/10 bg-cream px-4 py-3 text-ink outline-none focus:border-burgundy/40 disabled:cursor-not-allowed disabled:opacity-55" placeholder={placeholder} />
     </label>
   );
 }
 
-function Select({ label, value, options, onChange }: { label: string; value: string; options: string[]; onChange: (value: string) => void }) {
+function Select({ label, value, options, onChange, disabled = false }: { label: string; value: string; options: string[]; onChange: (value: string) => void; disabled?: boolean }) {
   return (
     <label className="block">
       <span className="mb-2 block text-sm font-bold text-ink/70">{label}</span>
-      <select value={value} onChange={(event) => onChange(event.target.value)} className="w-full rounded-2xl border border-burgundy/10 bg-cream px-4 py-3 text-ink outline-none focus:border-burgundy/40">
+      <select disabled={disabled} value={value} onChange={(event) => onChange(event.target.value)} className="w-full rounded-2xl border border-burgundy/10 bg-cream px-4 py-3 text-ink outline-none focus:border-burgundy/40 disabled:cursor-not-allowed disabled:opacity-55">
         {options.map((option) => <option key={option} value={option}>{option}</option>)}
       </select>
     </label>
