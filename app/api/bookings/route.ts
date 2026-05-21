@@ -97,12 +97,12 @@ function buildRutText(payload: NormalizedBookingPayload) {
     : "RUT: Nej. Kunden har inte valt RUT-avdrag.";
 }
 
-function buildAdminText(payload: NormalizedBookingPayload, user: User | null, bookingId: string) {
+function buildAdminText(payload: NormalizedBookingPayload, user: User, bookingId: string) {
   return [
     "New Iboren booking request",
     "",
     `Booking ID: ${bookingId}`,
-    `Authenticated user: ${user ? user.email || user.id : "Guest booking / no login"}`,
+    `Authenticated user: ${user.email || user.id}`,
     "",
     `Customer type: ${payload.customerType}`,
     buildRutText(payload),
@@ -148,15 +148,16 @@ function buildCustomerText(payload: NormalizedBookingPayload, bookingId: string)
   ].join("\n");
 }
 
-async function saveBooking(payload: NormalizedBookingPayload, auth: AuthContext | null): Promise<SaveBookingResult> {
-  const supabase = getSupabase(auth?.token);
+async function saveBooking(payload: NormalizedBookingPayload, auth: AuthContext): Promise<SaveBookingResult> {
+  const supabase = getSupabase(auth.token);
   if (!supabase) throw new Error("Supabase saknas.");
   const size = Number.parseInt(payload.size, 10);
   const sizeSqm = Number.isFinite(size) ? size : null;
 
-  let duplicateQuery = supabase
+  const { data: existing, error: lookupError } = await supabase
     .from("bookings")
     .select("id")
+    .eq("user_id", auth.user.id)
     .eq("service", payload.service)
     .eq("address", payload.address)
     .eq("preferred_date", payload.date)
@@ -165,11 +166,8 @@ async function saveBooking(payload: NormalizedBookingPayload, auth: AuthContext 
     .eq("time_window", payload.timeWindow)
     .eq("customer_email", payload.email)
     .neq("status", "cancelled")
-    .limit(1);
-
-  duplicateQuery = auth?.user.id ? duplicateQuery.eq("user_id", auth.user.id) : duplicateQuery.is("user_id", null);
-
-  const { data: existing, error: lookupError } = await duplicateQuery.maybeSingle();
+    .limit(1)
+    .maybeSingle();
 
   if (lookupError) throw new Error(`Kunde inte kontrollera tidigare bokning: ${lookupError.message}`);
   if (existing?.id) return { id: existing.id as string, duplicate: true };
@@ -183,7 +181,7 @@ async function saveBooking(payload: NormalizedBookingPayload, auth: AuthContext 
   ].join("\n").trim();
 
   const { data, error } = await supabase.from("bookings").insert({
-    user_id: auth?.user.id ?? null,
+    user_id: auth.user.id,
     service: payload.service,
     area: payload.area,
     address: payload.address || null,
@@ -220,6 +218,8 @@ function wait(ms: number) {
 export async function POST(request: Request) {
   try {
     const auth = await getAuthContext(request);
+    if (!auth) return NextResponse.json({ ok: false, message: "Du behöver logga in för att skicka en bokningsförfrågan." }, { status: 401 });
+
     const json = (await request.json()) as BookingPayload;
     const customerType = normalizeCustomerType(json.customerType);
     const service = sanitize(json.service);
@@ -242,7 +242,7 @@ export async function POST(request: Request) {
     const missing = required.filter((key) => !payload[key as keyof NormalizedBookingPayload]);
     if (missing.length) return NextResponse.json({ ok: false, message: `Missing required fields: ${missing.join(", ")}` }, { status: 400 });
     if (!/^\S+@\S+\.\S+$/.test(payload.email)) return NextResponse.json({ ok: false, message: "Invalid email address." }, { status: 400 });
-    if (auth?.user.email && payload.email.toLowerCase() !== auth.user.email.toLowerCase()) return NextResponse.json({ ok: false, message: "Bokningens e-post måste matcha ditt inloggade konto." }, { status: 403 });
+    if (auth.user.email && payload.email.toLowerCase() !== auth.user.email.toLowerCase()) return NextResponse.json({ ok: false, message: "Bokningens e-post måste matcha ditt inloggade konto." }, { status: 403 });
 
     const booking = await saveBooking(payload, auth);
     if (booking.duplicate) return NextResponse.json({ ok: false, duplicate: true, bookingId: booking.id, message: "Den här bokningen finns redan. Ändra datum, tid eller uppgifter om du vill skapa en ny bokning." }, { status: 409 });
@@ -250,7 +250,7 @@ export async function POST(request: Request) {
     const resendApiKey = process.env.RESEND_API_KEY;
     const toEmail = process.env.BOOKING_TO_EMAIL || "hej@iboren.se";
     const fromEmail = process.env.BOOKING_FROM_EMAIL || "Iboren <onboarding@resend.dev>";
-    const adminText = buildAdminText(payload, auth?.user ?? null, booking.id);
+    const adminText = buildAdminText(payload, auth.user, booking.id);
     const customerText = buildCustomerText(payload, booking.id);
 
     if (resendApiKey) {
