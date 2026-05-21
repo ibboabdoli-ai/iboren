@@ -179,52 +179,52 @@ export default function BookingPage() {
   }
 
   return (
-    <main className="min-h-screen bg-cream py-12 text-ink md:py-16">
-      <section className="luxe-container">
-        <Link href="/" className="mb-8 inline-flex items-center gap-2 text-sm font-bold text-burgundy"><ArrowLeft size={17} /> Tillbaka</Link>
+    <main className="min-h-screen overflow-x-hidden bg-cream py-8 text-ink md:py-16">
+      <section className="luxe-container max-w-full overflow-hidden px-4 sm:px-6">
+        <Link href="/" className="mb-6 inline-flex items-center gap-2 text-sm font-bold text-burgundy md:mb-8"><ArrowLeft size={17} /> Tillbaka</Link>
 
-        <div className="grid gap-6 lg:grid-cols-[1.08fr_.92fr]">
-          <form onSubmit={submit} className="rounded-[2.5rem] bg-porcelain p-7 shadow-soft md:p-9">
+        <div className="grid min-w-0 gap-6 lg:grid-cols-[1.08fr_.92fr]">
+          <form onSubmit={submit} className="min-w-0 overflow-hidden rounded-[2rem] bg-porcelain p-5 shadow-soft sm:p-7 md:rounded-[2.5rem] md:p-9">
             <p className="eyebrow">Boka städning</p>
-            <h1 className="display mt-4 text-5xl font-bold leading-[.9] text-burgundy md:text-7xl">Skicka bokningsförfrågan</h1>
-            <p className="mt-5 leading-8 text-ink/65">Logga in, kontrollera dina uppgifter och skicka en bokningsförfrågan till Iboren.</p>
+            <h1 className="display mt-4 max-w-full text-[2.85rem] font-bold leading-[.92] text-burgundy sm:text-5xl md:text-7xl [overflow-wrap:anywhere] hyphens-auto">Skicka bokningsförfrågan</h1>
+            <p className="mt-5 max-w-full text-base leading-7 text-ink/65 sm:text-lg sm:leading-8">Logga in, kontrollera dina uppgifter och skicka en bokningsförfrågan till Iboren.</p>
 
             {user ? (
-              <p className="mt-5 inline-flex rounded-full bg-burgundy/10 px-4 py-2 text-sm font-bold text-burgundy">Inloggad som {user.email}</p>
+              <p className="mt-5 inline-flex max-w-full rounded-full bg-burgundy/10 px-4 py-2 text-sm font-bold text-burgundy [overflow-wrap:anywhere]">Inloggad som {user.email}</p>
             ) : (
               <div className="mt-5 rounded-2xl bg-gold/20 p-4 text-sm leading-6 text-ink/70">Du behöver logga in för att boka. <Link href="/login" className="font-bold text-burgundy">Logga in här</Link>.</div>
             )}
 
-            <div className="mt-8 grid gap-5">
-              <div>
+            <div className="mt-8 grid min-w-0 gap-5">
+              <div className="min-w-0">
                 <label className="mb-2 block text-sm font-bold text-ink/70">Tjänst</label>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                   {serviceOptions.map((service) => (
-                    <button disabled={!user} type="button" key={service} onClick={() => setField("service", service)} className={`rounded-2xl border px-3 py-3 text-sm font-bold transition disabled:cursor-not-allowed disabled:opacity-55 ${draft.service === service ? "border-burgundy bg-burgundy text-porcelain" : "border-burgundy/10 bg-cream text-ink/70"}`}>{service}</button>
+                    <button disabled={!user} type="button" key={service} onClick={() => setField("service", service)} className={`min-w-0 rounded-2xl border px-3 py-3 text-sm font-bold transition disabled:cursor-not-allowed disabled:opacity-55 sm:text-base ${draft.service === service ? "border-burgundy bg-burgundy text-porcelain" : "border-burgundy/10 bg-cream text-ink/70"}`}>{service}</button>
                   ))}
                 </div>
               </div>
 
-              <div className="grid gap-4 md:grid-cols-2">
+              <div className="grid min-w-0 gap-4 md:grid-cols-2">
                 <Field disabled={!user} label="Namn" value={draft.name} onChange={(value) => setField("name", value)} required />
                 <Field disabled={!user} label="E-post" value={draft.email} onChange={(value) => setField("email", value)} type="email" required />
               </div>
-              <div className="grid gap-4 md:grid-cols-2">
+              <div className="grid min-w-0 gap-4 md:grid-cols-2">
                 <Field disabled={!user} label="Telefon" value={draft.phone} onChange={(value) => setField("phone", value)} required />
                 <Field disabled={!user} label="Storlek kvm" value={draft.size} onChange={(value) => setField("size", value.replace(/[^0-9]/g, ""))} placeholder="75" required />
               </div>
-              <div className="grid gap-4 md:grid-cols-2">
+              <div className="grid min-w-0 gap-4 md:grid-cols-2">
                 <Field disabled={!user} label="Område" value={draft.area} onChange={(value) => setField("area", value)} placeholder="Södertälje" required />
                 <Field disabled={!user} label="Adress" value={draft.address} onChange={(value) => setField("address", value)} placeholder="Gatuadress" required />
               </div>
-              <div className="grid gap-4 md:grid-cols-3">
+              <div className="grid min-w-0 gap-4 md:grid-cols-3">
                 <Field disabled={!user} label="Datum" value={draft.date} onChange={(value) => setField("date", value)} type="date" required />
                 <Select disabled={!user} label="Frekvens" value={draft.frequency} options={frequencyOptions} onChange={(value) => setField("frequency", value)} />
                 <Select disabled={!user} label="Tid" value={draft.timeWindow} options={timeOptions} onChange={(value) => setField("timeWindow", value)} />
               </div>
-              <label className="block">
+              <label className="block min-w-0">
                 <span className="mb-2 block text-sm font-bold text-ink/70">Önskemål</span>
-                <textarea disabled={!user} value={draft.notes} onChange={(event) => setField("notes", event.target.value)} className="min-h-28 w-full rounded-2xl border border-burgundy/10 bg-cream px-4 py-3 text-ink outline-none focus:border-burgundy/40 disabled:cursor-not-allowed disabled:opacity-55" placeholder="Särskilda instruktioner, portkod, nyckel, husdjur..." />
+                <textarea disabled={!user} value={draft.notes} onChange={(event) => setField("notes", event.target.value)} className="min-h-28 w-full min-w-0 rounded-2xl border border-burgundy/10 bg-cream px-4 py-3 text-ink outline-none focus:border-burgundy/40 disabled:cursor-not-allowed disabled:opacity-55" placeholder="Särskilda instruktioner, portkod, nyckel, husdjur..." />
               </label>
 
               <button disabled={submitting || !user} className="btn-primary w-full disabled:cursor-not-allowed disabled:opacity-55 md:w-fit">
@@ -232,15 +232,15 @@ export default function BookingPage() {
                 Skicka bokningsförfrågan
               </button>
 
-              {message && <p className={`rounded-2xl p-4 text-sm ${status === "success" ? "bg-green-100 text-green-800" : "bg-burgundy/10 text-burgundy"}`}>{message}</p>}
+              {message && <p className={`max-w-full rounded-2xl p-4 text-sm [overflow-wrap:anywhere] ${status === "success" ? "bg-green-100 text-green-800" : "bg-burgundy/10 text-burgundy"}`}>{message}</p>}
             </div>
           </form>
 
-          <aside className="rounded-[2.5rem] bg-burgundy p-7 text-porcelain shadow-luxe md:p-9">
+          <aside className="min-w-0 overflow-hidden rounded-[2rem] bg-burgundy p-5 text-porcelain shadow-luxe sm:p-7 md:rounded-[2.5rem] md:p-9">
             <div className="mb-6 grid h-14 w-14 place-items-center rounded-full bg-gold text-ink"><CheckCircle2 size={25} /></div>
-            <h2 className="display text-4xl font-bold">Sammanfattning</h2>
+            <h2 className="display text-4xl font-bold [overflow-wrap:anywhere]">Sammanfattning</h2>
             <p className="mt-4 leading-8 text-porcelain/70">Kontrollera uppgifterna innan du skickar. Iboren återkommer med bekräftelse och slutligt pris.</p>
-            <pre className="mt-7 max-h-[480px] overflow-auto whitespace-pre-wrap rounded-[1.5rem] bg-porcelain/10 p-5 text-sm leading-7 text-porcelain/80">{summary}</pre>
+            <pre className="mt-7 max-h-[480px] max-w-full overflow-auto whitespace-pre-wrap rounded-[1.5rem] bg-porcelain/10 p-5 text-sm leading-7 text-porcelain/80 [overflow-wrap:anywhere]">{summary}</pre>
             <Link href="/priser" className="mt-6 inline-flex items-center gap-2 rounded-full bg-porcelain px-5 py-3 text-sm font-bold text-burgundy">Beräkna pris</Link>
           </aside>
         </div>
@@ -251,18 +251,18 @@ export default function BookingPage() {
 
 function Field({ label, value, onChange, placeholder, type = "text", required = false, disabled = false }: { label: string; value: string; onChange: (value: string) => void; placeholder?: string; type?: string; required?: boolean; disabled?: boolean }) {
   return (
-    <label className="block">
+    <label className="block min-w-0">
       <span className="mb-2 block text-sm font-bold text-ink/70">{label}{required ? " *" : ""}</span>
-      <input disabled={disabled} required={required} type={type} value={value} onChange={(event) => onChange(event.target.value)} className="w-full rounded-2xl border border-burgundy/10 bg-cream px-4 py-3 text-ink outline-none focus:border-burgundy/40 disabled:cursor-not-allowed disabled:opacity-55" placeholder={placeholder} />
+      <input disabled={disabled} required={required} type={type} value={value} onChange={(event) => onChange(event.target.value)} className="w-full min-w-0 rounded-2xl border border-burgundy/10 bg-cream px-4 py-3 text-ink outline-none focus:border-burgundy/40 disabled:cursor-not-allowed disabled:opacity-55" placeholder={placeholder} />
     </label>
   );
 }
 
 function Select({ label, value, options, onChange, disabled = false }: { label: string; value: string; options: string[]; onChange: (value: string) => void; disabled?: boolean }) {
   return (
-    <label className="block">
+    <label className="block min-w-0">
       <span className="mb-2 block text-sm font-bold text-ink/70">{label}</span>
-      <select disabled={disabled} value={value} onChange={(event) => onChange(event.target.value)} className="w-full rounded-2xl border border-burgundy/10 bg-cream px-4 py-3 text-ink outline-none focus:border-burgundy/40 disabled:cursor-not-allowed disabled:opacity-55">
+      <select disabled={disabled} value={value} onChange={(event) => onChange(event.target.value)} className="w-full min-w-0 rounded-2xl border border-burgundy/10 bg-cream px-4 py-3 text-ink outline-none focus:border-burgundy/40 disabled:cursor-not-allowed disabled:opacity-55">
         {options.map((option) => <option key={option} value={option}>{option}</option>)}
       </select>
     </label>
