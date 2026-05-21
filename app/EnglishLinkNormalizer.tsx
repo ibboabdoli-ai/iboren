@@ -6,7 +6,10 @@ import { usePathname } from "next/navigation";
 const svToEn: Record<string, string> = {
   "/priser": "/en/prices",
   "/jobb": "/en/jobs",
+  "/om-oss": "/en/about",
   "/om-iboren": "/en/about",
+  "/profile": "/en/profile",
+  "/login": "/en/login",
   "/privacy": "/en/privacy",
   "/terms": "/en/terms",
   "/hemstadning": "/en/home-cleaning",
