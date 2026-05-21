@@ -26,8 +26,11 @@ function getCurrentFrameIndex(section: HTMLElement) {
 
 function clickFrameButton(section: HTMLElement, direction: 1 | -1) {
   const buttons = Array.from(section.querySelectorAll<HTMLButtonElement | HTMLAnchorElement>("button, a"));
-  const label = direction === 1 ? "Nästa bild" : "Föregående";
-  const button = buttons.find((item) => (item.textContent || "").includes(label));
+  const labels = direction === 1 ? ["Nästa bild", "Next image"] : ["Föregående", "Previous"];
+  const button = buttons.find((item) => {
+    const text = item.textContent || "";
+    return labels.some((label) => text.includes(label));
+  });
   if (!button) return false;
   button.click();
   return true;
