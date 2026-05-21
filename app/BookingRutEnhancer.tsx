@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { createRoot, Root } from "react-dom/client";
+import { createClient } from "@supabase/supabase-js";
 
 type CustomerType = "Privatperson" | "Företag";
 
@@ -33,6 +34,20 @@ const copy = {
   }
 };
 
+const serviceByLabel: Record<string, string> = {
+  "Home cleaning": "Hemstädning",
+  "Move-out cleaning": "Flyttstädning",
+  "Office cleaning": "Kontorsstädning",
+  "Window cleaning": "Fönsterputs"
+};
+
+function getSupabase() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (!url || !key) return null;
+  return createClient(url, key, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true } });
+}
+
 function fixEnglishBookingText(form: HTMLElement) {
   form.querySelectorAll<HTMLButtonElement>("button").forEach((button) => {
     const text = button.textContent?.trim() || "";
@@ -45,10 +60,121 @@ function fixEnglishBookingText(form: HTMLElement) {
 
   nodes.forEach((node) => {
     const text = node.nodeValue || "";
-    if (text.includes("obligatoriska") || text.includes("innan du skickar")) {
-      node.nodeValue = "Fill in all required fields before sending.";
-    }
+    if (text.includes("obligatoriska") || text.includes("innan du skickar")) node.nodeValue = "Fill in all required fields before sending.";
   });
+}
+
+function getInput(form: HTMLElement, selector: string) {
+  return form.querySelector<HTMLInputElement>(selector)?.value.trim() || "";
+}
+
+function getSelectValue(form: HTMLElement, valueToFind: string, fallback: string) {
+  const select = Array.from(form.querySelectorAll<HTMLSelectElement>("select")).find((item) => Array.from(item.options).some((option) => option.value === valueToFind));
+  return select?.value || fallback;
+}
+
+function getSelectedService(form: HTMLElement) {
+  const buttons = Array.from(form.querySelectorAll<HTMLButtonElement>("button[type='button']"));
+  const selected = buttons.find((button) => serviceByLabel[(button.textContent || "").trim()] && button.className.includes("bg-gold"));
+  const label = (selected?.textContent || "Home cleaning").trim();
+  return serviceByLabel[label] || "Hemstädning";
+}
+
+function showEnglishMessage(form: HTMLElement, message: string, tone: "error" | "success" | "info" = "error") {
+  let node = form.querySelector<HTMLParagraphElement>("#iboren-en-submit-message");
+  if (!node) {
+    node = document.createElement("p");
+    node.id = "iboren-en-submit-message";
+    (form.querySelector(".grid") || form).appendChild(node);
+  }
+  node.className = `rounded-2xl px-4 py-3 text-sm ${tone === "success" ? "bg-gold/20 text-gold" : tone === "info" ? "bg-porcelain/10 text-porcelain/70" : "bg-red-500/10 text-red-200"}`;
+  node.textContent = message;
+}
+
+function buildEnglishNotes(form: HTMLElement) {
+  const textArea = form.querySelector<HTMLTextAreaElement>("textarea")?.value.trim() || "";
+  const details = [
+    "--- Property & details ---",
+    `Number of rooms: ${getInput(form, "input[placeholder='3']") || "Not filled in"}`,
+    `Number of bathrooms: ${getInput(form, "input[placeholder='1']") || "Not filled in"}`,
+    "",
+    "--- Customer notes ---",
+    textArea || "-"
+  ];
+  return details.join("\n");
+}
+
+async function submitEnglishBooking(form: HTMLElement) {
+  fixEnglishBookingText(form);
+
+  const payload = {
+    service: getSelectedService(form),
+    area: getInput(form, "input[placeholder='Stockholm, Södertälje...']"),
+    address: getInput(form, "input[placeholder='Street address']"),
+    size: getInput(form, "input[placeholder='75']"),
+    frequency: getSelectValue(form, "Engång", "Engång"),
+    date: getInput(form, "input[type='date']"),
+    timeWindow: getSelectValue(form, "Morgon", "Flexibel"),
+    name: getInput(form, "input[placeholder='Full name']"),
+    email: getInput(form, "input[type='email']"),
+    phone: getInput(form, "input[type='tel']"),
+    notes: buildEnglishNotes(form),
+    customerType: window.__iborenBookingRut?.customerType || "Privatperson",
+    rutRequested: window.__iborenBookingRut?.rutRequested ?? true
+  };
+
+  const missing = [
+    ["Name", payload.name],
+    ["Email", payload.email],
+    ["Phone", payload.phone],
+    ["Area / city", payload.area],
+    ["Address", payload.address],
+    ["Size sqm", payload.size],
+    ["Preferred date", payload.date]
+  ].filter(([, value]) => !value).map(([label]) => label);
+
+  if (missing.length) {
+    showEnglishMessage(form, `Please fill in: ${missing.join(", ")}.`);
+    return;
+  }
+
+  const supabase = getSupabase();
+  const { data } = supabase ? await supabase.auth.getSession() : { data: { session: null } };
+  const token = data.session?.access_token;
+  const sessionEmail = data.session?.user?.email || "";
+
+  if (!token) {
+    showEnglishMessage(form, "Please log in before sending a booking request.");
+    return;
+  }
+
+  if (sessionEmail && payload.email.toLowerCase() !== sessionEmail.toLowerCase()) {
+    showEnglishMessage(form, `Use the same email as your logged-in account: ${sessionEmail}.`);
+    return;
+  }
+
+  showEnglishMessage(form, "Sending your booking request...", "info");
+
+  const response = await fetch("/api/bookings", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+    body: JSON.stringify(payload)
+  });
+  const result = await response.json().catch(() => null) as { ok?: boolean; duplicate?: boolean; message?: string } | null;
+
+  if (!response.ok || !result?.ok) {
+    const apiMessage = result?.duplicate
+      ? "This booking request already exists. Change the date, time or details if you want to create a new request."
+      : result?.message?.includes("Missing required fields")
+        ? result.message
+        : result?.message?.includes("e-post")
+          ? `Use the same email as your logged-in account: ${sessionEmail}.`
+          : result?.message || "Could not send the request right now.";
+    showEnglishMessage(form, apiMessage);
+    return;
+  }
+
+  showEnglishMessage(form, "Thank you. Your booking request has been sent to Iboren and saved to your profile.", "success");
 }
 
 function BookingRutPanel({ language }: { language: "sv" | "en" }) {
@@ -109,19 +235,24 @@ export default function BookingRutEnhancer() {
       .find((node) => node.textContent?.includes("Objekt & detaljer") || node.textContent?.includes("Property & details"))
       ?.closest("div");
 
-    if (detailsBlock?.parentElement) {
-      detailsBlock.insertAdjacentElement("beforebegin", host);
-    } else {
-      form.querySelector(".grid")?.appendChild(host);
-    }
+    if (detailsBlock?.parentElement) detailsBlock.insertAdjacentElement("beforebegin", host);
+    else form.querySelector(".grid")?.appendChild(host);
 
     const root: Root = createRoot(host);
     root.render(<BookingRutPanel language={language} />);
 
     const observer = language === "en" ? new MutationObserver(() => fixEnglishBookingText(form)) : null;
+    const onEnglishSubmit = (event: SubmitEvent) => {
+      event.preventDefault();
+      event.stopPropagation();
+      event.stopImmediatePropagation();
+      void submitEnglishBooking(form);
+    };
+
     if (language === "en") {
       fixEnglishBookingText(form);
       observer?.observe(form, { childList: true, subtree: true, characterData: true });
+      form.addEventListener("submit", onEnglishSubmit, true);
     }
 
     const originalFetch = window.fetch.bind(window);
@@ -139,6 +270,7 @@ export default function BookingRutEnhancer() {
 
     return () => {
       observer?.disconnect();
+      if (language === "en") form.removeEventListener("submit", onEnglishSubmit, true);
       root.unmount();
       host.remove();
       window.fetch = originalFetch;
