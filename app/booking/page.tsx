@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { createClient, User } from "@supabase/supabase-js";
-import { ArrowLeft, CheckCircle2, Loader2, Save, Send } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Loader2, Send } from "lucide-react";
 
 type BookingDraft = {
   service: string;
@@ -64,8 +64,6 @@ export default function BookingPage() {
     async function loadDefaults() {
       const supabase = getSupabase();
       if (!supabase) {
-        setMessage("Supabase saknas. Kontrollera environment variables i Vercel.");
-        setStatus("error");
         setLoading(false);
         return;
       }
@@ -127,37 +125,18 @@ export default function BookingPage() {
     setDraft((current) => ({ ...current, [key]: value }));
   };
 
-  async function saveBookingToDatabase() {
+  async function getAccessToken() {
     const supabase = getSupabase();
-    if (!supabase) throw new Error("Supabase saknas.");
-
-    const { data } = await supabase.auth.getUser();
-    const currentUser = data.user;
-
-    const { error } = await supabase.from("bookings").insert({
-      user_id: currentUser?.id ?? null,
-      service: draft.service,
-      area: draft.area,
-      address: draft.address || null,
-      size_sqm: Number.parseInt(draft.size, 10),
-      frequency: draft.frequency,
-      preferred_date: draft.date,
-      time_window: draft.timeWindow,
-      customer_name: draft.name,
-      customer_email: draft.email,
-      customer_phone: draft.phone || null,
-      notes: draft.notes || null,
-      status: "new"
-    });
-
-    if (error) throw new Error(error.message);
+    if (!supabase) return "";
+    const { data } = await supabase.auth.getSession();
+    return data.session?.access_token || "";
   }
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!draft.name || !draft.email || !draft.area || !draft.size || !draft.date) {
+    if (!draft.name || !draft.email || !draft.phone || !draft.area || !draft.address || !draft.size || !draft.date) {
       setStatus("error");
-      setMessage("Fyll i namn, e-post, område, storlek och datum innan du skickar.");
+      setMessage("Fyll i namn, e-post, telefon, område, adress, storlek och datum innan du skickar.");
       return;
     }
 
@@ -166,16 +145,19 @@ export default function BookingPage() {
     setStatus("idle");
 
     try {
-      await saveBookingToDatabase();
+      const accessToken = await getAccessToken();
+      const headers: HeadersInit = { "Content-Type": "application/json" };
+      if (accessToken) headers.Authorization = `Bearer ${accessToken}`;
+
       const response = await fetch("/api/bookings", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers,
         body: JSON.stringify(draft)
       });
       const result = await response.json();
       if (!response.ok || !result.ok) throw new Error(result.message || "Kunde inte skicka bokningen.");
       setStatus("success");
-      setMessage(user ? "Bokningen är sparad på din profil och skickad till Iboren." : "Bokningsförfrågan skickad.");
+      setMessage(user ? "Bokningen är sparad på din profil och skickad till Iboren." : "Tack! Din bokningsförfrågan är skickad till Iboren.");
     } catch (error) {
       setStatus("error");
       setMessage(error instanceof Error ? error.message : "Något gick fel.");
@@ -191,18 +173,18 @@ export default function BookingPage() {
   return (
     <main className="min-h-screen bg-cream py-12 text-ink md:py-16">
       <section className="luxe-container">
-        <Link href="/profile" className="mb-8 inline-flex items-center gap-2 text-sm font-bold text-burgundy"><ArrowLeft size={17} /> Tillbaka till profil</Link>
+        <Link href="/" className="mb-8 inline-flex items-center gap-2 text-sm font-bold text-burgundy"><ArrowLeft size={17} /> Tillbaka</Link>
 
         <div className="grid gap-6 lg:grid-cols-[1.08fr_.92fr]">
           <form onSubmit={submit} className="rounded-[2.5rem] bg-porcelain p-7 shadow-soft md:p-9">
-            <p className="eyebrow">Iboren Booking</p>
-            <h1 className="display mt-4 text-5xl font-bold leading-[.9] text-burgundy md:text-7xl">Ny bokning</h1>
-            <p className="mt-5 leading-8 text-ink/65">Uppgifter från din profil fylls i automatiskt. Kontrollera och komplettera innan du skickar.</p>
+            <p className="eyebrow">Boka städning</p>
+            <h1 className="display mt-4 text-5xl font-bold leading-[.9] text-burgundy md:text-7xl">Skicka bokningsförfrågan</h1>
+            <p className="mt-5 leading-8 text-ink/65">Fyll i dina uppgifter så återkommer Iboren med bekräftelse, tid och slutligt pris.</p>
 
             {user ? (
               <p className="mt-5 inline-flex rounded-full bg-burgundy/10 px-4 py-2 text-sm font-bold text-burgundy">Inloggad som {user.email}</p>
             ) : (
-              <div className="mt-5 rounded-2xl bg-gold/20 p-4 text-sm leading-6 text-ink/70">Du är inte inloggad. Bokningen skickas, men sparas inte på en profil. <Link href="/login" className="font-bold text-burgundy">Logga in här</Link>.</div>
+              <div className="mt-5 rounded-2xl bg-gold/20 p-4 text-sm leading-6 text-ink/70">Du kan skicka en bokningsförfrågan utan konto. Vill du spara historik på en profil kan du <Link href="/login" className="font-bold text-burgundy">logga in här</Link>.</div>
             )}
 
             <div className="mt-8 grid gap-5">
@@ -216,19 +198,19 @@ export default function BookingPage() {
               </div>
 
               <div className="grid gap-4 md:grid-cols-2">
-                <Field label="Namn" value={draft.name} onChange={(value) => setField("name", value)} />
-                <Field label="E-post" value={draft.email} onChange={(value) => setField("email", value)} type="email" />
+                <Field label="Namn" value={draft.name} onChange={(value) => setField("name", value)} required />
+                <Field label="E-post" value={draft.email} onChange={(value) => setField("email", value)} type="email" required />
               </div>
               <div className="grid gap-4 md:grid-cols-2">
-                <Field label="Telefon" value={draft.phone} onChange={(value) => setField("phone", value)} />
-                <Field label="Storlek kvm" value={draft.size} onChange={(value) => setField("size", value.replace(/[^0-9]/g, ""))} placeholder="75" />
+                <Field label="Telefon" value={draft.phone} onChange={(value) => setField("phone", value)} required />
+                <Field label="Storlek kvm" value={draft.size} onChange={(value) => setField("size", value.replace(/[^0-9]/g, ""))} placeholder="75" required />
               </div>
               <div className="grid gap-4 md:grid-cols-2">
-                <Field label="Område" value={draft.area} onChange={(value) => setField("area", value)} placeholder="Södertälje" />
-                <Field label="Adress" value={draft.address} onChange={(value) => setField("address", value)} placeholder="Gatuadress" />
+                <Field label="Område" value={draft.area} onChange={(value) => setField("area", value)} placeholder="Södertälje" required />
+                <Field label="Adress" value={draft.address} onChange={(value) => setField("address", value)} placeholder="Gatuadress" required />
               </div>
               <div className="grid gap-4 md:grid-cols-3">
-                <Field label="Datum" value={draft.date} onChange={(value) => setField("date", value)} type="date" />
+                <Field label="Datum" value={draft.date} onChange={(value) => setField("date", value)} type="date" required />
                 <Select label="Frekvens" value={draft.frequency} options={frequencyOptions} onChange={(value) => setField("frequency", value)} />
                 <Select label="Tid" value={draft.timeWindow} options={timeOptions} onChange={(value) => setField("timeWindow", value)} />
               </div>
@@ -249,9 +231,9 @@ export default function BookingPage() {
           <aside className="rounded-[2.5rem] bg-burgundy p-7 text-porcelain shadow-luxe md:p-9">
             <div className="mb-6 grid h-14 w-14 place-items-center rounded-full bg-gold text-ink"><CheckCircle2 size={25} /></div>
             <h2 className="display text-4xl font-bold">Sammanfattning</h2>
-            <p className="mt-4 leading-8 text-porcelain/70">Den här informationen sparas i din profilhistorik och skickas till Iboren.</p>
+            <p className="mt-4 leading-8 text-porcelain/70">Kontrollera uppgifterna innan du skickar. Iboren återkommer med bekräftelse och slutligt pris.</p>
             <pre className="mt-7 max-h-[480px] overflow-auto whitespace-pre-wrap rounded-[1.5rem] bg-porcelain/10 p-5 text-sm leading-7 text-porcelain/80">{summary}</pre>
-            <Link href="/profile" className="mt-6 inline-flex items-center gap-2 rounded-full bg-porcelain px-5 py-3 text-sm font-bold text-burgundy"><Save size={17} /> Visa profil</Link>
+            <Link href="/priser" className="mt-6 inline-flex items-center gap-2 rounded-full bg-porcelain px-5 py-3 text-sm font-bold text-burgundy">Beräkna pris</Link>
           </aside>
         </div>
       </section>
@@ -259,11 +241,11 @@ export default function BookingPage() {
   );
 }
 
-function Field({ label, value, onChange, placeholder, type = "text" }: { label: string; value: string; onChange: (value: string) => void; placeholder?: string; type?: string }) {
+function Field({ label, value, onChange, placeholder, type = "text", required = false }: { label: string; value: string; onChange: (value: string) => void; placeholder?: string; type?: string; required?: boolean }) {
   return (
     <label className="block">
-      <span className="mb-2 block text-sm font-bold text-ink/70">{label}</span>
-      <input type={type} value={value} onChange={(event) => onChange(event.target.value)} className="w-full rounded-2xl border border-burgundy/10 bg-cream px-4 py-3 text-ink outline-none focus:border-burgundy/40" placeholder={placeholder} />
+      <span className="mb-2 block text-sm font-bold text-ink/70">{label}{required ? " *" : ""}</span>
+      <input required={required} type={type} value={value} onChange={(event) => onChange(event.target.value)} className="w-full rounded-2xl border border-burgundy/10 bg-cream px-4 py-3 text-ink outline-none focus:border-burgundy/40" placeholder={placeholder} />
     </label>
   );
 }
