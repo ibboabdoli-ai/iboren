@@ -127,37 +127,25 @@ export default function BookingPage() {
     setDraft((current) => ({ ...current, [key]: value }));
   };
 
-  async function saveBookingToDatabase() {
+  async function getAccessToken() {
     const supabase = getSupabase();
-    if (!supabase) throw new Error("Supabase saknas.");
-
-    const { data } = await supabase.auth.getUser();
-    const currentUser = data.user;
-
-    const { error } = await supabase.from("bookings").insert({
-      user_id: currentUser?.id ?? null,
-      service: draft.service,
-      area: draft.area,
-      address: draft.address || null,
-      size_sqm: Number.parseInt(draft.size, 10),
-      frequency: draft.frequency,
-      preferred_date: draft.date,
-      time_window: draft.timeWindow,
-      customer_name: draft.name,
-      customer_email: draft.email,
-      customer_phone: draft.phone || null,
-      notes: draft.notes || null,
-      status: "new"
-    });
-
-    if (error) throw new Error(error.message);
+    if (!supabase) return "";
+    const { data } = await supabase.auth.getSession();
+    return data.session?.access_token || "";
   }
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!draft.name || !draft.email || !draft.area || !draft.size || !draft.date) {
+
+    if (!user) {
       setStatus("error");
-      setMessage("Fyll i namn, e-post, område, storlek och datum innan du skickar.");
+      setMessage("Du behöver logga in innan du kan skicka en bokningsförfrågan.");
+      return;
+    }
+
+    if (!draft.name || !draft.email || !draft.phone || !draft.area || !draft.address || !draft.size || !draft.date) {
+      setStatus("error");
+      setMessage("Fyll i namn, e-post, telefon, område, adress, storlek och datum innan du skickar.");
       return;
     }
 
@@ -166,22 +154,24 @@ export default function BookingPage() {
     setStatus("idle");
 
     try {
-      await saveBookingToDatabase();
+      const accessToken = await getAccessToken();
+      if (!accessToken) throw new Error("Du behöver logga in igen innan du skickar bokningen.");
+
       const response = await fetch("/api/bookings", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
         body: JSON.stringify(draft)
       });
       const result = await response.json();
       if (!response.ok || !result.ok) throw new Error(result.message || "Kunde inte skicka bokningen.");
       setStatus("success");
-      setMessage(user ? "Bokningen är sparad på din profil och skickad till Iboren." : "Bokningsförfrågan skickad.");
+      setMessage("Bokningen är sparad på din profil och skickad till Iboren.");
     } catch (error) {
       setStatus("error");
       setMessage(error instanceof Error ? error.message : "Något gick fel.");
+    } finally {
+      setSubmitting(false);
     }
-
-    setSubmitting(false);
   }
 
   if (loading) {
@@ -202,7 +192,7 @@ export default function BookingPage() {
             {user ? (
               <p className="mt-5 inline-flex rounded-full bg-burgundy/10 px-4 py-2 text-sm font-bold text-burgundy">Inloggad som {user.email}</p>
             ) : (
-              <div className="mt-5 rounded-2xl bg-gold/20 p-4 text-sm leading-6 text-ink/70">Du är inte inloggad. Bokningen skickas, men sparas inte på en profil. <Link href="/login" className="font-bold text-burgundy">Logga in här</Link>.</div>
+              <div className="mt-5 rounded-2xl bg-gold/20 p-4 text-sm leading-6 text-ink/70">Du behöver logga in för att boka. <Link href="/login" className="font-bold text-burgundy">Logga in här</Link>.</div>
             )}
 
             <div className="mt-8 grid gap-5">
@@ -237,7 +227,7 @@ export default function BookingPage() {
                 <textarea value={draft.notes} onChange={(event) => setField("notes", event.target.value)} className="min-h-28 w-full rounded-2xl border border-burgundy/10 bg-cream px-4 py-3 text-ink outline-none focus:border-burgundy/40" placeholder="Särskilda instruktioner, portkod, nyckel, husdjur..." />
               </label>
 
-              <button disabled={submitting} className="btn-primary w-full md:w-fit">
+              <button disabled={submitting || !user} className="btn-primary w-full disabled:cursor-not-allowed disabled:opacity-55 md:w-fit">
                 {submitting ? <Loader2 className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5" />}
                 Skicka bokningsförfrågan
               </button>
