@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { createClient, Session, User } from "@supabase/supabase-js";
-import { ArrowLeft, Loader2, LogOut, Save, UserRound, XCircle } from "lucide-react";
+import { ArrowLeft, CalendarPlus, Loader2, LogOut, Save, UserRound, XCircle } from "lucide-react";
 
 type Booking = {
   id: string;
@@ -251,7 +251,8 @@ export default function EnglishProfilePage() {
               <div className="rounded-2xl bg-white/5 p-4"><p className="text-3xl font-black text-gold">{activeCount}</p><p className="text-xs uppercase tracking-[.18em] text-porcelain/55">Active</p></div>
               <div className="rounded-2xl bg-white/5 p-4"><p className="text-3xl font-black text-gold">{cancelledCount}</p><p className="text-xs uppercase tracking-[.18em] text-porcelain/55">Cancelled</p></div>
             </div>
-            <button onClick={signOut} className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-full border border-gold/35 px-5 py-3 text-sm font-bold text-gold"><LogOut size={17} /> Log out</button>
+            <Link href="/en#booking" className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-full border border-gold/35 bg-gold px-5 py-3 text-sm font-bold text-night"><CalendarPlus size={17} /> New booking request</Link>
+            <button onClick={signOut} className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-full border border-gold/35 px-5 py-3 text-sm font-bold text-gold"><LogOut size={17} /> Log out</button>
           </aside>
 
           <div className="grid gap-6">
@@ -272,7 +273,10 @@ export default function EnglishProfilePage() {
             <section className="rounded-[2.5rem] bg-porcelain p-6 shadow-luxe md:p-8">
               <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
                 <div><p className="text-xs font-black uppercase tracking-[.28em] text-burgundy/60">Booking requests</p><h2 className="display mt-2 text-4xl font-bold text-burgundy">My requests</h2></div>
-                <button onClick={() => setShowCancelled((value) => !value)} className="rounded-full border border-burgundy/15 px-4 py-2 text-sm font-bold text-burgundy">{showCancelled ? "Hide cancelled" : "Show cancelled"}</button>
+                <div className="grid w-full gap-3 sm:w-auto sm:grid-cols-2">
+                  <button onClick={() => setShowCancelled((value) => !value)} className="rounded-full border border-burgundy/15 px-4 py-2 text-sm font-bold text-burgundy">{showCancelled ? "Hide cancelled" : "Show cancelled"}</button>
+                  <Link href="/en#booking" className="rounded-full border border-gold/35 bg-gold px-4 py-2 text-center text-sm font-bold text-night">New booking request</Link>
+                </div>
               </div>
               {message && <p className="mb-4 rounded-2xl bg-burgundy/10 p-4 text-sm text-burgundy">{message}</p>}
               {bookingsLoading ? <Loader2 className="h-7 w-7 animate-spin text-burgundy" /> : visibleBookings.length === 0 ? <p className="rounded-2xl bg-cream p-5 text-ink/65">No booking requests yet.</p> : <div className="grid gap-4">{visibleBookings.map((booking) => <article key={booking.id} className="rounded-[1.5rem] border border-burgundy/10 bg-cream p-5"><div className="flex flex-wrap items-start justify-between gap-3"><div><p className="text-xs font-black uppercase tracking-[.2em] text-burgundy/55">{booking.created_at ? new Date(booking.created_at).toLocaleDateString("en-SE") : ""}</p><h3 className="display mt-1 text-3xl font-bold text-burgundy">{booking.service}</h3><p className="mt-1 text-sm text-ink/65">{booking.area} · {booking.size_sqm ? `${booking.size_sqm} sqm` : "Size not set"}</p></div><span className={`rounded-full border px-3 py-1 text-xs font-black uppercase tracking-[.14em] ${statusClass(booking.status)}`}>{statusLabel(booking.status)}</span></div><div className="mt-4 grid gap-2 text-sm leading-6 text-ink/68 md:grid-cols-2"><p><strong>Address:</strong> {booking.address || "—"}</p><p><strong>Date:</strong> {booking.preferred_date || "—"}</p><p><strong>Time:</strong> {booking.time_window || "—"}</p><p><strong>Frequency:</strong> {booking.frequency || "—"}</p><p><strong>Phone:</strong> {booking.customer_phone || "—"}</p><p><strong>Email:</strong> {booking.customer_email}</p></div>{booking.notes && <pre className="mt-4 whitespace-pre-wrap rounded-2xl bg-white/60 p-4 text-sm leading-6 text-ink/62">{booking.notes}</pre>}{booking.status !== "cancelled" && <button onClick={() => cancelBooking(booking.id)} disabled={cancelingId === booking.id} className="mt-4 inline-flex items-center gap-2 rounded-full border border-red-200 bg-red-50 px-4 py-2 text-sm font-bold text-red-700">{cancelingId === booking.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <XCircle className="h-4 w-4" />} Cancel request</button>}</article>)}</div>}
