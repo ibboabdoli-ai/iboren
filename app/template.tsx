@@ -6,12 +6,14 @@ import InternalLinkNormalizer from "./InternalLinkNormalizer";
 import LanguageSwitcher from "./LanguageSwitcher";
 import PerformanceHints from "./PerformanceHints";
 import SeoInternalLinks from "./SeoInternalLinks";
+import SwedishBookingCopyFix from "./SwedishBookingCopyFix";
 
 export default function Template({ children }: { children: React.ReactNode }) {
   return (
     <>
       <InternalLinkNormalizer />
       <EnglishLinkNormalizer />
+      <SwedishBookingCopyFix />
       <HeaderLogo />
       <CinematicFrameLock />
       <BookingRutEnhancer />
