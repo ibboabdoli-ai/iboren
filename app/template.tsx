@@ -1,4 +1,3 @@
-import BookingAuthEnhancer from "./BookingAuthEnhancer";
 import BookingRutEnhancer from "./BookingRutEnhancer";
 import CinematicFrameLock from "./CinematicFrameLock";
 import EnglishLinkNormalizer from "./EnglishLinkNormalizer";
@@ -17,7 +16,6 @@ export default function Template({ children }: { children: React.ReactNode }) {
       <SwedishBookingCopyFix />
       <HeaderLogo />
       <CinematicFrameLock />
-      <BookingAuthEnhancer />
       <BookingRutEnhancer />
       <PerformanceHints />
       <LanguageSwitcher />
