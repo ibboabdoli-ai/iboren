@@ -30,6 +30,8 @@ type BookingDraft = {
 type ReverseGeocodeResponse = { ok: boolean; address?: string; area?: string; message?: string };
 type Option = { value: string; label: string };
 
+const EN_BOOKING_FORM_VERSION = "EN-FIX-2";
+
 const initialDraft: BookingDraft = {
   service: "Hemstädning",
   area: "Södertälje",
@@ -161,6 +163,14 @@ function buildBookingNotes(draft: BookingDraft) {
   return details.join("\n");
 }
 
+function normalizeEnglishError(message: string) {
+  if (message.includes("Fyll i alla obligatoriska") || message.toLowerCase().includes("missing required fields")) {
+    return `${EN_BOOKING_FORM_VERSION}: Fill in all required fields before sending. Required fields are name, email, phone, area, address, size, rooms, bathrooms and date.`;
+  }
+  if (message.includes("Du behöver logga in")) return `${EN_BOOKING_FORM_VERSION}: Log in before sending a booking request.`;
+  return `${EN_BOOKING_FORM_VERSION}: ${message}`;
+}
+
 export default function EnglishHomePage() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [draft, setDraft] = useState(initialDraft);
@@ -232,26 +242,26 @@ export default function EnglishHomePage() {
 
   function useLocation() {
     if (!navigator.geolocation) {
-      setMessage("Your browser does not support location sharing. Enter the address manually.");
+      setMessage(`${EN_BOOKING_FORM_VERSION}: Your browser does not support location sharing. Enter the address manually.`);
       return;
     }
 
     setLocating(true);
-    setMessage("Fetching your position and trying to fill in the address...");
+    setMessage(`${EN_BOOKING_FORM_VERSION}: Fetching your position and trying to fill in the address...`);
     navigator.geolocation.getCurrentPosition(
       async (position) => {
         try {
           const result = await reverseGeocode(position.coords.latitude, position.coords.longitude);
           setDraft((current) => ({ ...current, address: result.address || current.address, area: result.area || current.area }));
-          setMessage(result.address ? "Address was filled automatically. Please check that it is correct before sending." : "Position found, but the address could not be interpreted. Enter the address manually.");
+          setMessage(result.address ? `${EN_BOOKING_FORM_VERSION}: Address was filled automatically. Please check that it is correct before sending.` : `${EN_BOOKING_FORM_VERSION}: Position found, but the address could not be interpreted. Enter the address manually.`);
         } catch {
-          setMessage("Position found, but the address could not be fetched automatically. Enter the address manually.");
+          setMessage(`${EN_BOOKING_FORM_VERSION}: Position found, but the address could not be fetched automatically. Enter the address manually.`);
         } finally {
           setLocating(false);
         }
       },
       () => {
-        setMessage("Location sharing was denied. You can enter the address manually.");
+        setMessage(`${EN_BOOKING_FORM_VERSION}: Location sharing was denied. You can enter the address manually.`);
         setLocating(false);
       },
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 30000 }
@@ -270,7 +280,7 @@ export default function EnglishHomePage() {
 
     if (!user) {
       setStatus("error");
-      setMessage("Log in before sending a booking request.");
+      setMessage(`${EN_BOOKING_FORM_VERSION}: Log in before sending a booking request.`);
       return;
     }
 
@@ -281,7 +291,7 @@ export default function EnglishHomePage() {
 
     if (missing.length) {
       setStatus("error");
-      setMessage(`Fill in the required fields before sending: ${missing.map((field) => field.label).join(", ")}.`);
+      setMessage(`${EN_BOOKING_FORM_VERSION}: Fill in the required fields before sending: ${missing.map((field) => field.label).join(", ")}.`);
       return;
     }
 
@@ -316,10 +326,11 @@ export default function EnglishHomePage() {
       if (!response.ok || !result.ok) throw new Error(result.message || "Could not send the request.");
 
       setStatus("success");
-      setMessage("Thank you. Your request has been saved to your profile and sent to Iboren.");
+      setMessage(`${EN_BOOKING_FORM_VERSION}: Thank you. Your request has been saved to your profile and sent to Iboren.`);
     } catch (error) {
       setStatus("error");
-      setMessage(error instanceof Error ? error.message : "Could not send the request right now.");
+      const rawMessage = error instanceof Error ? error.message : "Could not send the request right now.";
+      setMessage(normalizeEnglishError(rawMessage));
     }
   }
 
@@ -386,7 +397,7 @@ export default function EnglishHomePage() {
 
           <div className="grid gap-5 xl:grid-cols-[1fr_.88fr]">
             <form onSubmit={submit} className="rounded-[2rem] border border-porcelain/10 bg-porcelain/8 p-5 shadow-2xl backdrop-blur-xl md:p-7">
-              <div className="mb-6 flex items-center justify-between"><div><p className="text-xs uppercase tracking-[.28em] text-gold">Step 1 / Request</p><h3 className="display mt-2 text-3xl font-normal uppercase">Request details</h3></div><span className="rounded-full border border-gold/30 px-3 py-1 text-[10px] font-bold uppercase tracking-[.22em] text-gold">Draft</span></div>
+              <div className="mb-6 flex items-center justify-between"><div><p className="text-xs uppercase tracking-[.28em] text-gold">Step 1 / Request</p><h3 className="display mt-2 text-3xl font-normal uppercase">Request details</h3><p className="mt-2 text-[10px] font-bold uppercase tracking-[.18em] text-gold/70">Form version: {EN_BOOKING_FORM_VERSION}</p></div><span className="rounded-full border border-gold/30 px-3 py-1 text-[10px] font-bold uppercase tracking-[.22em] text-gold">Draft</span></div>
               <div className="grid gap-4">
                 <div><label className="mb-2 block text-sm font-bold text-porcelain/80">Service</label><div className="grid grid-cols-1 gap-2 sm:grid-cols-2">{serviceOptions.map((service) => <button type="button" key={service.value} onClick={() => setField("service", service.value)} className={`rounded-2xl border px-3 py-3 text-sm font-bold transition ${draft.service === service.value ? "border-gold bg-gold text-ink" : "border-porcelain/10 bg-porcelain/6 text-porcelain/80"}`}>{service.label}</button>)}</div></div>
                 <div className="grid gap-4 sm:grid-cols-2"><Field label="Area / city" value={draft.area} onChange={(value) => setField("area", value)} placeholder="Stockholm, Södertälje..." /><Field label="Size sqm" value={draft.size} onChange={(value) => setField("size", value.replace(/[^0-9]/g, ""))} placeholder="75" /></div>
