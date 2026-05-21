@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import EnglishHomePage from "../EnglishHomePage";
+import EnglishBookingPage from "../EnglishBookingPage";
 
 export const metadata: Metadata = {
   title: "Iboren – Cleaning request in Södertälje and Stockholm",
@@ -8,5 +8,5 @@ export const metadata: Metadata = {
 };
 
 export default function EnglishPage() {
-  return <EnglishHomePage />;
+  return <EnglishBookingPage />;
 }
