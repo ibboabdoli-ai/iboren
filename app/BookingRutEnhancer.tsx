@@ -33,6 +33,24 @@ const copy = {
   }
 };
 
+function fixEnglishBookingText(form: HTMLElement) {
+  form.querySelectorAll<HTMLButtonElement>("button").forEach((button) => {
+    const text = button.textContent?.trim() || "";
+    if (text.includes("boknings") || text.includes("förfrågan")) button.textContent = "Send booking request";
+  });
+
+  const walker = document.createTreeWalker(form, NodeFilter.SHOW_TEXT);
+  const nodes: Text[] = [];
+  while (walker.nextNode()) nodes.push(walker.currentNode as Text);
+
+  nodes.forEach((node) => {
+    const text = node.nodeValue || "";
+    if (text.includes("obligatoriska") || text.includes("innan du skickar")) {
+      node.nodeValue = "Fill in all required fields before sending.";
+    }
+  });
+}
+
 function BookingRutPanel({ language }: { language: "sv" | "en" }) {
   const [customerType, setCustomerType] = useState<CustomerType>("Privatperson");
   const [rutRequested, setRutRequested] = useState(true);
@@ -100,6 +118,12 @@ export default function BookingRutEnhancer() {
     const root: Root = createRoot(host);
     root.render(<BookingRutPanel language={language} />);
 
+    const observer = language === "en" ? new MutationObserver(() => fixEnglishBookingText(form)) : null;
+    if (language === "en") {
+      fixEnglishBookingText(form);
+      observer?.observe(form, { childList: true, subtree: true, characterData: true });
+    }
+
     const originalFetch = window.fetch.bind(window);
     window.fetch = ((input: RequestInfo | URL, init?: RequestInit) => {
       const url = typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
@@ -114,6 +138,7 @@ export default function BookingRutEnhancer() {
     }) as typeof window.fetch;
 
     return () => {
+      observer?.disconnect();
       root.unmount();
       host.remove();
       window.fetch = originalFetch;
