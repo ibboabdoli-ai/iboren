@@ -2,10 +2,25 @@
 
 import { useLayoutEffect } from "react";
 
+function optimizedImageSrc(src: string) {
+  if (!src || src.startsWith("/_next/image")) return src;
+  const url = new URL(src, window.location.origin);
+  if (!url.pathname.startsWith("/cinematic/") || !url.pathname.endsWith(".webp")) return src;
+  const width = window.innerWidth <= 768 ? 828 : 1920;
+  return `/_next/image?url=${encodeURIComponent(url.pathname)}&w=${width}&q=65`;
+}
+
+function optimizeImageElement(image: HTMLImageElement) {
+  const original = image.getAttribute("src") || image.src;
+  const optimized = optimizedImageSrc(original);
+  if (optimized !== original) image.setAttribute("src", optimized);
+}
+
 export default function PerformanceHints() {
   useLayoutEffect(() => {
     const heroImage = document.querySelector<HTMLImageElement>("#top img");
     if (heroImage) {
+      optimizeImageElement(heroImage);
       heroImage.loading = "eager";
       heroImage.decoding = "async";
       heroImage.fetchPriority = "high";
@@ -14,6 +29,7 @@ export default function PerformanceHints() {
 
     const images = Array.from(document.querySelectorAll<HTMLImageElement>("#cinematic-scroll img"));
     images.forEach((image, index) => {
+      optimizeImageElement(image);
       image.loading = index === 0 ? "eager" : "lazy";
       image.decoding = "async";
       image.sizes = "100vw";
