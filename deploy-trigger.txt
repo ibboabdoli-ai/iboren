@@ -1,1 +1,3 @@
-Trigger a fresh Vercel production deployment after adding Supabase auth environment variables.
+Trigger production deployment after English booking marker update.
+Expected English booking form marker: EN-FIX-2
+Timestamp marker: 2026-05-21T21:55Z
