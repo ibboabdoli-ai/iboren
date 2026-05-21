@@ -50,6 +50,15 @@ export default function EnglishLinkNormalizer() {
   const pathname = usePathname() || "/";
 
   useEffect(() => {
+    if (isEnglishRoute(pathname)) {
+      window.sessionStorage.setItem("iboren-language", "en");
+    }
+
+    if (pathname === "/profile" && window.sessionStorage.getItem("iboren-language") === "en") {
+      window.location.replace("/en/profile");
+      return;
+    }
+
     if (!isEnglishRoute(pathname)) return;
 
     const normalizeExistingLinks = () => {
