@@ -8,12 +8,24 @@ type BookingPayload = {
   area?: string;
   address?: string;
   size?: string;
+  sizeSqm?: string;
+  size_sqm?: string;
   frequency?: string;
   date?: string;
+  preferredDate?: string;
+  preferred_date?: string;
   timeWindow?: string;
+  time?: string;
+  time_window?: string;
   name?: string;
+  customerName?: string;
+  customer_name?: string;
   email?: string;
+  customerEmail?: string;
+  customer_email?: string;
   phone?: string;
+  customerPhone?: string;
+  customer_phone?: string;
   notes?: string;
   customerType?: string;
   rutRequested?: boolean;
@@ -45,11 +57,29 @@ class DuplicateBookingError extends Error {
   }
 }
 
-const required: Array<keyof BookingPayload> = ["service", "area", "address", "size", "date", "name", "email", "phone"];
+const required: Array<keyof NormalizedBookingPayload> = ["service", "area", "address", "size", "date", "name", "email", "phone"];
+const requiredLabels: Record<string, string> = {
+  service: "service/tjänst",
+  area: "area/område",
+  address: "address/adress",
+  size: "size/storlek",
+  date: "date/datum",
+  name: "name/namn",
+  email: "email/e-post",
+  phone: "phone/telefon"
+};
 const EMAIL_WAIT_LIMIT_MS = 4500;
 
 function sanitize(value: unknown) {
   return String(value ?? "").replace(/[<>]/g, "").trim().slice(0, 3000);
+}
+
+function firstFilled(...values: unknown[]) {
+  for (const value of values) {
+    const clean = sanitize(value);
+    if (clean) return clean;
+  }
+  return "";
 }
 
 function normalizeCustomerType(value: unknown) {
@@ -222,25 +252,33 @@ export async function POST(request: Request) {
 
     const json = (await request.json()) as BookingPayload;
     const customerType = normalizeCustomerType(json.customerType);
-    const service = sanitize(json.service);
+    const service = firstFilled(json.service);
     const payload: NormalizedBookingPayload = {
       service,
-      area: sanitize(json.area),
-      address: sanitize(json.address),
-      size: sanitize(json.size),
-      frequency: sanitize(json.frequency || "Engång"),
-      date: sanitize(json.date),
-      timeWindow: sanitize(json.timeWindow || "Flexibel"),
-      name: sanitize(json.name),
-      email: sanitize(json.email),
-      phone: sanitize(json.phone),
-      notes: sanitize(json.notes),
+      area: firstFilled(json.area),
+      address: firstFilled(json.address),
+      size: firstFilled(json.size, json.sizeSqm, json.size_sqm),
+      frequency: firstFilled(json.frequency) || "Engång",
+      date: firstFilled(json.date, json.preferredDate, json.preferred_date),
+      timeWindow: firstFilled(json.timeWindow, json.time, json.time_window) || "Flexibel",
+      name: firstFilled(json.name, json.customerName, json.customer_name),
+      email: firstFilled(json.email, json.customerEmail, json.customer_email),
+      phone: firstFilled(json.phone, json.customerPhone, json.customer_phone),
+      notes: firstFilled(json.notes),
       customerType,
       rutRequested: normalizeRutRequested(json.rutRequested, customerType, service)
     };
 
-    const missing = required.filter((key) => !payload[key as keyof NormalizedBookingPayload]);
-    if (missing.length) return NextResponse.json({ ok: false, message: `Missing required fields: ${missing.join(", ")}` }, { status: 400 });
+    const missing = required.filter((key) => !payload[key]);
+    if (missing.length) {
+      const readableMissing = missing.map((key) => requiredLabels[key] || key).join(", ");
+      return NextResponse.json({
+        ok: false,
+        missing,
+        message: `Saknade obligatoriska fält / Missing required fields: ${readableMissing}.`
+      }, { status: 400 });
+    }
+
     if (!/^\S+@\S+\.\S+$/.test(payload.email)) return NextResponse.json({ ok: false, message: "Invalid email address." }, { status: 400 });
     if (auth.user.email && payload.email.toLowerCase() !== auth.user.email.toLowerCase()) return NextResponse.json({ ok: false, message: "Bokningens e-post måste matcha ditt inloggade konto." }, { status: 403 });
 
