@@ -5,6 +5,10 @@ import { createClient } from "@supabase/supabase-js";
 
 const SUBMIT_TIMEOUT_MS = 15000;
 
+function isEnglishPath() {
+  return window.location.pathname === "/en" || window.location.pathname.startsWith("/en/") || window.location.pathname.startsWith("/en-");
+}
+
 function getSupabase() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -128,6 +132,7 @@ function run(form: HTMLFormElement, button: HTMLButtonElement | null) {
 }
 
 function attach() {
+  if (isEnglishPath()) return;
   const form = document.querySelector<HTMLFormElement>("#booking form");
   if (!form) return;
   const button = form.querySelector<HTMLButtonElement>('button[type="submit"], button:not([type])');
@@ -153,6 +158,7 @@ function attach() {
 
 export default function BookingSubmitController() {
   useEffect(() => {
+    if (isEnglishPath()) return;
     attach();
     const observer = new MutationObserver(attach);
     observer.observe(document.documentElement, { childList: true, subtree: true });
