@@ -57,6 +57,11 @@ function logoHtml(isEnglish: boolean) {
   `;
 }
 
+function applyBlur(header: HTMLElement) {
+  header.style.backdropFilter = "blur(18px)";
+  header.style.setProperty("-webkit-backdrop-filter", "blur(18px)");
+}
+
 function applyHeaderLogo() {
   const { isEnglish } = getLanguageState();
   const headerLogoLink = document.querySelector<HTMLAnchorElement>('header nav a[href="#top"], header nav a[href="/"], header nav a[href="/en"]');
@@ -77,8 +82,7 @@ function stabilizeExistingHeader() {
   header.style.top = "0";
   header.style.zIndex = "90";
   header.style.width = "100%";
-  header.style.backdropFilter = "blur(18px)";
-  header.style.webkitBackdropFilter = "blur(18px)";
+  applyBlur(header);
 }
 
 function normalizeHeaderLanguageLinks() {
@@ -119,8 +123,7 @@ function createFallbackHeader() {
   header.style.position = "sticky";
   header.style.top = "0";
   header.style.zIndex = "90";
-  header.style.backdropFilter = "blur(18px)";
-  header.style.webkitBackdropFilter = "blur(18px)";
+  applyBlur(header);
 
   header.innerHTML = `
     <nav class="luxe-container flex min-h-20 items-center justify-between gap-6 py-3">
@@ -131,7 +134,7 @@ function createFallbackHeader() {
       <div class="flex items-center gap-3 text-sm font-black uppercase tracking-[.12em]">
         <a href="${svHref}" class="rounded-full px-3 py-2 ${!isEnglish ? "bg-gold text-night" : "text-porcelain/72 hover:text-gold"}">SV</a>
         <a href="${enHref}" class="rounded-full px-3 py-2 ${isEnglish ? "bg-gold text-night" : "text-porcelain/72 hover:text-gold"}">EN</a>
-        <a href="${isEnglish ? "/login" : "/login"}" class="hidden rounded-full border border-gold/30 px-4 py-2 text-porcelain/80 hover:text-gold sm:inline-flex">${isEnglish ? "Log in" : "Logga in"}</a>
+        <a href="/login" class="hidden rounded-full border border-gold/30 px-4 py-2 text-porcelain/80 hover:text-gold sm:inline-flex">${isEnglish ? "Log in" : "Logga in"}</a>
         <a href="${isEnglish ? "/en#booking" : "/#booking"}" class="rounded-full bg-gold px-4 py-2 text-night">${isEnglish ? "Send request" : "Skicka förfrågan"}</a>
       </div>
     </nav>
