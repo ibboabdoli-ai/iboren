@@ -1,3 +1,4 @@
-Retry Vercel deployment.
-Expected form marker: EN-NEW-ROUTE-1
-Retry marker: 2026-05-21T22:45Z
+Trigger production deployment after English pages update.
+Expected prices marker: English price calculator enabled
+Expected jobs marker: English job application form enabled
+Timestamp marker: 2026-05-22T09:14Z
