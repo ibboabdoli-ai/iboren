@@ -195,6 +195,13 @@ export default function EnglishBookingPage() {
     setDraft((current) => ({ ...current, extras: current.extras.includes(extra) ? current.extras.filter((item) => item !== extra) : [...current.extras, extra] }));
   }
 
+  function startNewBooking() {
+    setDraft((current) => ({ ...initialDraft, name: current.name, email: current.email, phone: current.phone, area: current.area || initialDraft.area }));
+    setStatus("idle");
+    setMessage("");
+    window.setTimeout(() => document.querySelector("#booking")?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
+  }
+
   async function reverseGeocode(latitude: number, longitude: number) {
     const response = await fetch(`/api/reverse-geocode?lat=${encodeURIComponent(latitude)}&lon=${encodeURIComponent(longitude)}`, { headers: { Accept: "application/json" } });
     const result = (await response.json()) as ReverseGeocodeResponse;
@@ -378,6 +385,12 @@ export default function EnglishBookingPage() {
                 <textarea value={draft.notes} onChange={(event) => setField("notes", event.target.value)} className="min-h-28 w-full rounded-2xl border border-porcelain/10 bg-porcelain px-4 py-4 text-ink placeholder:text-ink/45 outline-none" placeholder="Special requests..." />
                 <button disabled={status === "loading" || !user} className="btn-primary w-full bg-gold text-ink hover:bg-porcelain disabled:cursor-not-allowed disabled:opacity-55">{status === "loading" ? <Loader2 className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5" />} Send booking request</button>
                 {message && <p className={`rounded-2xl px-4 py-3 text-sm ${status === "success" ? "bg-gold/20 text-gold" : status === "error" ? "bg-red-500/10 text-red-200" : "bg-porcelain/10 text-porcelain/70"}`}>{message}</p>}
+                {status === "success" && (
+                  <div className="grid gap-3 pt-1">
+                    <Link href="/profile" className="rounded-full bg-gold px-5 py-4 text-center text-sm font-black uppercase tracking-[.22em] text-night">Go to my profile</Link>
+                    <button type="button" onClick={startNewBooking} className="rounded-full border border-gold/35 px-5 py-4 text-center text-sm font-black text-gold">New booking</button>
+                  </div>
+                )}
               </div>
             </form>
 
