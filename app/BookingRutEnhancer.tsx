@@ -33,6 +33,10 @@ const copy = {
   }
 };
 
+function isEnglishPath() {
+  return window.location.pathname === "/en" || window.location.pathname.startsWith("/en") || window.location.pathname.startsWith("/en-");
+}
+
 function BookingRutPanel({ language }: { language: "sv" | "en" }) {
   const [customerType, setCustomerType] = useState<CustomerType>("Privatperson");
   const [rutRequested, setRutRequested] = useState(true);
@@ -78,10 +82,12 @@ function BookingRutPanel({ language }: { language: "sv" | "en" }) {
 
 export default function BookingRutEnhancer() {
   useEffect(() => {
+    if (isEnglishPath()) return;
+
     const form = document.querySelector<HTMLElement>("#booking form");
     if (!form || document.querySelector("#iboren-booking-rut-host")) return;
 
-    const language = window.location.pathname === "/en" || window.location.pathname.startsWith("/en/") ? "en" : "sv";
+    const language = "sv";
     window.__iborenBookingRut = { customerType: "Privatperson", rutRequested: true };
 
     const host = document.createElement("div");
