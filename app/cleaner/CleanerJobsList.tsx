@@ -3,53 +3,16 @@
 import { useEffect, useState } from "react";
 import { CalendarDays, CheckCircle2, Loader2, MapPin, RefreshCw, ShieldCheck, XCircle } from "lucide-react";
 
+type JobStatus = "accepted" | "declined" | "completed";
+
 type Job = {
-  assignment: {
-    id: string;
-    booking_id: string;
-    employee_id: string;
-    status: string;
-    note: string | null;
-    created_at: string;
-    updated_at: string;
-  };
-  booking: {
-    id: string;
-    service: string;
-    area: string;
-    address: string | null;
-    size_sqm: number | null;
-    frequency: string | null;
-    preferred_date: string | null;
-    time_window: string | null;
-    customer_name: string;
-    customer_email: string;
-    customer_phone: string | null;
-    notes: string | null;
-    status: string | null;
-    created_at: string;
-  } | null;
-  employee: {
-    id: string;
-    email: string;
-    name: string;
-    phone: string | null;
-  } | null;
+  assignment: { id: string; booking_id: string; employee_id: string; status: string; note: string | null; created_at: string; updated_at: string };
+  booking: { id: string; service: string; area: string; address: string | null; size_sqm: number | null; frequency: string | null; preferred_date: string | null; time_window: string | null; customer_name: string; customer_email: string; customer_phone: string | null; notes: string | null; status: string | null; created_at: string } | null;
+  employee: { id: string; email: string; name: string; phone: string | null } | null;
 };
 
-type JobsResponse = {
-  ok?: boolean;
-  message?: string;
-  role?: string;
-  employee?: { id: string; email: string; name: string };
-  jobs?: Job[];
-};
-
-type StatusResponse = {
-  ok?: boolean;
-  message?: string;
-  assignment?: Job["assignment"];
-};
+type JobsResponse = { ok?: boolean; message?: string; role?: string; jobs?: Job[] };
+type StatusResponse = { ok?: boolean; message?: string; assignment?: Job["assignment"] };
 
 const headerName = ["Author", "ization"].join("");
 const tokenWord = ["Bear", "er"].join("");
@@ -104,7 +67,7 @@ export default function CleanerJobsList({ token }: { token: string }) {
     setLoading(false);
   }
 
-  async function updateJobStatus(assignmentId: string, status: "accepted" | "declined") {
+  async function updateJobStatus(assignmentId: string, status: JobStatus) {
     setUpdatingId(assignmentId);
     setMessage("");
     try {
@@ -116,16 +79,16 @@ export default function CleanerJobsList({ token }: { token: string }) {
       const result = await response.json().catch(() => null) as StatusResponse | null;
       if (!response.ok || !result?.ok || !result.assignment) throw new Error(result?.message || "Could not update job status.");
       setJobs((current) => current.map((job) => job.assignment.id === assignmentId ? { ...job, assignment: { ...job.assignment, ...result.assignment } } : job));
-      setMessage(status === "accepted" ? "Job accepted." : "Job declined.");
+      if (status === "accepted") setMessage("Job accepted.");
+      else if (status === "declined") setMessage("Job declined.");
+      else setMessage("Job marked as completed. Admin has been notified.");
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Could not update job status.");
     }
     setUpdatingId(null);
   }
 
-  useEffect(() => {
-    void loadJobs();
-  }, [token]);
+  useEffect(() => { void loadJobs(); }, [token]);
 
   return (
     <section className="rounded-[2rem] bg-porcelain p-6 shadow-soft md:p-7">
@@ -144,11 +107,7 @@ export default function CleanerJobsList({ token }: { token: string }) {
 
       {message && <p className="mt-5 rounded-2xl bg-burgundy/10 p-4 text-sm font-bold text-burgundy">{message}</p>}
 
-      {loading ? (
-        <div className="grid min-h-32 place-items-center text-burgundy"><Loader2 className="h-7 w-7 animate-spin" /></div>
-      ) : jobs.length === 0 ? (
-        <div className="mt-6 rounded-2xl border border-dashed border-burgundy/20 bg-cream p-5 text-sm leading-7 text-ink/65">No assigned jobs yet.</div>
-      ) : (
+      {loading ? <div className="grid min-h-32 place-items-center text-burgundy"><Loader2 className="h-7 w-7 animate-spin" /></div> : jobs.length === 0 ? <div className="mt-6 rounded-2xl border border-dashed border-burgundy/20 bg-cream p-5 text-sm leading-7 text-ink/65">No assigned jobs yet.</div> : (
         <div className="mt-6 grid gap-4">
           {jobs.map((job) => {
             const booking = job.booking;
@@ -156,6 +115,7 @@ export default function CleanerJobsList({ token }: { token: string }) {
             const isUpdating = updatingId === job.assignment.id;
             const isAccepted = job.assignment.status === "accepted";
             const isDeclined = job.assignment.status === "declined";
+            const isCompleted = job.assignment.status === "completed";
             return (
               <article key={job.assignment.id} className="rounded-[1.5rem] bg-cream p-4 text-sm ring-1 ring-burgundy/10">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -172,12 +132,13 @@ export default function CleanerJobsList({ token }: { token: string }) {
 
                 <div className="mt-4 flex flex-wrap gap-2">
                   <button type="button" disabled={isUpdating || isAccepted} onClick={() => updateJobStatus(job.assignment.id, "accepted")} className="inline-flex items-center gap-2 rounded-full bg-green-100 px-4 py-2 text-xs font-black uppercase tracking-[.12em] text-green-800 ring-1 ring-green-200 disabled:opacity-50">
-                    {isUpdating ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
-                    {isAccepted ? "Accepted" : "Accept"}
+                    {isUpdating ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}{isAccepted ? "Accepted" : "Accept"}
                   </button>
                   <button type="button" disabled={isUpdating || isDeclined} onClick={() => updateJobStatus(job.assignment.id, "declined")} className="inline-flex items-center gap-2 rounded-full bg-red-100 px-4 py-2 text-xs font-black uppercase tracking-[.12em] text-red-800 ring-1 ring-red-200 disabled:opacity-50">
-                    {isUpdating ? <Loader2 className="h-4 w-4 animate-spin" /> : <XCircle className="h-4 w-4" />}
-                    {isDeclined ? "Declined" : "Decline"}
+                    {isUpdating ? <Loader2 className="h-4 w-4 animate-spin" /> : <XCircle className="h-4 w-4" />}{isDeclined ? "Declined" : "Decline"}
+                  </button>
+                  <button type="button" disabled={isUpdating || isCompleted} onClick={() => updateJobStatus(job.assignment.id, "completed")} className="inline-flex items-center gap-2 rounded-full bg-ink px-4 py-2 text-xs font-black uppercase tracking-[.12em] text-porcelain ring-1 ring-ink/15 disabled:opacity-50">
+                    {isUpdating ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}{isCompleted ? "Completed" : "Klar"}
                   </button>
                 </div>
 
