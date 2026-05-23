@@ -7,6 +7,7 @@ import { ArrowDownUp, ArrowLeft, CheckCircle2, LayoutDashboard, Loader2, Refresh
 import AdminCsvExport from "./AdminCsvExport";
 import AdminNoteBox from "./AdminNoteBox";
 import AdminRoleManager from "./AdminRoleManager";
+import AvailableCleanersBox from "./AvailableCleanersBox";
 
 type AdminBooking = {
   id: string;
@@ -355,6 +356,7 @@ export default function AdminPage() {
                       <p><strong className="text-ink">Skapad:</strong> {new Date(booking.created_at).toLocaleDateString("sv-SE")}</p>
                     </div>
 
+                    <AvailableCleanersBox bookingId={booking.id} getToken={getToken} />
                     {booking.notes && <p className="mt-4 rounded-2xl bg-porcelain p-4 text-sm leading-7 text-ink/65"><strong>Kundens önskemål:</strong><br />{booking.notes}</p>}
                     <AdminNoteBox bookingId={booking.id} initialNote={booking.admin_notes || ""} />
                   </article>
