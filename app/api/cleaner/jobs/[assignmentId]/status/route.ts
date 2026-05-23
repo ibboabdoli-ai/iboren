@@ -8,7 +8,7 @@ const TOKEN_WORD = ["Bear", "er"].join("");
 const EMAIL_ENDPOINT = ["https://api.re", "send.com/emails"].join("");
 const EMAIL_WAIT_LIMIT_MS = 4500;
 const STAFF_ROLES = ["admin", "supervisor", "cleaner"] as const;
-const ALLOWED_STATUSES = ["accepted", "declined"] as const;
+const ALLOWED_STATUSES = ["accepted", "declined", "completed"] as const;
 
 type StaffRole = typeof STAFF_ROLES[number];
 type AllowedStatus = typeof ALLOWED_STATUSES[number];
@@ -85,7 +85,9 @@ function normalizeStatus(value: unknown): AllowedStatus | null {
 }
 
 function statusLabel(status: AllowedStatus) {
-  return status === "accepted" ? "accepted the job" : "declined the job";
+  if (status === "accepted") return "accepted the job";
+  if (status === "declined") return "declined the job";
+  return "marked the job as completed";
 }
 
 function buildAdminStatusEmailText(params: { assignment: AssignmentRow; booking: BookingRow | null; employee: EmployeeRow; status: AllowedStatus }) {
@@ -197,7 +199,7 @@ export async function PATCH(request: Request, { params }: { params: { assignment
   const status = normalizeStatus(body?.status);
   const note = cleanText(body?.note, 500) || null;
 
-  if (!status) return NextResponse.json({ ok: false, message: "Status must be accepted or declined." }, { status: 400 });
+  if (!status) return NextResponse.json({ ok: false, message: "Status must be accepted, declined or completed." }, { status: 400 });
 
   const { data: assignment, error: assignmentError } = await staff.supabase
     .from("booking_assignments")
