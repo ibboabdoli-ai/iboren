@@ -140,15 +140,15 @@ export async function POST(request: Request) {
 
   let savedEmployee = null;
 
+  const { data: existingEmployee, error: employeeLookupError } = await admin.supabase
+    .from("employees")
+    .select("id")
+    .eq("email", email)
+    .maybeSingle<{ id: string }>();
+
+  if (employeeLookupError) return NextResponse.json({ ok: false, message: employeeLookupError.message }, { status: 500 });
+
   if (isStaffRole(role)) {
-    const { data: existingEmployee, error: employeeLookupError } = await admin.supabase
-      .from("employees")
-      .select("id")
-      .eq("email", email)
-      .maybeSingle<{ id: string }>();
-
-    if (employeeLookupError) return NextResponse.json({ ok: false, message: employeeLookupError.message }, { status: 500 });
-
     const employeeRow = {
       email,
       name,
@@ -165,6 +165,16 @@ export async function POST(request: Request) {
       : admin.supabase.from("employees").insert(employeeRow).select("id, user_id, email, name, phone, role, active, has_car, max_hours_per_day, created_at, updated_at").single();
 
     const { data, error } = await employeeQuery;
+    if (error) return NextResponse.json({ ok: false, message: error.message }, { status: 500 });
+    savedEmployee = data;
+  } else if (existingEmployee?.id) {
+    const { data, error } = await admin.supabase
+      .from("employees")
+      .update({ active: false, updated_at: new Date().toISOString() })
+      .eq("id", existingEmployee.id)
+      .select("id, user_id, email, name, phone, role, active, has_car, max_hours_per_day, created_at, updated_at")
+      .single();
+
     if (error) return NextResponse.json({ ok: false, message: error.message }, { status: 500 });
     savedEmployee = data;
   }
