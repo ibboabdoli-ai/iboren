@@ -49,6 +49,18 @@ function formatTime(value: string) {
   return String(value || "").slice(0, 5);
 }
 
+function assignmentStatusClass(status: string | null) {
+  if (status === "accepted") return "bg-green-100 text-green-800 ring-1 ring-green-200";
+  if (status === "declined") return "bg-red-100 text-red-800 ring-1 ring-red-200";
+  return "bg-gold text-ink ring-1 ring-gold/30";
+}
+
+function assignmentStatusLabel(status: string | null) {
+  if (status === "accepted") return "accepted";
+  if (status === "declined") return "declined";
+  return "assigned";
+}
+
 export default function AvailableCleanersBox({ bookingId, getToken }: { bookingId: string; getToken: () => Promise<string | null> }) {
   const [loading, setLoading] = useState(false);
   const [assigningId, setAssigningId] = useState<string | null>(null);
@@ -58,6 +70,7 @@ export default function AvailableCleanersBox({ bookingId, getToken }: { bookingI
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [assignedEmployee, setAssignedEmployee] = useState<Suggestion["employee"] | null>(null);
   const [assignedEmployeeId, setAssignedEmployeeId] = useState<string | null>(null);
+  const [assignmentStatus, setAssignmentStatus] = useState<string | null>(null);
 
   async function authHeaders(contentType = false) {
     const token = await getToken();
@@ -75,6 +88,7 @@ export default function AvailableCleanersBox({ bookingId, getToken }: { bookingI
     if (!response.ok || !result?.ok) throw new Error(result?.message || "Could not load assignment.");
     setAssignedEmployee(result.employee || null);
     setAssignedEmployeeId(result.assignment?.employee_id || result.employee?.id || null);
+    setAssignmentStatus(result.assignment?.status || null);
   }
 
   async function loadSuggestions() {
@@ -110,6 +124,7 @@ export default function AvailableCleanersBox({ bookingId, getToken }: { bookingI
       if (!response.ok || !result?.ok) throw new Error(result?.message || "Could not assign cleaner.");
       setAssignedEmployee(result.employee || employee);
       setAssignedEmployeeId(result.assignment?.employee_id || employee.id);
+      setAssignmentStatus(result.assignment?.status || "assigned");
       setMessage(`Assigned to ${result.employee?.name || employee.name}.`);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Could not assign cleaner.");
@@ -135,8 +150,8 @@ export default function AvailableCleanersBox({ bookingId, getToken }: { bookingI
       </div>
 
       {assignedEmployee && (
-        <div className="mt-3 rounded-xl bg-green-100 p-3 text-xs font-bold text-green-800 ring-1 ring-green-200">
-          <span className="inline-flex items-center gap-2"><UserCheck className="h-4 w-4" /> Assigned cleaner: {assignedEmployee.name} · {assignedEmployee.email}</span>
+        <div className={`mt-3 rounded-xl p-3 text-xs font-bold ${assignmentStatusClass(assignmentStatus)}`}>
+          <span className="inline-flex flex-wrap items-center gap-2"><UserCheck className="h-4 w-4" /> Assigned cleaner: {assignedEmployee.name} · {assignedEmployee.email} · status: {assignmentStatusLabel(assignmentStatus)}</span>
         </div>
       )}
 
