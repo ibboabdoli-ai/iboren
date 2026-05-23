@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { CalendarDays, Loader2, MapPin, RefreshCw, ShieldCheck } from "lucide-react";
+import { CalendarDays, CheckCircle2, Loader2, MapPin, RefreshCw, ShieldCheck, XCircle } from "lucide-react";
 
 type Job = {
   assignment: {
@@ -45,11 +45,18 @@ type JobsResponse = {
   jobs?: Job[];
 };
 
+type StatusResponse = {
+  ok?: boolean;
+  message?: string;
+  assignment?: Job["assignment"];
+};
+
 const headerName = ["Author", "ization"].join("");
 const tokenWord = ["Bear", "er"].join("");
 
 function statusLabel(status: string | null | undefined) {
   if (status === "accepted") return "Accepted";
+  if (status === "declined") return "Declined";
   if (status === "completed") return "Completed";
   if (status === "cancelled") return "Cancelled";
   return "Assigned";
@@ -57,6 +64,7 @@ function statusLabel(status: string | null | undefined) {
 
 function statusClass(status: string | null | undefined) {
   if (status === "accepted") return "bg-green-100 text-green-800 ring-1 ring-green-200";
+  if (status === "declined") return "bg-red-100 text-red-800 ring-1 ring-red-200";
   if (status === "completed") return "bg-ink text-porcelain ring-1 ring-ink/15";
   if (status === "cancelled") return "bg-red-100 text-red-800 ring-1 ring-red-200";
   return "bg-gold text-ink";
@@ -69,17 +77,23 @@ function formatDate(value: string | null | undefined) {
 
 export default function CleanerJobsList({ token }: { token: string }) {
   const [loading, setLoading] = useState(true);
+  const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [message, setMessage] = useState("");
   const [role, setRole] = useState("");
   const [jobs, setJobs] = useState<Job[]>([]);
+
+  function requestHeaders(contentType = false) {
+    const headers: Record<string, string> = {};
+    headers[headerName] = `${tokenWord} ${token}`;
+    if (contentType) headers["Content-Type"] = "application/json";
+    return headers;
+  }
 
   async function loadJobs() {
     setLoading(true);
     setMessage("");
     try {
-      const headers: Record<string, string> = {};
-      headers[headerName] = `${tokenWord} ${token}`;
-      const response = await fetch("/api/cleaner/jobs", { headers });
+      const response = await fetch("/api/cleaner/jobs", { headers: requestHeaders() });
       const result = await response.json().catch(() => null) as JobsResponse | null;
       if (!response.ok || !result?.ok) throw new Error(result?.message || "Could not load jobs.");
       setRole(result.role || "");
@@ -88,6 +102,25 @@ export default function CleanerJobsList({ token }: { token: string }) {
       setMessage(error instanceof Error ? error.message : "Could not load jobs.");
     }
     setLoading(false);
+  }
+
+  async function updateJobStatus(assignmentId: string, status: "accepted" | "declined") {
+    setUpdatingId(assignmentId);
+    setMessage("");
+    try {
+      const response = await fetch(`/api/cleaner/jobs/${assignmentId}/status`, {
+        method: "PATCH",
+        headers: requestHeaders(true),
+        body: JSON.stringify({ status })
+      });
+      const result = await response.json().catch(() => null) as StatusResponse | null;
+      if (!response.ok || !result?.ok || !result.assignment) throw new Error(result?.message || "Could not update job status.");
+      setJobs((current) => current.map((job) => job.assignment.id === assignmentId ? { ...job, assignment: { ...job.assignment, ...result.assignment } } : job));
+      setMessage(status === "accepted" ? "Job accepted." : "Job declined.");
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Could not update job status.");
+    }
+    setUpdatingId(null);
   }
 
   useEffect(() => {
@@ -120,6 +153,9 @@ export default function CleanerJobsList({ token }: { token: string }) {
           {jobs.map((job) => {
             const booking = job.booking;
             if (!booking) return null;
+            const isUpdating = updatingId === job.assignment.id;
+            const isAccepted = job.assignment.status === "accepted";
+            const isDeclined = job.assignment.status === "declined";
             return (
               <article key={job.assignment.id} className="rounded-[1.5rem] bg-cream p-4 text-sm ring-1 ring-burgundy/10">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -132,6 +168,17 @@ export default function CleanerJobsList({ token }: { token: string }) {
                     <p className="inline-flex items-center gap-2"><CalendarDays className="h-4 w-4 text-burgundy" /> {formatDate(booking.preferred_date)}</p>
                     <p className="mt-1">{booking.time_window || "No time window"}</p>
                   </div>
+                </div>
+
+                <div className="mt-4 flex flex-wrap gap-2">
+                  <button type="button" disabled={isUpdating || isAccepted} onClick={() => updateJobStatus(job.assignment.id, "accepted")} className="inline-flex items-center gap-2 rounded-full bg-green-100 px-4 py-2 text-xs font-black uppercase tracking-[.12em] text-green-800 ring-1 ring-green-200 disabled:opacity-50">
+                    {isUpdating ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
+                    {isAccepted ? "Accepted" : "Accept"}
+                  </button>
+                  <button type="button" disabled={isUpdating || isDeclined} onClick={() => updateJobStatus(job.assignment.id, "declined")} className="inline-flex items-center gap-2 rounded-full bg-red-100 px-4 py-2 text-xs font-black uppercase tracking-[.12em] text-red-800 ring-1 ring-red-200 disabled:opacity-50">
+                    {isUpdating ? <Loader2 className="h-4 w-4 animate-spin" /> : <XCircle className="h-4 w-4" />}
+                    {isDeclined ? "Declined" : "Decline"}
+                  </button>
                 </div>
 
                 <div className="mt-4 grid gap-2 rounded-2xl bg-porcelain p-3 text-xs leading-6 text-ink/65 sm:grid-cols-2">
