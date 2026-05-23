@@ -6,6 +6,7 @@ import { createClient, User } from "@supabase/supabase-js";
 import { ArrowDownUp, ArrowLeft, CheckCircle2, LayoutDashboard, Loader2, RefreshCw, Search, ShieldCheck, XCircle } from "lucide-react";
 import AdminCsvExport from "./AdminCsvExport";
 import AdminNoteBox from "./AdminNoteBox";
+import AdminRoleManager from "./AdminRoleManager";
 
 type AdminBooking = {
   id: string;
@@ -259,6 +260,8 @@ export default function AdminPage() {
             </div>
           </div>
         </div>
+
+        <AdminRoleManager getToken={getToken} />
 
         <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
           {quickStats.map(({ status, count }) => (
