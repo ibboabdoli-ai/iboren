@@ -1,9 +1,26 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { getBookingStatusLocale } from "./statusLocale";
 
 export const runtime = "nodejs";
 
 const allowedStatuses = ["new", "confirmed", "completed", "cancelled"];
+
+const englishLabels: Record<string, string> = {
+  Hemstädning: "Home cleaning",
+  Flyttstädning: "Move-out cleaning",
+  Kontorsstädning: "Office cleaning",
+  Fönsterputs: "Window cleaning",
+  Engång: "One-time",
+  "Varje vecka": "Every week",
+  "Varannan vecka": "Every other week",
+  "Varje månad": "Every month",
+  Morgon: "Morning",
+  Förmiddag: "Late morning",
+  Eftermiddag: "Afternoon",
+  Kväll: "Evening",
+  Flexibel: "Flexible"
+};
 
 type BookingRow = {
   id: string;
@@ -45,14 +62,33 @@ function sanitize(value: unknown) {
   return String(value ?? "").replace(/[<>]/g, "").trim().slice(0, 1200);
 }
 
+function english(value: string | null) {
+  const clean = sanitize(value || "");
+  return englishLabels[clean] || clean;
+}
+
 function bookingSummary(booking: BookingRow) {
+  const locale = getBookingStatusLocale(booking.notes);
   const service = sanitize(booking.service);
   const area = sanitize(booking.area);
   const address = sanitize(booking.address || "");
   const date = sanitize(booking.preferred_date || "");
   const timeWindow = sanitize(booking.time_window || "");
-  const size = booking.size_sqm ? `${booking.size_sqm} kvm` : "Ej angivet";
 
+  if (locale === "en") {
+    const size = booking.size_sqm ? `${booking.size_sqm} sqm` : "Not specified";
+    return [
+      `Booking ID: ${booking.id}`,
+      `Service: ${english(service)}`,
+      `Area: ${area}`,
+      `Address: ${address || "Not specified"}`,
+      `Size: ${size}`,
+      `Date: ${date || "Not specified"}`,
+      `Time: ${english(timeWindow) || "Not specified"}`
+    ].join("\n");
+  }
+
+  const size = booking.size_sqm ? `${booking.size_sqm} kvm` : "Ej angivet";
   return [
     `Boknings-ID: ${booking.id}`,
     `Tjänst: ${service}`,
@@ -65,10 +101,72 @@ function bookingSummary(booking: BookingRow) {
 }
 
 function statusEmailContent(status: string, booking: BookingRow) {
+  const locale = getBookingStatusLocale(booking.notes);
   const service = sanitize(booking.service);
   const name = sanitize(booking.customer_name || "");
-  const greeting = `Hej ${name || "kund"},`;
   const summary = bookingSummary(booking);
+
+  if (locale === "en") {
+    const greeting = `Hi ${name || "there"},`;
+
+    if (status === "confirmed") {
+      return {
+        subject: `Your booking is confirmed – ${english(service)}`,
+        text: [
+          greeting,
+          "",
+          "Your booking with Iboren has been confirmed.",
+          "",
+          summary,
+          "",
+          "We will contact you if we need any additional information before the cleaning.",
+          "",
+          "Best regards,",
+          "Iboren"
+        ].join("\n")
+      };
+    }
+
+    if (status === "cancelled") {
+      return {
+        subject: `Your booking has been cancelled – ${english(service)}`,
+        text: [
+          greeting,
+          "",
+          "Your booking with Iboren has been marked as cancelled.",
+          "",
+          summary,
+          "",
+          "Contact us at hej@iboren.se if anything is incorrect or if you want to book a new time.",
+          "",
+          "Best regards,",
+          "Iboren"
+        ].join("\n")
+      };
+    }
+
+    if (status === "completed") {
+      return {
+        subject: "Thank you – your cleaning is marked as completed",
+        text: [
+          greeting,
+          "",
+          "Thank you. Your booking with Iboren has been marked as completed.",
+          "",
+          summary,
+          "",
+          "Thank you for choosing Iboren.",
+          "",
+          "Best regards,",
+          "Iboren"
+        ].join("\n")
+      };
+    }
+
+    return null;
+  }
+
+  const greeting = `Hej ${name || "kund"},`;
 
   if (status === "confirmed") {
     return {
