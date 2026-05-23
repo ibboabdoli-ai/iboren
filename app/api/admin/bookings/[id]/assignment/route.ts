@@ -92,7 +92,9 @@ async function loadCurrentAssignment(supabase: AdminClient, bookingId: string) {
     .from("booking_assignments")
     .select("id, booking_id, employee_id, assigned_by, status, note, created_at, updated_at")
     .eq("booking_id", bookingId)
-    .in("status", ["assigned", "accepted"])
+    .in("status", ["assigned", "accepted", "declined"])
+    .order("updated_at", { ascending: false })
+    .limit(1)
     .maybeSingle<AssignmentRow>();
 
   if (error) throw error;
