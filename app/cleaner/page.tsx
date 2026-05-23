@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { createClient, User } from "@supabase/supabase-js";
-import { ArrowLeft, CalendarDays, Loader2, Lock, ShieldCheck, UserRound } from "lucide-react";
+import { ArrowLeft, Loader2, Lock, ShieldCheck, UserRound } from "lucide-react";
+import CleanerAvailabilityForm from "./CleanerAvailabilityForm";
 
 type Role = "admin" | "supervisor" | "cleaner" | "customer";
 
@@ -50,6 +51,7 @@ function roleBadgeClass(role: Role | undefined) {
 export default function CleanerPage() {
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<User | null>(null);
+  const [accessToken, setAccessToken] = useState("");
   const [roleInfo, setRoleInfo] = useState<RoleResponse | null>(null);
   const [message, setMessage] = useState("");
 
@@ -74,11 +76,13 @@ export default function CleanerPage() {
 
       if (!session?.user || !session.access_token) {
         setUser(null);
+        setAccessToken("");
         setLoading(false);
         return;
       }
 
       setUser(session.user);
+      setAccessToken(session.access_token);
 
       try {
         const headers: Record<string, string> = {};
@@ -143,7 +147,7 @@ export default function CleanerPage() {
               <div className="mb-5 grid h-14 w-14 place-items-center rounded-full bg-gold text-ink"><UserRound size={25} /></div>
               <p className="text-xs font-bold uppercase tracking-[.32em] text-gold">Iboren staff</p>
               <h1 className="display mt-3 text-5xl font-bold leading-[.9] md:text-7xl">Cleaner panel</h1>
-              <p className="mt-5 max-w-2xl leading-8 text-porcelain/70">Access check is active. Availability and assigned jobs will be added in the next steps.</p>
+              <p className="mt-5 max-w-2xl leading-8 text-porcelain/70">Set availability here. Assigned jobs will be added in the next steps.</p>
             </div>
             <div className="rounded-[1.5rem] border border-gold/15 bg-night/20 p-4 text-sm font-bold text-porcelain/80">
               <p>{roleInfo?.email || user.email}</p>
@@ -152,22 +156,20 @@ export default function CleanerPage() {
           </div>
         </div>
 
-        <div className="mt-6 grid gap-5 md:grid-cols-3">
-          <article className="rounded-[2rem] bg-porcelain p-6 shadow-soft">
-            <CalendarDays className="mb-5 text-burgundy" />
-            <h2 className="display text-3xl font-bold text-burgundy">Availability</h2>
-            <p className="mt-3 leading-7 text-ink/65">Next step: cleaner can save working days and time windows.</p>
-          </article>
-          <article className="rounded-[2rem] bg-porcelain p-6 shadow-soft">
-            <ShieldCheck className="mb-5 text-burgundy" />
-            <h2 className="display text-3xl font-bold text-burgundy">My jobs</h2>
-            <p className="mt-3 leading-7 text-ink/65">Later: assigned bookings will appear here.</p>
-          </article>
-          <article className="rounded-[2rem] bg-porcelain p-6 shadow-soft">
-            <Lock className="mb-5 text-burgundy" />
-            <h2 className="display text-3xl font-bold text-burgundy">Access control</h2>
-            <p className="mt-3 leading-7 text-ink/65">Only cleaner, supervisor and admin roles can open this panel.</p>
-          </article>
+        <div className="mt-6 grid gap-5 lg:grid-cols-[1.15fr_.85fr]">
+          {accessToken ? <CleanerAvailabilityForm token={accessToken} /> : null}
+          <div className="grid gap-5">
+            <article className="rounded-[2rem] bg-porcelain p-6 shadow-soft">
+              <ShieldCheck className="mb-5 text-burgundy" />
+              <h2 className="display text-3xl font-bold text-burgundy">My jobs</h2>
+              <p className="mt-3 leading-7 text-ink/65">Later: assigned bookings will appear here.</p>
+            </article>
+            <article className="rounded-[2rem] bg-porcelain p-6 shadow-soft">
+              <Lock className="mb-5 text-burgundy" />
+              <h2 className="display text-3xl font-bold text-burgundy">Access control</h2>
+              <p className="mt-3 leading-7 text-ink/65">Only cleaner, supervisor and admin roles can open this panel.</p>
+            </article>
+          </div>
         </div>
       </section>
     </main>
