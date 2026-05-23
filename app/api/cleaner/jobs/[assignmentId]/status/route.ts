@@ -62,6 +62,8 @@ function getAdminClient() {
   return createClient(url, serviceKey, { auth: { persistSession: false, autoRefreshToken: false } });
 }
 
+type AdminClient = NonNullable<ReturnType<typeof getAdminClient>>;
+
 function getToken(request: Request) {
   const header = request.headers.get(HEADER_NAME.toLowerCase()) || "";
   return header.toLowerCase().startsWith(`${TOKEN_WORD.toLowerCase()} `)
@@ -125,7 +127,7 @@ function wait(ms: number) {
   return new Promise<"timeout">((resolve) => setTimeout(() => resolve("timeout"), ms));
 }
 
-async function notifyAdminAboutStatus(params: { supabase: ReturnType<typeof createClient>; assignment: AssignmentRow; employee: EmployeeRow; status: AllowedStatus }) {
+async function notifyAdminAboutStatus(params: { supabase: AdminClient; assignment: AssignmentRow; employee: EmployeeRow; status: AllowedStatus }) {
   const resendApiKey = process.env.RESEND_API_KEY;
   const toEmail = process.env.BOOKING_TO_EMAIL || "hej@iboren.se";
   const fromEmail = process.env.BOOKING_FROM_EMAIL || "Iboren <onboarding@resend.dev>";
