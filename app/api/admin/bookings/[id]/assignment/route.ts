@@ -40,6 +40,8 @@ function getAdminClient() {
   return createClient(url, serviceKey, { auth: { persistSession: false, autoRefreshToken: false } });
 }
 
+type AdminClient = NonNullable<ReturnType<typeof getAdminClient>>;
+
 function getAdminEmails() {
   return (process.env.ADMIN_EMAILS || "ibbo.abdoli@gmail.com")
     .split(",")
@@ -85,7 +87,7 @@ async function verifyAdmin(request: Request) {
   return { ok: true as const, supabase, user };
 }
 
-async function loadCurrentAssignment(supabase: ReturnType<typeof createClient>, bookingId: string) {
+async function loadCurrentAssignment(supabase: AdminClient, bookingId: string) {
   const { data, error } = await supabase
     .from("booking_assignments")
     .select("id, booking_id, employee_id, assigned_by, status, note, created_at, updated_at")
