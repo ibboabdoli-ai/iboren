@@ -1,5 +1,5 @@
 -- Iboren employee roles and availability schema
--- Step 2: database foundation only. This file does not change the live UI.
+-- Step 2/3: database foundation only. This file does not change the live UI.
 -- Run this manually in Supabase SQL editor after reviewing.
 
 create extension if not exists pgcrypto;
@@ -173,7 +173,8 @@ alter table public.employee_areas enable row level security;
 alter table public.booking_assignments enable row level security;
 
 -- user_roles policies
-create policy if not exists "Users can read their own role"
+drop policy if exists "Users can read their own role" on public.user_roles;
+create policy "Users can read their own role"
   on public.user_roles for select
   using (
     user_id = auth.uid()
@@ -181,13 +182,15 @@ create policy if not exists "Users can read their own role"
     or public.has_internal_role(array['admin', 'supervisor'])
   );
 
-create policy if not exists "Admins can manage roles"
+drop policy if exists "Admins can manage roles" on public.user_roles;
+create policy "Admins can manage roles"
   on public.user_roles for all
   using (public.has_internal_role(array['admin']))
   with check (public.has_internal_role(array['admin']));
 
 -- employees policies
-create policy if not exists "Employees can read own employee row and managers can read all"
+drop policy if exists "Employees can read own employee row and managers can read all" on public.employees;
+create policy "Employees can read own employee row and managers can read all"
   on public.employees for select
   using (
     user_id = auth.uid()
@@ -195,13 +198,15 @@ create policy if not exists "Employees can read own employee row and managers ca
     or public.has_internal_role(array['admin', 'supervisor'])
   );
 
-create policy if not exists "Admins and supervisors can manage employees"
+drop policy if exists "Admins and supervisors can manage employees" on public.employees;
+create policy "Admins and supervisors can manage employees"
   on public.employees for all
   using (public.has_internal_role(array['admin', 'supervisor']))
   with check (public.has_internal_role(array['admin', 'supervisor']));
 
 -- employee_availability policies
-create policy if not exists "Employees and managers can read availability"
+drop policy if exists "Employees and managers can read availability" on public.employee_availability;
+create policy "Employees and managers can read availability"
   on public.employee_availability for select
   using (
     public.has_internal_role(array['admin', 'supervisor'])
@@ -212,7 +217,8 @@ create policy if not exists "Employees and managers can read availability"
     )
   );
 
-create policy if not exists "Employees can manage own availability and managers can manage all"
+drop policy if exists "Employees can manage own availability and managers can manage all" on public.employee_availability;
+create policy "Employees can manage own availability and managers can manage all"
   on public.employee_availability for all
   using (
     public.has_internal_role(array['admin', 'supervisor'])
@@ -232,7 +238,8 @@ create policy if not exists "Employees can manage own availability and managers 
   );
 
 -- employee_skills policies
-create policy if not exists "Employees and managers can read skills"
+drop policy if exists "Employees and managers can read skills" on public.employee_skills;
+create policy "Employees and managers can read skills"
   on public.employee_skills for select
   using (
     public.has_internal_role(array['admin', 'supervisor'])
@@ -243,7 +250,8 @@ create policy if not exists "Employees and managers can read skills"
     )
   );
 
-create policy if not exists "Employees can manage own skills and managers can manage all"
+drop policy if exists "Employees can manage own skills and managers can manage all" on public.employee_skills;
+create policy "Employees can manage own skills and managers can manage all"
   on public.employee_skills for all
   using (
     public.has_internal_role(array['admin', 'supervisor'])
@@ -263,7 +271,8 @@ create policy if not exists "Employees can manage own skills and managers can ma
   );
 
 -- employee_areas policies
-create policy if not exists "Employees and managers can read areas"
+drop policy if exists "Employees and managers can read areas" on public.employee_areas;
+create policy "Employees and managers can read areas"
   on public.employee_areas for select
   using (
     public.has_internal_role(array['admin', 'supervisor'])
@@ -274,7 +283,8 @@ create policy if not exists "Employees and managers can read areas"
     )
   );
 
-create policy if not exists "Employees can manage own areas and managers can manage all"
+drop policy if exists "Employees can manage own areas and managers can manage all" on public.employee_areas;
+create policy "Employees can manage own areas and managers can manage all"
   on public.employee_areas for all
   using (
     public.has_internal_role(array['admin', 'supervisor'])
@@ -294,7 +304,8 @@ create policy if not exists "Employees can manage own areas and managers can man
   );
 
 -- booking_assignments policies
-create policy if not exists "Managers can read all assignments and employees can read own assignments"
+drop policy if exists "Managers can read all assignments and employees can read own assignments" on public.booking_assignments;
+create policy "Managers can read all assignments and employees can read own assignments"
   on public.booking_assignments for select
   using (
     public.has_internal_role(array['admin', 'supervisor'])
@@ -305,7 +316,8 @@ create policy if not exists "Managers can read all assignments and employees can
     )
   );
 
-create policy if not exists "Managers can create and update assignments"
+drop policy if exists "Managers can create and update assignments" on public.booking_assignments;
+create policy "Managers can create and update assignments"
   on public.booking_assignments for all
   using (public.has_internal_role(array['admin', 'supervisor']))
   with check (public.has_internal_role(array['admin', 'supervisor']));
