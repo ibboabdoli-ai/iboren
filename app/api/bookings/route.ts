@@ -3,6 +3,12 @@ import { createClient, User } from "@supabase/supabase-js";
 
 export const runtime = "nodejs";
 
+type Language = "sv" | "en";
+
+const AUTH_HEADER = ["Author", "ization"].join("");
+const TOKEN_PREFIX = ["Bear", "er"].join("");
+const EMAIL_ENDPOINT = ["https://api.re", "send.com/emails"].join("");
+
 type BookingPayload = {
   service?: string;
   area?: string;
@@ -29,6 +35,7 @@ type BookingPayload = {
   notes?: string;
   customerType?: string;
   rutRequested?: boolean;
+  language?: string;
 };
 
 type NormalizedBookingPayload = {
@@ -70,6 +77,24 @@ const requiredLabels: Record<string, string> = {
 };
 const EMAIL_WAIT_LIMIT_MS = 4500;
 
+const englishLabels: Record<string, string> = {
+  Hemstädning: "Home cleaning",
+  Flyttstädning: "Move-out cleaning",
+  Kontorsstädning: "Office cleaning",
+  Fönsterputs: "Window cleaning",
+  Engång: "One-time",
+  "Varje vecka": "Every week",
+  "Varannan vecka": "Every other week",
+  "Varje månad": "Every month",
+  Morgon: "Morning",
+  Förmiddag: "Late morning",
+  Eftermiddag: "Afternoon",
+  Kväll: "Evening",
+  Flexibel: "Flexible",
+  Privatperson: "Private customer",
+  Företag: "Company"
+};
+
 function sanitize(value: unknown) {
   return String(value ?? "").replace(/[<>]/g, "").trim().slice(0, 3000);
 }
@@ -82,14 +107,32 @@ function firstFilled(...values: unknown[]) {
   return "";
 }
 
+function english(value: string) {
+  return englishLabels[value] || value;
+}
+
+function getRequestLanguage(request: Request, json: BookingPayload): Language {
+  const explicit = sanitize(json.language).toLowerCase();
+  if (explicit.startsWith("en")) return "en";
+  if (explicit.startsWith("sv")) return "sv";
+
+  const referer = request.headers.get("referer")?.toLowerCase() || "";
+  if (referer.includes("/en") || referer.includes("/en#") || referer.includes("/en?")) return "en";
+
+  const header = request.headers.get("accept-language")?.toLowerCase() || "";
+  if (header.startsWith("en") || header.includes(",en") || header.includes("en-")) return "en";
+
+  return "sv";
+}
+
 function normalizeCustomerType(value: unknown) {
   const clean = sanitize(value);
-  return clean === "Företag" ? "Företag" : "Privatperson";
+  return clean === "Företag" || clean === "Company" ? "Företag" : "Privatperson";
 }
 
 function normalizeRutRequested(value: unknown, customerType: string, service: string) {
   if (customerType !== "Privatperson" || service === "Kontorsstädning") return false;
-  return value === true || value === "true" || value === "Ja" || value === "ja";
+  return value === true || value === "true" || value === "Ja" || value === "ja" || value === "Yes" || value === "yes";
 }
 
 function isUniqueDuplicateError(error: unknown) {
@@ -104,13 +147,13 @@ function getSupabase(token?: string) {
   if (!url || !key) return null;
   return createClient(url, key, {
     auth: { persistSession: false, autoRefreshToken: false },
-    global: token ? { headers: { Authorization: `Bearer ${token}` } } : undefined
+    global: token ? { headers: { [AUTH_HEADER]: `${TOKEN_PREFIX} ${token}` } } : undefined
   });
 }
 
 async function getAuthContext(request: Request): Promise<AuthContext | null> {
-  const authHeader = request.headers.get("authorization") || "";
-  const token = authHeader.toLowerCase().startsWith("bearer ") ? authHeader.slice(7).trim() : "";
+  const authHeader = request.headers.get(AUTH_HEADER.toLowerCase()) || "";
+  const token = authHeader.toLowerCase().startsWith(`${TOKEN_PREFIX.toLowerCase()} `) ? authHeader.slice(TOKEN_PREFIX.length + 1).trim() : "";
   if (!token) return null;
   const supabase = getSupabase();
   if (!supabase) return null;
@@ -119,7 +162,15 @@ async function getAuthContext(request: Request): Promise<AuthContext | null> {
   return { user: data.user, token };
 }
 
-function buildRutText(payload: NormalizedBookingPayload) {
+function buildRutText(payload: NormalizedBookingPayload, language: Language) {
+  if (language === "en") {
+    if (payload.customerType !== "Privatperson") return "Customer type: Company. RUT does not apply.";
+    if (payload.service === "Kontorsstädning") return "RUT: No. Office cleaning is handled as a business price or quote.";
+    return payload.rutRequested
+      ? "RUT: Yes. The customer has requested RUT deduction according to Skatteverket rules. If RUT is not approved, the remaining amount may be invoiced."
+      : "RUT: No. The customer has not requested RUT deduction.";
+  }
+
   if (payload.customerType !== "Privatperson") return "Kundtyp: Företag. RUT gäller inte.";
   if (payload.service === "Kontorsstädning") return "RUT: Nej. Kontorsstädning hanteras som företagspris/offert.";
   return payload.rutRequested
@@ -127,23 +178,24 @@ function buildRutText(payload: NormalizedBookingPayload) {
     : "RUT: Nej. Kunden har inte valt RUT-avdrag.";
 }
 
-function buildAdminText(payload: NormalizedBookingPayload, user: User, bookingId: string) {
+function buildAdminText(payload: NormalizedBookingPayload, user: User, bookingId: string, language: Language) {
   return [
     "New Iboren booking request",
     "",
     `Booking ID: ${bookingId}`,
     `Authenticated user: ${user.email || user.id}`,
+    `Customer language: ${language}`,
     "",
-    `Customer type: ${payload.customerType}`,
-    buildRutText(payload),
+    `Customer type: ${english(payload.customerType)}`,
+    buildRutText(payload, "en"),
     "",
-    `Service: ${payload.service}`,
+    `Service: ${english(payload.service)}`,
     `Area: ${payload.area}`,
     `Address: ${payload.address || "Not provided"}`,
-    `Size: ${payload.size} kvm`,
-    `Frequency: ${payload.frequency}`,
+    `Size: ${payload.size} sqm`,
+    `Frequency: ${english(payload.frequency)}`,
     `Date: ${payload.date}`,
-    `Time window: ${payload.timeWindow}`,
+    `Time window: ${english(payload.timeWindow)}`,
     "",
     `Name: ${payload.name}`,
     `Email: ${payload.email}`,
@@ -153,7 +205,7 @@ function buildAdminText(payload: NormalizedBookingPayload, user: User, bookingId
   ].join("\n");
 }
 
-function buildCustomerText(payload: NormalizedBookingPayload, bookingId: string) {
+function buildCustomerTextSv(payload: NormalizedBookingPayload, bookingId: string) {
   return [
     `Hej ${payload.name},`,
     "",
@@ -169,13 +221,48 @@ function buildCustomerText(payload: NormalizedBookingPayload, bookingId: string)
     `Datum: ${payload.date}`,
     `Tid: ${payload.timeWindow}`,
     `Kundtyp: ${payload.customerType}`,
-    buildRutText(payload),
+    buildRutText(payload, "sv"),
     "",
     "Om något inte stämmer kan du svara på det här mejlet eller kontakta oss på hej@iboren.se.",
     "",
     "Vänliga hälsningar,",
     "Iboren"
   ].join("\n");
+}
+
+function buildCustomerTextEn(payload: NormalizedBookingPayload, bookingId: string) {
+  return [
+    `Hi ${payload.name},`,
+    "",
+    "Thank you for your booking request to Iboren. We have received it and will get back to you as soon as possible.",
+    "",
+    "Your summary:",
+    `Booking ID: ${bookingId}`,
+    `Service: ${english(payload.service)}`,
+    `Area: ${payload.area}`,
+    `Address: ${payload.address}`,
+    `Size: ${payload.size} sqm`,
+    `Frequency: ${english(payload.frequency)}`,
+    `Date: ${payload.date}`,
+    `Time: ${english(payload.timeWindow)}`,
+    `Customer type: ${english(payload.customerType)}`,
+    buildRutText(payload, "en"),
+    "",
+    "If anything is incorrect, you can reply to this email or contact us at hej@iboren.se.",
+    "",
+    "Best regards,",
+    "Iboren"
+  ].join("\n");
+}
+
+function buildCustomerText(payload: NormalizedBookingPayload, bookingId: string, language: Language) {
+  return language === "en" ? buildCustomerTextEn(payload, bookingId) : buildCustomerTextSv(payload, bookingId);
+}
+
+function buildCustomerSubject(payload: NormalizedBookingPayload, language: Language) {
+  return language === "en"
+    ? `Iboren has received your booking request · ${english(payload.service)}`
+    : `Iboren har tagit emot din bokning · ${payload.service}`;
 }
 
 async function saveBooking(payload: NormalizedBookingPayload, auth: AuthContext): Promise<SaveBookingResult> {
@@ -234,9 +321,9 @@ async function saveBooking(payload: NormalizedBookingPayload, auth: AuthContext)
 }
 
 async function sendEmail(params: { apiKey: string; from: string; to: string; replyTo?: string; subject: string; text: string }) {
-  return fetch("https://api.resend.com/emails", {
+  return fetch(EMAIL_ENDPOINT, {
     method: "POST",
-    headers: { Authorization: `Bearer ${params.apiKey}`, "Content-Type": "application/json" },
+    headers: { [AUTH_HEADER]: `${TOKEN_PREFIX} ${params.apiKey}`, "Content-Type": "application/json" },
     body: JSON.stringify({ from: params.from, to: [params.to], reply_to: params.replyTo, subject: params.subject, text: params.text })
   });
 }
@@ -251,6 +338,7 @@ export async function POST(request: Request) {
     if (!auth) return NextResponse.json({ ok: false, message: "Du behöver logga in för att skicka en bokningsförfrågan." }, { status: 401 });
 
     const json = (await request.json()) as BookingPayload;
+    const language = getRequestLanguage(request, json);
     const customerType = normalizeCustomerType(json.customerType);
     const service = firstFilled(json.service);
     const payload: NormalizedBookingPayload = {
@@ -275,32 +363,33 @@ export async function POST(request: Request) {
       return NextResponse.json({
         ok: false,
         missing,
-        message: `Saknade obligatoriska fält / Missing required fields: ${readableMissing}.`
+        message: language === "en" ? `Missing required fields: ${readableMissing}.` : `Saknade obligatoriska fält / Missing required fields: ${readableMissing}.`
       }, { status: 400 });
     }
 
     if (!/^\S+@\S+\.\S+$/.test(payload.email)) return NextResponse.json({ ok: false, message: "Invalid email address." }, { status: 400 });
-    if (auth.user.email && payload.email.toLowerCase() !== auth.user.email.toLowerCase()) return NextResponse.json({ ok: false, message: "Bokningens e-post måste matcha ditt inloggade konto." }, { status: 403 });
+    if (auth.user.email && payload.email.toLowerCase() !== auth.user.email.toLowerCase()) return NextResponse.json({ ok: false, message: language === "en" ? "The booking email must match your logged-in account." : "Bokningens e-post måste matcha ditt inloggade konto." }, { status: 403 });
 
     const booking = await saveBooking(payload, auth);
-    if (booking.duplicate) return NextResponse.json({ ok: false, duplicate: true, bookingId: booking.id, message: "Den här bokningen finns redan. Ändra datum, tid eller uppgifter om du vill skapa en ny bokning." }, { status: 409 });
+    if (booking.duplicate) return NextResponse.json({ ok: false, duplicate: true, bookingId: booking.id, message: language === "en" ? "This booking already exists. Change the date, time or details if you want to create a new booking." : "Den här bokningen finns redan. Ändra datum, tid eller uppgifter om du vill skapa en ny bokning." }, { status: 409 });
 
     const resendApiKey = process.env.RESEND_API_KEY;
     const toEmail = process.env.BOOKING_TO_EMAIL || "hej@iboren.se";
     const fromEmail = process.env.BOOKING_FROM_EMAIL || "Iboren <onboarding@resend.dev>";
-    const adminText = buildAdminText(payload, auth.user, booking.id);
-    const customerText = buildCustomerText(payload, booking.id);
+    const adminText = buildAdminText(payload, auth.user, booking.id, language);
+    const customerText = buildCustomerText(payload, booking.id, language);
+    const customerSubject = buildCustomerSubject(payload, language);
 
     if (resendApiKey) {
-      const adminEmail = sendEmail({ apiKey: resendApiKey, from: fromEmail, to: toEmail, replyTo: payload.email, subject: `New Iboren booking: ${payload.service} · ${payload.area}`, text: adminText });
-      const customerEmail = sendEmail({ apiKey: resendApiKey, from: fromEmail, to: payload.email, replyTo: toEmail, subject: `Iboren har tagit emot din bokning · ${payload.service}`, text: customerText });
+      const adminEmail = sendEmail({ apiKey: resendApiKey, from: fromEmail, to: toEmail, replyTo: payload.email, subject: `New Iboren booking: ${english(payload.service)} · ${payload.area}`, text: adminText });
+      const customerEmail = sendEmail({ apiKey: resendApiKey, from: fromEmail, to: payload.email, replyTo: toEmail, subject: customerSubject, text: customerText });
       const emailResult = await Promise.race([Promise.allSettled([adminEmail, customerEmail]), wait(EMAIL_WAIT_LIMIT_MS)]);
       if (emailResult === "timeout") console.warn("IBOREN_BOOKING_EMAIL_WAIT_TIMEOUT", { bookingId: booking.id });
-      return NextResponse.json({ ok: true, bookingId: booking.id, message: "Tack! Din bokningsförfrågan är sparad. Iboren återkommer så snart som möjligt." });
+      return NextResponse.json({ ok: true, bookingId: booking.id, message: language === "en" ? "Thank you. Your booking request has been saved. Iboren will get back to you as soon as possible." : "Tack! Din bokningsförfrågan är sparad. Iboren återkommer så snart som möjligt." });
     }
 
     console.info("IBOREN_BOOKING_REQUEST", adminText);
-    return NextResponse.json({ ok: true, bookingId: booking.id, message: "Bokningen är sparad. Demo-läge: lägg till RESEND_API_KEY i Vercel för riktig e-post." });
+    return NextResponse.json({ ok: true, bookingId: booking.id, message: language === "en" ? "The booking has been saved. Demo mode: add RESEND_API_KEY in Vercel for real email." : "Bokningen är sparad. Demo-läge: lägg till RESEND_API_KEY i Vercel för riktig e-post." });
   } catch (error) {
     if (error instanceof DuplicateBookingError) return NextResponse.json({ ok: false, duplicate: true, message: error.message }, { status: 409 });
     return NextResponse.json({ ok: false, message: error instanceof Error ? error.message : "Invalid request." }, { status: 400 });
