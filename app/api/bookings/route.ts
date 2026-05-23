@@ -119,9 +119,6 @@ function getRequestLanguage(request: Request, json: BookingPayload): Language {
   const referer = request.headers.get("referer")?.toLowerCase() || "";
   if (referer.includes("/en") || referer.includes("/en#") || referer.includes("/en?")) return "en";
 
-  const header = request.headers.get("accept-language")?.toLowerCase() || "";
-  if (header.startsWith("en") || header.includes(",en") || header.includes("en-")) return "en";
-
   return "sv";
 }
 
@@ -265,7 +262,7 @@ function buildCustomerSubject(payload: NormalizedBookingPayload, language: Langu
     : `Iboren har tagit emot din bokning · ${payload.service}`;
 }
 
-async function saveBooking(payload: NormalizedBookingPayload, auth: AuthContext): Promise<SaveBookingResult> {
+async function saveBooking(payload: NormalizedBookingPayload, auth: AuthContext, language: Language): Promise<SaveBookingResult> {
   const supabase = getSupabase(auth.token);
   if (!supabase) throw new Error("Supabase saknas.");
   const size = Number.parseInt(payload.size, 10);
@@ -294,7 +291,8 @@ async function saveBooking(payload: NormalizedBookingPayload, auth: AuthContext)
     "",
     "--- Kundtyp & RUT ---",
     `Kundtyp: ${payload.customerType}`,
-    `RUT önskas: ${payload.rutRequested ? "Ja" : "Nej"}`
+    `RUT önskas: ${payload.rutRequested ? "Ja" : "Nej"}`,
+    `Språk / Language: ${language}`
   ].join("\n").trim();
 
   const { data, error } = await supabase.from("bookings").insert({
@@ -370,7 +368,7 @@ export async function POST(request: Request) {
     if (!/^\S+@\S+\.\S+$/.test(payload.email)) return NextResponse.json({ ok: false, message: "Invalid email address." }, { status: 400 });
     if (auth.user.email && payload.email.toLowerCase() !== auth.user.email.toLowerCase()) return NextResponse.json({ ok: false, message: language === "en" ? "The booking email must match your logged-in account." : "Bokningens e-post måste matcha ditt inloggade konto." }, { status: 403 });
 
-    const booking = await saveBooking(payload, auth);
+    const booking = await saveBooking(payload, auth, language);
     if (booking.duplicate) return NextResponse.json({ ok: false, duplicate: true, bookingId: booking.id, message: language === "en" ? "This booking already exists. Change the date, time or details if you want to create a new booking." : "Den här bokningen finns redan. Ändra datum, tid eller uppgifter om du vill skapa en ny bokning." }, { status: 409 });
 
     const resendApiKey = process.env.RESEND_API_KEY;
