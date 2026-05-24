@@ -1,13 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { CheckCircle2, Loader2, RefreshCw, Send, UserCheck, UsersRound } from "lucide-react";
+import { CheckCircle2, Loader2, RefreshCw, Send, UserCheck, UsersRound, XCircle } from "lucide-react";
 
 type Suggestion = { employee: { id: string; email: string; name: string; phone: string | null; has_car: boolean; max_hours_per_day: number }; slots: Array<{ id: string; start_time: string; end_time: string; weekday: number }>; matchesService: boolean; matchesArea: boolean; score: number };
 type Offer = { assignment: { id: string; employee_id: string; status: string; updated_at: string }; employee: Suggestion["employee"] | null };
 type SuggestionsResponse = { ok?: boolean; message?: string; weekday?: number; suggestions?: Suggestion[] };
 type CleanerEmailResult = { sent?: boolean; skipped?: boolean; reason?: string | null };
 type OffersResponse = { ok?: boolean; message?: string; offers?: Offer[]; assignment?: Offer["assignment"]; employee?: Suggestion["employee"] | null; cleanerEmail?: CleanerEmailResult };
+type CloseResponse = { ok?: boolean; message?: string; count?: number; emails?: Array<{ to: string; sent: boolean; skipped: boolean; reason: string | null }> };
 
 const headerName = ["Author", "ization"].join("");
 const tokenWord = ["Bear", "er"].join("");
@@ -17,7 +18,7 @@ function formatTime(value: string) { return String(value || "").slice(0, 5); }
 function statusClass(status: string | null) {
   if (status === "accepted") return "bg-green-100 text-green-800 ring-1 ring-green-200";
   if (status === "confirmed" || status === "completed") return "bg-ink text-porcelain ring-1 ring-ink/15";
-  if (status === "declined") return "bg-red-100 text-red-800 ring-1 ring-red-200";
+  if (status === "declined" || status === "not_selected") return "bg-red-100 text-red-800 ring-1 ring-red-200";
   return "bg-gold text-ink ring-1 ring-gold/30";
 }
 function statusLabel(status: string | null) {
@@ -25,6 +26,7 @@ function statusLabel(status: string | null) {
   if (status === "confirmed") return "Confirmed";
   if (status === "declined") return "Not available";
   if (status === "completed") return "Completed";
+  if (status === "not_selected") return "Not selected";
   return "Offer sent";
 }
 function offerMessage(employee: Suggestion["employee"], email?: CleanerEmailResult) {
@@ -40,11 +42,18 @@ function confirmMessage(employee: Suggestion["employee"] | null | undefined, ema
   if (email && email.sent === false) return `${name} confirmed. Email failed: ${email.reason || "unknown error"}.`;
   return `${name} confirmed.`;
 }
+function closeMessage(result: CloseResponse | null) {
+  const count = result?.count || 0;
+  const sent = (result?.emails || []).filter((email) => email.sent).length;
+  if (!count) return result?.message || "No remaining offers to close.";
+  return `Closed ${count} remaining offers. Emails sent: ${sent}.`;
+}
 
 export default function AvailableCleanersBox({ bookingId, getToken }: { bookingId: string; getToken: () => Promise<string | null> }) {
   const [loading, setLoading] = useState(false);
   const [sendingId, setSendingId] = useState<string | null>(null);
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
+  const [closing, setClosing] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [message, setMessage] = useState("");
   const [weekday, setWeekday] = useState<number | null>(null);
@@ -110,7 +119,23 @@ export default function AvailableCleanersBox({ bookingId, getToken }: { bookingI
     setConfirmingId(null);
   }
 
+  async function closeRemainingOffers() {
+    setClosing(true); setMessage("");
+    try {
+      const headers = await authHeaders(false);
+      const response = await fetch(`/api/admin/bookings/${bookingId}/offers/close-remaining`, { method: "POST", headers });
+      const result = await response.json().catch(() => null) as CloseResponse | null;
+      if (!response.ok || !result?.ok) throw new Error(result?.message || "Could not close remaining offers.");
+      setMessage(closeMessage(result));
+      await loadOffers();
+    } catch (error) { setMessage(error instanceof Error ? error.message : "Could not close remaining offers."); }
+    setClosing(false);
+  }
+
   useEffect(() => { void loadSuggestions(); }, [bookingId]);
+
+  const hasConfirmed = offers.some((offer) => offer.assignment.status === "confirmed" || offer.assignment.status === "completed");
+  const hasRemaining = offers.some((offer) => ["assigned", "accepted"].includes(offer.assignment.status));
 
   return (
     <div className="mt-4 rounded-2xl bg-porcelain p-4 text-sm shadow-sm ring-1 ring-burgundy/10">
@@ -120,6 +145,7 @@ export default function AvailableCleanersBox({ bookingId, getToken }: { bookingI
       </div>
 
       {offers.length > 0 && <div className="mt-3 grid gap-2">{offers.map((offer) => offer.employee ? <div key={offer.assignment.id} className={`rounded-xl p-3 text-xs font-bold ${statusClass(offer.assignment.status)}`}><div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between"><span className="inline-flex flex-wrap items-center gap-2"><UserCheck className="h-4 w-4" /> {offer.employee.name} · {offer.employee.email} · {statusLabel(offer.assignment.status)}</span>{offer.assignment.status === "accepted" && <button type="button" disabled={Boolean(confirmingId)} onClick={() => confirmOffer(offer)} className="inline-flex items-center justify-center gap-2 rounded-full bg-ink px-3 py-2 text-xs font-black uppercase tracking-[.12em] text-porcelain disabled:opacity-50">{confirmingId === offer.assignment.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}Confirm</button>}</div></div> : null)}</div>}
+      {hasConfirmed && hasRemaining && <button type="button" disabled={closing} onClick={closeRemainingOffers} className="mt-3 inline-flex items-center justify-center gap-2 rounded-full bg-red-100 px-4 py-2 text-xs font-black uppercase tracking-[.12em] text-red-800 ring-1 ring-red-200 disabled:opacity-50">{closing ? <Loader2 className="h-4 w-4 animate-spin" /> : <XCircle className="h-4 w-4" />}Close remaining offers</button>}
       {message && <p className="mt-3 rounded-xl bg-burgundy/10 p-3 text-xs font-bold text-burgundy">{message}</p>}
 
       {loading && !loaded ? <div className="mt-4 grid min-h-16 place-items-center text-burgundy"><Loader2 className="h-5 w-5 animate-spin" /></div> : suggestions.length === 0 ? <p className="mt-4 rounded-xl bg-cream p-3 text-xs font-bold text-ink/55">No available cleaner found for this date/time yet.</p> : (
@@ -127,7 +153,7 @@ export default function AvailableCleanersBox({ bookingId, getToken }: { bookingI
           {suggestions.map((suggestion) => {
             const offer = offers.find((item) => item.assignment.employee_id === suggestion.employee.id);
             const isSending = sendingId === suggestion.employee.id;
-            const locked = offer?.assignment.status === "completed" || offer?.assignment.status === "confirmed";
+            const locked = Boolean(offer && ["completed", "confirmed", "not_selected"].includes(offer.assignment.status));
             return <article key={suggestion.employee.id} className={`rounded-xl p-3 ${offer ? "bg-green-50 ring-1 ring-green-200" : "bg-cream"}`}><div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"><div><p className="font-black text-burgundy">{suggestion.employee.name}</p><p className="text-xs text-ink/55">{suggestion.employee.email}{suggestion.employee.phone ? ` · ${suggestion.employee.phone}` : ""}</p></div><div className="flex flex-col items-start gap-2 sm:items-end"><p className="text-xs font-bold text-ink/55">Car: {suggestion.employee.has_car ? "Yes" : "No"} · Max {suggestion.employee.max_hours_per_day}h/day</p><button type="button" disabled={Boolean(sendingId) || locked} onClick={() => sendOffer(suggestion.employee)} className={`inline-flex items-center justify-center gap-2 rounded-full px-4 py-2 text-xs font-black uppercase tracking-[.12em] disabled:opacity-60 ${offer ? "bg-green-100 text-green-800" : "bg-burgundy text-porcelain"}`}>{isSending ? <Loader2 className="h-4 w-4 animate-spin" /> : offer ? <CheckCircle2 className="h-4 w-4" /> : <Send className="h-4 w-4" />}{isSending ? "Sending" : offer ? statusLabel(offer.assignment.status) : "Send offer"}</button></div></div><div className="mt-2 flex flex-wrap gap-2">{suggestion.slots.map((slot) => <span key={slot.id} className="rounded-full bg-green-100 px-3 py-1 text-xs font-bold text-green-800 ring-1 ring-green-200">{formatTime(slot.start_time)}–{formatTime(slot.end_time)}</span>)}</div></article>;
           })}
         </div>
