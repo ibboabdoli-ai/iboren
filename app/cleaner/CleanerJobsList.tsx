@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { CalendarDays, CheckCircle2, Loader2, MapPin, RefreshCw, ShieldCheck, XCircle } from "lucide-react";
+import { CalendarDays, CheckCircle2, Download, Loader2, MapPin, RefreshCw, ShieldCheck, XCircle } from "lucide-react";
 
 type JobStatus = "accepted" | "declined" | "completed";
 
@@ -41,6 +41,7 @@ function formatDate(value: string | null | undefined) {
 export default function CleanerJobsList({ token }: { token: string }) {
   const [loading, setLoading] = useState(true);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [calendarLoadingId, setCalendarLoadingId] = useState<string | null>(null);
   const [message, setMessage] = useState("");
   const [role, setRole] = useState("");
   const [jobs, setJobs] = useState<Job[]>([]);
@@ -88,6 +89,31 @@ export default function CleanerJobsList({ token }: { token: string }) {
     setUpdatingId(null);
   }
 
+  async function downloadCalendar(assignmentId: string) {
+    setCalendarLoadingId(assignmentId);
+    setMessage("");
+    try {
+      const response = await fetch(`/api/cleaner/jobs/${assignmentId}/calendar.ics`, { headers: requestHeaders() });
+      if (!response.ok) {
+        const result = await response.json().catch(() => null) as { message?: string } | null;
+        throw new Error(result?.message || "Could not create calendar file.");
+      }
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `iboren-job-${assignmentId}.ics`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+      setMessage("Calendar file downloaded. Open it to save the job in your calendar.");
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Could not create calendar file.");
+    }
+    setCalendarLoadingId(null);
+  }
+
   useEffect(() => { void loadJobs(); }, [token]);
 
   return (
@@ -113,6 +139,7 @@ export default function CleanerJobsList({ token }: { token: string }) {
             const booking = job.booking;
             if (!booking) return null;
             const isUpdating = updatingId === job.assignment.id;
+            const isCalendarLoading = calendarLoadingId === job.assignment.id;
             const isAccepted = job.assignment.status === "accepted";
             const isDeclined = job.assignment.status === "declined";
             const isCompleted = job.assignment.status === "completed";
@@ -139,6 +166,9 @@ export default function CleanerJobsList({ token }: { token: string }) {
                   </button>
                   <button type="button" disabled={isUpdating || isCompleted} onClick={() => updateJobStatus(job.assignment.id, "completed")} className="inline-flex items-center gap-2 rounded-full bg-ink px-4 py-2 text-xs font-black uppercase tracking-[.12em] text-porcelain ring-1 ring-ink/15 disabled:opacity-50">
                     {isUpdating ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}{isCompleted ? "Completed" : "Klar"}
+                  </button>
+                  <button type="button" disabled={isCalendarLoading} onClick={() => downloadCalendar(job.assignment.id)} className="inline-flex items-center gap-2 rounded-full bg-porcelain px-4 py-2 text-xs font-black uppercase tracking-[.12em] text-burgundy ring-1 ring-burgundy/10 disabled:opacity-50">
+                    {isCalendarLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}Add to calendar
                   </button>
                 </div>
 
