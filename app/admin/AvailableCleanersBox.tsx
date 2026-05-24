@@ -52,12 +52,14 @@ function formatTime(value: string) {
 function assignmentStatusClass(status: string | null) {
   if (status === "accepted") return "bg-green-100 text-green-800 ring-1 ring-green-200";
   if (status === "declined") return "bg-red-100 text-red-800 ring-1 ring-red-200";
+  if (status === "completed") return "bg-ink text-porcelain ring-1 ring-ink/15";
   return "bg-gold text-ink ring-1 ring-gold/30";
 }
 
 function assignmentStatusLabel(status: string | null) {
   if (status === "accepted") return "accepted";
   if (status === "declined") return "declined";
+  if (status === "completed") return "completed by cleaner";
   return "assigned";
 }
 
