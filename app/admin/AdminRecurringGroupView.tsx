@@ -36,12 +36,14 @@ type RecurringGroup = {
   visits: AdminBooking[];
 };
 
-type BulkStatusResponse = {
-  ok?: boolean;
-  message?: string;
-  status?: string;
-  updatedIds?: string[];
-  count?: number;
+type BulkStatusResponse = { ok?: boolean; message?: string; count?: number };
+
+type Props = {
+  bookings: AdminBooking[];
+  updatingId: string | null;
+  updateStatus: (bookingId: string, status: string) => Promise<void>;
+  getToken: () => Promise<string | null>;
+  onBulkUpdated?: () => Promise<void>;
 };
 
 function statusLabel(status: string | null) {
@@ -73,48 +75,39 @@ function statusAccentClass(status: string | null) {
 }
 
 function getRecurringInfo(booking: AdminBooking) {
-  const notes = booking.notes || "";
-  const match = notes.match(/Visit:\s*(\d+)\s*of\s*(\d+)/i);
+  const match = (booking.notes || "").match(/Visit:\s*(\d+)\s*of\s*(\d+)/i);
   if (match) return { current: Number(match[1]), total: Number(match[2]) };
   return { current: null, total: null };
 }
 
 function groupKey(booking: AdminBooking) {
-  return [
-    booking.customer_email || booking.customer_name,
-    booking.service,
-    booking.address || booking.area,
-    booking.frequency || "recurring"
-  ].map((value) => String(value || "").trim().toLowerCase()).join("|");
+  return [booking.customer_email || booking.customer_name, booking.service, booking.address || booking.area, booking.frequency || "recurring"]
+    .map((value) => String(value || "").trim().toLowerCase())
+    .join("|");
 }
 
 function groupBookings(bookings: AdminBooking[]) {
   const map = new Map<string, RecurringGroup>();
-
   for (const booking of bookings) {
     const key = groupKey(booking);
     const existing = map.get(key);
-    if (existing) {
-      existing.visits.push(booking);
-    } else {
-      map.set(key, {
-        key,
-        customerName: booking.customer_name,
-        customerEmail: booking.customer_email,
-        customerPhone: booking.customer_phone,
-        service: booking.service,
-        area: booking.area,
-        address: booking.address,
-        frequency: booking.frequency,
-        visits: [booking]
-      });
-    }
+    if (existing) existing.visits.push(booking);
+    else map.set(key, {
+      key,
+      customerName: booking.customer_name,
+      customerEmail: booking.customer_email,
+      customerPhone: booking.customer_phone,
+      service: booking.service,
+      area: booking.area,
+      address: booking.address,
+      frequency: booking.frequency,
+      visits: [booking]
+    });
   }
 
-  return [...map.values()].map((group) => ({
-    ...group,
-    visits: [...group.visits].sort((a, b) => String(a.preferred_date || "9999-12-31").localeCompare(String(b.preferred_date || "9999-12-31")))
-  })).sort((a, b) => String(a.visits[0]?.preferred_date || "9999-12-31").localeCompare(String(b.visits[0]?.preferred_date || "9999-12-31")));
+  return [...map.values()]
+    .map((group) => ({ ...group, visits: [...group.visits].sort((a, b) => String(a.preferred_date || "9999-12-31").localeCompare(String(b.preferred_date || "9999-12-31"))) }))
+    .sort((a, b) => String(a.visits[0]?.preferred_date || "9999-12-31").localeCompare(String(b.visits[0]?.preferred_date || "9999-12-31")));
 }
 
 function countByStatus(visits: AdminBooking[], status: string) {
@@ -122,27 +115,10 @@ function countByStatus(visits: AdminBooking[], status: string) {
 }
 
 function activeVisitIds(visits: AdminBooking[]) {
-  return visits
-    .filter((visit) => {
-      const status = visit.status || "new";
-      return status !== "completed" && status !== "cancelled";
-    })
-    .map((visit) => visit.id);
+  return visits.filter((visit) => !["completed", "cancelled"].includes(visit.status || "new")).map((visit) => visit.id);
 }
 
-export default function AdminRecurringGroupView({
-  bookings,
-  updatingId,
-  updateStatus,
-  getToken,
-  onBulkUpdated
-}: {
-  bookings: AdminBooking[];
-  updatingId: string | null;
-  updateStatus: (bookingId: string, status: string) => Promise<void>;
-  getToken: () => Promise<string | null>;
-  onBulkUpdated: () => Promise<void>;
-}) {
+export default function AdminRecurringGroupView({ bookings, updatingId, updateStatus, getToken, onBulkUpdated }: Props) {
   const groups = useMemo(() => groupBookings(bookings), [bookings]);
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
   const [bulkUpdatingKey, setBulkUpdatingKey] = useState<string | null>(null);
@@ -150,6 +126,14 @@ export default function AdminRecurringGroupView({
 
   function toggleGroup(key: string) {
     setOpenGroups((current) => ({ ...current, [key]: !current[key] }));
+  }
+
+  async function refreshAfterBulk() {
+    if (onBulkUpdated) {
+      await onBulkUpdated();
+      return;
+    }
+    if (typeof window !== "undefined") window.location.reload();
   }
 
   async function bulkUpdate(group: RecurringGroup, status: "confirmed" | "completed" | "cancelled") {
@@ -161,7 +145,6 @@ export default function AdminRecurringGroupView({
 
     setBulkUpdatingKey(`${group.key}:${status}`);
     setBulkMessage("");
-
     try {
       const token = await getToken();
       if (!token) throw new Error("Du behöver logga in igen.");
@@ -173,17 +156,14 @@ export default function AdminRecurringGroupView({
       const result = await response.json().catch(() => null) as BulkStatusResponse | null;
       if (!response.ok || !result?.ok) throw new Error(result?.message || "Could not update recurring visits.");
       setBulkMessage(`Updated ${result.count || 0} visits to ${status}. Customer emails were skipped for bulk action.`);
-      await onBulkUpdated();
+      await refreshAfterBulk();
     } catch (error) {
       setBulkMessage(error instanceof Error ? error.message : "Could not update recurring visits.");
     }
-
     setBulkUpdatingKey(null);
   }
 
-  if (!groups.length) {
-    return <div className="rounded-[2rem] border border-dashed border-burgundy/20 bg-cream p-6 text-ink/65">Inga recurring-bokningar matchar filter/sökning.</div>;
-  }
+  if (!groups.length) return <div className="rounded-[2rem] border border-dashed border-burgundy/20 bg-cream p-6 text-ink/65">Inga recurring-bokningar matchar filter/sökning.</div>;
 
   return (
     <div className="grid gap-4">
@@ -217,7 +197,6 @@ export default function AdminRecurringGroupView({
                 </div>
                 <p className="mt-3 text-xs font-bold text-ink/45">Period: {firstDate} → {lastDate}</p>
               </div>
-
               <div className="flex flex-col gap-2">
                 <button type="button" onClick={() => toggleGroup(group.key)} className="inline-flex items-center justify-center gap-2 rounded-full bg-burgundy px-5 py-3 text-sm font-black text-porcelain">
                   {isOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
@@ -249,7 +228,6 @@ export default function AdminRecurringGroupView({
                   const currentStatus = booking.status || "new";
                   const isUpdating = updatingId === booking.id;
                   const recurring = getRecurringInfo(booking);
-
                   return (
                     <article key={booking.id} className={`relative overflow-hidden rounded-[1.5rem] border p-4 shadow-sm ${statusCardClass(currentStatus)}`}>
                       <span className={`absolute inset-y-0 left-0 w-1.5 ${statusAccentClass(currentStatus)}`} />
@@ -257,9 +235,7 @@ export default function AdminRecurringGroupView({
                         <div className="min-w-0">
                           <div className="flex flex-wrap gap-2">
                             <p className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-bold uppercase tracking-[.18em] ${statusPillClass(currentStatus)}`}><ShieldCheck className="h-3.5 w-3.5" /> {statusLabel(currentStatus)}</p>
-                            <p className="inline-flex items-center rounded-full bg-gold px-3 py-1 text-xs font-black uppercase tracking-[.16em] text-ink">
-                              Visit {recurring.current && recurring.total ? `${recurring.current}/${recurring.total}` : ""}
-                            </p>
+                            <p className="inline-flex items-center rounded-full bg-gold px-3 py-1 text-xs font-black uppercase tracking-[.16em] text-ink">Visit {recurring.current && recurring.total ? `${recurring.current}/${recurring.total}` : ""}</p>
                           </div>
                           <h3 className="display mt-3 break-words text-2xl font-bold text-burgundy">{booking.service}</h3>
                           <p className="mt-2 break-words leading-7 text-ink/70">{booking.area}{booking.address ? ` · ${booking.address}` : ""}</p>
@@ -271,25 +247,15 @@ export default function AdminRecurringGroupView({
                           <option value="cancelled">Avbokad</option>
                         </select>
                       </div>
-
                       <div className="mt-4 flex flex-wrap gap-2 pl-1">
                         <button disabled={isUpdating || currentStatus === "confirmed"} onClick={() => updateStatus(booking.id, "confirmed")} className="inline-flex items-center gap-2 rounded-full bg-green-100 px-4 py-2 text-sm font-bold text-green-800 ring-1 ring-green-200 disabled:opacity-40"><CheckCircle2 className="h-4 w-4" /> Bekräfta</button>
                         <button disabled={isUpdating || currentStatus === "completed"} onClick={() => updateStatus(booking.id, "completed")} className="inline-flex items-center gap-2 rounded-full bg-ink px-4 py-2 text-sm font-bold text-porcelain ring-1 ring-ink/15 disabled:opacity-40"><CheckCircle2 className="h-4 w-4" /> Klar</button>
                         <button disabled={isUpdating || currentStatus === "cancelled"} onClick={() => updateStatus(booking.id, "cancelled")} className="inline-flex items-center gap-2 rounded-full bg-red-100 px-4 py-2 text-sm font-bold text-red-800 ring-1 ring-red-200 disabled:opacity-40"><XCircle className="h-4 w-4" /> Avboka</button>
                         {isUpdating && <span className="inline-flex items-center gap-2 rounded-full bg-porcelain px-4 py-2 text-sm font-bold text-burgundy"><Loader2 className="h-4 w-4 animate-spin" /> Uppdaterar</span>}
                       </div>
-
                       <div className="mt-4 grid gap-3 rounded-[1.5rem] bg-porcelain/70 p-4 text-sm text-ink/68 md:grid-cols-2 xl:grid-cols-4">
-                        <p><strong className="text-ink">Kund:</strong> {booking.customer_name}</p>
-                        <p className="break-words"><strong className="text-ink">E-post:</strong> {booking.customer_email}</p>
-                        <p><strong className="text-ink">Telefon:</strong> {booking.customer_phone || "—"}</p>
-                        <p><strong className="text-ink">Datum:</strong> {booking.preferred_date || "—"}</p>
-                        <p><strong className="text-ink">Storlek:</strong> {booking.size_sqm ? `${booking.size_sqm} kvm` : "—"}</p>
-                        <p><strong className="text-ink">Frekvens:</strong> {booking.frequency || "—"}</p>
-                        <p><strong className="text-ink">Tid:</strong> {booking.time_window || "—"}</p>
-                        <p><strong className="text-ink">Skapad:</strong> {new Date(booking.created_at).toLocaleDateString("sv-SE")}</p>
+                        <p><strong className="text-ink">Kund:</strong> {booking.customer_name}</p><p className="break-words"><strong className="text-ink">E-post:</strong> {booking.customer_email}</p><p><strong className="text-ink">Telefon:</strong> {booking.customer_phone || "—"}</p><p><strong className="text-ink">Datum:</strong> {booking.preferred_date || "—"}</p><p><strong className="text-ink">Storlek:</strong> {booking.size_sqm ? `${booking.size_sqm} kvm` : "—"}</p><p><strong className="text-ink">Frekvens:</strong> {booking.frequency || "—"}</p><p><strong className="text-ink">Tid:</strong> {booking.time_window || "—"}</p><p><strong className="text-ink">Skapad:</strong> {new Date(booking.created_at).toLocaleDateString("sv-SE")}</p>
                       </div>
-
                       <AvailableCleanersBox bookingId={booking.id} getToken={getToken} />
                       {booking.notes && <p className="mt-4 rounded-2xl bg-porcelain p-4 text-sm leading-7 text-ink/65"><strong>Kundens önskemål:</strong><br />{booking.notes}</p>}
                       <AdminNoteBox bookingId={booking.id} initialNote={booking.admin_notes || ""} />
