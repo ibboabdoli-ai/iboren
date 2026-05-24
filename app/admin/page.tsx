@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { createClient, User } from "@supabase/supabase-js";
-import { ArrowDownUp, ArrowLeft, CheckCircle2, LayoutDashboard, Loader2, RefreshCw, Search, ShieldCheck, XCircle } from "lucide-react";
+import { ArrowDownUp, ArrowLeft, CheckCircle2, Clock3, CreditCard, LayoutDashboard, Loader2, RefreshCw, Search, ShieldCheck, XCircle } from "lucide-react";
 import AdminCsvExport from "./AdminCsvExport";
 import AdminNoteBox from "./AdminNoteBox";
 import AdminRecurringGroupView from "./AdminRecurringGroupView";
@@ -326,6 +326,19 @@ export default function AdminPage() {
               </button>
             </div>
           </div>
+        </div>
+
+        <div className="mt-6 grid gap-3 md:grid-cols-2">
+          <Link href="/admin/time-reports" className="rounded-[1.5rem] bg-porcelain p-5 text-burgundy shadow-soft ring-1 ring-burgundy/10 transition hover:-translate-y-0.5">
+            <Clock3 className="mb-4 h-6 w-6" />
+            <h2 className="display text-3xl font-bold">Time reports</h2>
+            <p className="mt-2 text-sm font-bold text-ink/55">Review, approve or reject cleaner submitted hours.</p>
+          </Link>
+          <Link href="/admin/payroll-basis" className="rounded-[1.5rem] bg-porcelain p-5 text-burgundy shadow-soft ring-1 ring-burgundy/10 transition hover:-translate-y-0.5">
+            <CreditCard className="mb-4 h-6 w-6" />
+            <h2 className="display text-3xl font-bold">Payroll basis</h2>
+            <p className="mt-2 text-sm font-bold text-ink/55">Export CSV before using Mark as paid. Paid entries leave the open payroll basis.</p>
+          </Link>
         </div>
 
         <AdminRoleManager getToken={getToken} />
