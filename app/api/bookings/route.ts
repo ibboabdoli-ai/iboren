@@ -55,7 +55,8 @@ type NormalizedBookingPayload = {
 };
 
 type AuthContext = { user: User; token: string };
-type SaveBookingResult = { id: string; duplicate: boolean };
+type SaveBookingResult = { id: string; duplicate: boolean; date: string };
+type RecurringPlan = { count: number; stepDays?: number; stepMonths?: number; label: string };
 
 class DuplicateBookingError extends Error {
   constructor() {
@@ -138,6 +139,60 @@ function isUniqueDuplicateError(error: unknown) {
   return candidate?.code === "23505" || text.includes("bookings_unique_active_request_idx") || text.includes("duplicate key value violates unique constraint");
 }
 
+function parseDate(dateValue: string) {
+  const date = new Date(`${dateValue}T12:00:00`);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function formatDate(date: Date) {
+  return date.toISOString().slice(0, 10);
+}
+
+function addMonths(date: Date, months: number) {
+  const next = new Date(date);
+  const day = next.getDate();
+  next.setMonth(next.getMonth() + months);
+  if (next.getDate() < day) next.setDate(0);
+  return next;
+}
+
+function getRecurringPlan(frequency: string): RecurringPlan {
+  const clean = frequency.toLowerCase().trim();
+  if (["varje vecka", "every week", "weekly"].includes(clean)) return { count: 8, stepDays: 7, label: "weekly" };
+  if (["varannan vecka", "every other week", "biweekly", "bi-weekly"].includes(clean)) return { count: 6, stepDays: 14, label: "every_other_week" };
+  if (["varje månad", "every month", "monthly"].includes(clean)) return { count: 6, stepMonths: 1, label: "monthly" };
+  return { count: 1, label: "one_time" };
+}
+
+function buildVisitDates(startDate: string, frequency: string) {
+  const start = parseDate(startDate);
+  if (!start) return [startDate];
+  const plan = getRecurringPlan(frequency);
+  const dates: string[] = [];
+
+  for (let index = 0; index < plan.count; index += 1) {
+    if (plan.stepMonths) dates.push(formatDate(addMonths(start, index * plan.stepMonths)));
+    else dates.push(formatDate(new Date(start.getTime() + index * (plan.stepDays || 0) * 24 * 60 * 60 * 1000)));
+  }
+
+  return dates;
+}
+
+function withVisitDate(payload: NormalizedBookingPayload, date: string, visitIndex: number, visitCount: number) {
+  const recurringText = visitCount > 1
+    ? [
+      payload.notes || "",
+      "",
+      "--- Recurring visit ---",
+      `Visit: ${visitIndex + 1} of ${visitCount}`,
+      `Original start date: ${payload.date}`,
+      `Frequency: ${payload.frequency}`
+    ].join("\n").trim()
+    : payload.notes;
+
+  return { ...payload, date, notes: recurringText };
+}
+
 function getSupabase(token?: string) {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -175,11 +230,13 @@ function buildRutText(payload: NormalizedBookingPayload, language: Language) {
     : "RUT: Nej. Kunden har inte valt RUT-avdrag.";
 }
 
-function buildAdminText(payload: NormalizedBookingPayload, user: User, bookingId: string, language: Language) {
+function buildAdminText(payload: NormalizedBookingPayload, user: User, bookingId: string, language: Language, recurring?: { total: number; dates: string[] }) {
   return [
     "New Iboren booking request",
     "",
     `Booking ID: ${bookingId}`,
+    recurring && recurring.total > 1 ? `Recurring visits created: ${recurring.total}` : "Recurring visits created: 1",
+    recurring && recurring.total > 1 ? `Visit dates: ${recurring.dates.join(", ")}` : "",
     `Authenticated user: ${user.email || user.id}`,
     `Customer language: ${language}`,
     "",
@@ -199,14 +256,16 @@ function buildAdminText(payload: NormalizedBookingPayload, user: User, bookingId
     `Phone: ${payload.phone || "Not provided"}`,
     "",
     `Notes: ${payload.notes || "-"}`
-  ].join("\n");
+  ].filter(Boolean).join("\n");
 }
 
-function buildCustomerTextSv(payload: NormalizedBookingPayload, bookingId: string) {
+function buildCustomerTextSv(payload: NormalizedBookingPayload, bookingId: string, recurring?: { total: number; dates: string[] }) {
   return [
     `Hej ${payload.name},`,
     "",
     "Tack för din bokningsförfrågan till Iboren. Vi har tagit emot den och återkommer så snart som möjligt.",
+    recurring && recurring.total > 1 ? `Vi har skapat ${recurring.total} kommande besök utifrån din valda frekvens.` : "",
+    recurring && recurring.total > 1 ? `Datum: ${recurring.dates.join(", ")}` : "",
     "",
     "Din sammanfattning:",
     `Boknings-ID: ${bookingId}`,
@@ -215,7 +274,7 @@ function buildCustomerTextSv(payload: NormalizedBookingPayload, bookingId: strin
     `Adress: ${payload.address}`,
     `Storlek: ${payload.size} kvm`,
     `Frekvens: ${payload.frequency}`,
-    `Datum: ${payload.date}`,
+    `Startdatum: ${payload.date}`,
     `Tid: ${payload.timeWindow}`,
     `Kundtyp: ${payload.customerType}`,
     buildRutText(payload, "sv"),
@@ -224,14 +283,16 @@ function buildCustomerTextSv(payload: NormalizedBookingPayload, bookingId: strin
     "",
     "Vänliga hälsningar,",
     "Iboren"
-  ].join("\n");
+  ].filter(Boolean).join("\n");
 }
 
-function buildCustomerTextEn(payload: NormalizedBookingPayload, bookingId: string) {
+function buildCustomerTextEn(payload: NormalizedBookingPayload, bookingId: string, recurring?: { total: number; dates: string[] }) {
   return [
     `Hi ${payload.name},`,
     "",
     "Thank you for your booking request to Iboren. We have received it and will get back to you as soon as possible.",
+    recurring && recurring.total > 1 ? `We have created ${recurring.total} upcoming visits based on your selected frequency.` : "",
+    recurring && recurring.total > 1 ? `Dates: ${recurring.dates.join(", ")}` : "",
     "",
     "Your summary:",
     `Booking ID: ${bookingId}`,
@@ -240,7 +301,7 @@ function buildCustomerTextEn(payload: NormalizedBookingPayload, bookingId: strin
     `Address: ${payload.address}`,
     `Size: ${payload.size} sqm`,
     `Frequency: ${english(payload.frequency)}`,
-    `Date: ${payload.date}`,
+    `Start date: ${payload.date}`,
     `Time: ${english(payload.timeWindow)}`,
     `Customer type: ${english(payload.customerType)}`,
     buildRutText(payload, "en"),
@@ -249,11 +310,11 @@ function buildCustomerTextEn(payload: NormalizedBookingPayload, bookingId: strin
     "",
     "Best regards,",
     "Iboren"
-  ].join("\n");
+  ].filter(Boolean).join("\n");
 }
 
-function buildCustomerText(payload: NormalizedBookingPayload, bookingId: string, language: Language) {
-  return language === "en" ? buildCustomerTextEn(payload, bookingId) : buildCustomerTextSv(payload, bookingId);
+function buildCustomerText(payload: NormalizedBookingPayload, bookingId: string, language: Language, recurring?: { total: number; dates: string[] }) {
+  return language === "en" ? buildCustomerTextEn(payload, bookingId, recurring) : buildCustomerTextSv(payload, bookingId, recurring);
 }
 
 function buildCustomerSubject(payload: NormalizedBookingPayload, language: Language) {
@@ -284,7 +345,7 @@ async function saveBooking(payload: NormalizedBookingPayload, auth: AuthContext,
     .maybeSingle();
 
   if (lookupError) throw new Error(`Kunde inte kontrollera tidigare bokning: ${lookupError.message}`);
-  if (existing?.id) return { id: existing.id as string, duplicate: true };
+  if (existing?.id) return { id: existing.id as string, duplicate: true, date: payload.date };
 
   const notesWithRut = [
     payload.notes || "",
@@ -315,7 +376,22 @@ async function saveBooking(payload: NormalizedBookingPayload, auth: AuthContext,
     if (isUniqueDuplicateError(error)) throw new DuplicateBookingError();
     throw new Error(`Kunde inte spara bokningen i databasen: ${error.message}`);
   }
-  return { id: data.id as string, duplicate: false };
+  return { id: data.id as string, duplicate: false, date: payload.date };
+}
+
+async function saveRecurringBookings(payload: NormalizedBookingPayload, auth: AuthContext, language: Language) {
+  const dates = buildVisitDates(payload.date, payload.frequency);
+  const results: SaveBookingResult[] = [];
+
+  for (let index = 0; index < dates.length; index += 1) {
+    const visitPayload = withVisitDate(payload, dates[index], index, dates.length);
+    results.push(await saveBooking(visitPayload, auth, language));
+  }
+
+  const created = results.filter((result) => !result.duplicate);
+  const duplicates = results.filter((result) => result.duplicate);
+  const first = created[0] || results[0];
+  return { first, results, created, duplicates, dates };
 }
 
 async function sendEmail(params: { apiKey: string; from: string; to: string; replyTo?: string; subject: string; text: string }) {
@@ -368,26 +444,28 @@ export async function POST(request: Request) {
     if (!/^\S+@\S+\.\S+$/.test(payload.email)) return NextResponse.json({ ok: false, message: "Invalid email address." }, { status: 400 });
     if (auth.user.email && payload.email.toLowerCase() !== auth.user.email.toLowerCase()) return NextResponse.json({ ok: false, message: language === "en" ? "The booking email must match your logged-in account." : "Bokningens e-post måste matcha ditt inloggade konto." }, { status: 403 });
 
-    const booking = await saveBooking(payload, auth, language);
-    if (booking.duplicate) return NextResponse.json({ ok: false, duplicate: true, bookingId: booking.id, message: language === "en" ? "This booking already exists. Change the date, time or details if you want to create a new booking." : "Den här bokningen finns redan. Ändra datum, tid eller uppgifter om du vill skapa en ny bokning." }, { status: 409 });
+    const bookingSet = await saveRecurringBookings(payload, auth, language);
+    if (!bookingSet.created.length && bookingSet.first?.duplicate) return NextResponse.json({ ok: false, duplicate: true, bookingId: bookingSet.first.id, message: language === "en" ? "This booking already exists. Change the date, time or details if you want to create a new booking." : "Den här bokningen finns redan. Ändra datum, tid eller uppgifter om du vill skapa en ny bokning." }, { status: 409 });
 
+    const recurring = { total: bookingSet.results.length, dates: bookingSet.dates };
+    const bookingId = bookingSet.first.id;
     const resendApiKey = process.env.RESEND_API_KEY;
     const toEmail = process.env.BOOKING_TO_EMAIL || "hej@iboren.se";
     const fromEmail = process.env.BOOKING_FROM_EMAIL || "Iboren <onboarding@resend.dev>";
-    const adminText = buildAdminText(payload, auth.user, booking.id, language);
-    const customerText = buildCustomerText(payload, booking.id, language);
+    const adminText = buildAdminText(payload, auth.user, bookingId, language, recurring);
+    const customerText = buildCustomerText(payload, bookingId, language, recurring);
     const customerSubject = buildCustomerSubject(payload, language);
 
     if (resendApiKey) {
       const adminEmail = sendEmail({ apiKey: resendApiKey, from: fromEmail, to: toEmail, replyTo: payload.email, subject: `New Iboren booking: ${english(payload.service)} · ${payload.area}`, text: adminText });
       const customerEmail = sendEmail({ apiKey: resendApiKey, from: fromEmail, to: payload.email, replyTo: toEmail, subject: customerSubject, text: customerText });
       const emailResult = await Promise.race([Promise.allSettled([adminEmail, customerEmail]), wait(EMAIL_WAIT_LIMIT_MS)]);
-      if (emailResult === "timeout") console.warn("IBOREN_BOOKING_EMAIL_WAIT_TIMEOUT", { bookingId: booking.id });
-      return NextResponse.json({ ok: true, bookingId: booking.id, message: language === "en" ? "Thank you. Your booking request has been saved. Iboren will get back to you as soon as possible." : "Tack! Din bokningsförfrågan är sparad. Iboren återkommer så snart som möjligt." });
+      if (emailResult === "timeout") console.warn("IBOREN_BOOKING_EMAIL_WAIT_TIMEOUT", { bookingId });
+      return NextResponse.json({ ok: true, bookingId, bookingIds: bookingSet.created.map((item) => item.id), visitDates: bookingSet.dates, duplicates: bookingSet.duplicates.length, message: language === "en" ? "Thank you. Your booking request has been saved. Iboren will get back to you as soon as possible." : "Tack! Din bokningsförfrågan är sparad. Iboren återkommer så snart som möjligt." });
     }
 
     console.info("IBOREN_BOOKING_REQUEST", adminText);
-    return NextResponse.json({ ok: true, bookingId: booking.id, message: language === "en" ? "The booking has been saved. Demo mode: add RESEND_API_KEY in Vercel for real email." : "Bokningen är sparad. Demo-läge: lägg till RESEND_API_KEY i Vercel för riktig e-post." });
+    return NextResponse.json({ ok: true, bookingId, bookingIds: bookingSet.created.map((item) => item.id), visitDates: bookingSet.dates, duplicates: bookingSet.duplicates.length, message: language === "en" ? "The booking has been saved. Demo mode: add RESEND_API_KEY in Vercel for real email." : "Bokningen är sparad. Demo-läge: lägg till RESEND_API_KEY i Vercel för riktig e-post." });
   } catch (error) {
     if (error instanceof DuplicateBookingError) return NextResponse.json({ ok: false, duplicate: true, message: error.message }, { status: 409 });
     return NextResponse.json({ ok: false, message: error instanceof Error ? error.message : "Invalid request." }, { status: 400 });
