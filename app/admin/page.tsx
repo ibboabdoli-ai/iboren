@@ -6,6 +6,7 @@ import { createClient, User } from "@supabase/supabase-js";
 import { ArrowDownUp, ArrowLeft, CheckCircle2, LayoutDashboard, Loader2, RefreshCw, Search, ShieldCheck, XCircle } from "lucide-react";
 import AdminCsvExport from "./AdminCsvExport";
 import AdminNoteBox from "./AdminNoteBox";
+import AdminRecurringGroupView from "./AdminRecurringGroupView";
 import AdminRoleManager from "./AdminRoleManager";
 import AvailableCleanersBox from "./AvailableCleanersBox";
 
@@ -399,6 +400,8 @@ export default function AdminPage() {
               <div className="grid min-h-40 place-items-center text-burgundy"><Loader2 className="h-7 w-7 animate-spin" /></div>
             ) : filteredBookings.length === 0 ? (
               <div className="rounded-[2rem] border border-dashed border-burgundy/20 bg-cream p-6 text-ink/65">Inga bokningar matchar filter/sökning.</div>
+            ) : workflowFilter === "recurring" ? (
+              <AdminRecurringGroupView bookings={filteredBookings} updatingId={updatingId} updateStatus={updateStatus} getToken={getToken} />
             ) : (
               filteredBookings.map((booking) => {
                 const currentStatus = booking.status || "new";
