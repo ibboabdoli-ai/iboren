@@ -8,49 +8,12 @@ const TOKEN_WORD = ["Bear", "er"].join("");
 const EMAIL_ENDPOINT = ["https://api.re", "send.com/emails"].join("");
 const EMAIL_WAIT_LIMIT_MS = 4500;
 
-type AssignmentPayload = {
-  employee_id?: string;
-  note?: string;
-};
+type AssignmentPayload = { employee_id?: string; note?: string };
+type EmployeeRow = { id: string; email: string; name: string; phone: string | null; role: string; active: boolean; has_car: boolean; max_hours_per_day: number };
+type AssignmentRow = { id: string; booking_id: string; employee_id: string; assigned_by: string | null; status: string; note: string | null; created_at: string; updated_at: string };
+type BookingRow = { id: string; service: string; area: string; address: string | null; size_sqm: number | null; frequency: string | null; preferred_date: string | null; time_window: string | null; customer_name: string; customer_email: string; customer_phone: string | null; notes: string | null; status: string | null; created_at: string };
 
-type EmployeeRow = {
-  id: string;
-  email: string;
-  name: string;
-  phone: string | null;
-  role: string;
-  active: boolean;
-  has_car: boolean;
-  max_hours_per_day: number;
-};
-
-type AssignmentRow = {
-  id: string;
-  booking_id: string;
-  employee_id: string;
-  assigned_by: string | null;
-  status: string;
-  note: string | null;
-  created_at: string;
-  updated_at: string;
-};
-
-type BookingRow = {
-  id: string;
-  service: string;
-  area: string;
-  address: string | null;
-  size_sqm: number | null;
-  frequency: string | null;
-  preferred_date: string | null;
-  time_window: string | null;
-  customer_name: string;
-  customer_email: string;
-  customer_phone: string | null;
-  notes: string | null;
-  status: string | null;
-  created_at: string;
-};
+type EmailResult = { sent: boolean; skipped: boolean; reason: string | null };
 
 function getAdminClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -62,17 +25,12 @@ function getAdminClient() {
 type AdminClient = NonNullable<ReturnType<typeof getAdminClient>>;
 
 function getAdminEmails() {
-  return (process.env.ADMIN_EMAILS || "ibbo.abdoli@gmail.com")
-    .split(",")
-    .map((email) => email.trim().toLowerCase())
-    .filter(Boolean);
+  return (process.env.ADMIN_EMAILS || "ibbo.abdoli@gmail.com").split(",").map((email) => email.trim().toLowerCase()).filter(Boolean);
 }
 
 function getToken(request: Request) {
   const header = request.headers.get(HEADER_NAME.toLowerCase()) || "";
-  return header.toLowerCase().startsWith(`${TOKEN_WORD.toLowerCase()} `)
-    ? header.slice(TOKEN_WORD.length + 1).trim()
-    : "";
+  return header.toLowerCase().startsWith(`${TOKEN_WORD.toLowerCase()} `) ? header.slice(TOKEN_WORD.length + 1).trim() : "";
 }
 
 function cleanText(value: unknown, max = 500) {
@@ -111,6 +69,25 @@ function buildCleanerAssignmentEmailText(params: { booking: BookingRow; employee
   ].join("\n");
 }
 
+function buildCleanerCancellationEmailText(params: { booking: BookingRow; employee: EmployeeRow }) {
+  const { booking, employee } = params;
+  return [
+    `Hi ${employee.name || "there"},`,
+    "",
+    "This cleaning job has been removed from your Iboren cleaner panel by admin.",
+    "You do not need to take action on this job anymore.",
+    "",
+    `Service: ${booking.service}`,
+    `Area: ${booking.area}`,
+    `Address: ${booking.address || "-"}`,
+    `Date: ${booking.preferred_date || "-"}`,
+    `Time window: ${booking.time_window || "-"}`,
+    "",
+    "Best regards,",
+    "Iboren"
+  ].join("\n");
+}
+
 async function sendEmail(params: { apiKey: string; from: string; to: string; replyTo?: string; subject: string; text: string }) {
   return fetch(EMAIL_ENDPOINT, {
     method: "POST",
@@ -119,72 +96,62 @@ async function sendEmail(params: { apiKey: string; from: string; to: string; rep
   });
 }
 
-function wait(ms: number) {
-  return new Promise<"timeout">((resolve) => setTimeout(() => resolve("timeout"), ms));
-}
+function wait(ms: number) { return new Promise<"timeout">((resolve) => setTimeout(() => resolve("timeout"), ms)); }
 
-async function notifyAssignedCleaner(params: { booking: BookingRow; employee: EmployeeRow; note: string | null }) {
+async function sendCleanerEmail(params: { toEmail: string; subject: string; text: string }): Promise<EmailResult> {
   const resendApiKey = process.env.RESEND_API_KEY;
   const fromEmail = process.env.BOOKING_FROM_EMAIL || "Iboren <onboarding@resend.dev>";
   const replyTo = process.env.BOOKING_TO_EMAIL || "hej@iboren.se";
-  const toEmail = params.employee.email.trim().toLowerCase();
-
+  const toEmail = params.toEmail.trim().toLowerCase();
   if (!isValidEmail(toEmail)) return { sent: false, skipped: true, reason: "invalid_cleaner_email" };
-
-  const subject = `Iboren: New assigned job · ${params.booking.service}`;
-  const text = buildCleanerAssignmentEmailText(params);
-
   if (!resendApiKey) {
-    console.info("IBOREN_ASSIGNED_CLEANER_EMAIL", { to: toEmail, text });
+    console.info("IBOREN_CLEANER_EMAIL", { to: toEmail, subject: params.subject, text: params.text });
     return { sent: false, skipped: true, reason: "missing_resend_api_key" };
   }
-
-  const emailResult = await Promise.race([
-    sendEmail({ apiKey: resendApiKey, from: fromEmail, to: toEmail, replyTo, subject, text }),
-    wait(EMAIL_WAIT_LIMIT_MS)
-  ]);
-
+  const emailResult = await Promise.race([sendEmail({ apiKey: resendApiKey, from: fromEmail, to: toEmail, replyTo, subject: params.subject, text: params.text }), wait(EMAIL_WAIT_LIMIT_MS)]);
   if (emailResult === "timeout") return { sent: false, skipped: false, reason: "timeout" };
   return { sent: emailResult.ok, skipped: false, reason: emailResult.ok ? null : "resend_error" };
+}
+
+async function notifyAssignedCleaner(params: { booking: BookingRow; employee: EmployeeRow; note: string | null }) {
+  return sendCleanerEmail({ toEmail: params.employee.email, subject: `Iboren: New assigned job · ${params.booking.service}`, text: buildCleanerAssignmentEmailText(params) });
+}
+
+async function notifyCancelledCleaner(params: { booking: BookingRow; employee: EmployeeRow }) {
+  return sendCleanerEmail({ toEmail: params.employee.email, subject: `Iboren: Assigned job removed · ${params.booking.service}`, text: buildCleanerCancellationEmailText(params) });
 }
 
 async function verifyAdmin(request: Request) {
   const supabase = getAdminClient();
   if (!supabase) return { ok: false as const, status: 500, message: "Missing Supabase admin environment variables." };
-
   const token = getToken(request);
   if (!token) return { ok: false as const, status: 401, message: "Missing access token." };
-
   const { data, error } = await supabase.auth.getUser(token);
   const user = data.user;
   const email = user?.email?.toLowerCase() || "";
   if (error || !user || !email) return { ok: false as const, status: 401, message: "Invalid session." };
-
-  const { data: roles, error: roleError } = await supabase
-    .from("user_roles")
-    .select("role, active")
-    .eq("email", email)
-    .limit(1);
-
+  const { data: roles, error: roleError } = await supabase.from("user_roles").select("role, active").eq("email", email).limit(1);
   if (roleError) return { ok: false as const, status: 500, message: roleError.message };
-
   const isAdminByRole = Boolean((roles || []).find((row) => row.active && row.role === "admin"));
   const isAdminByEnv = getAdminEmails().includes(email);
   if (!isAdminByRole && !isAdminByEnv) return { ok: false as const, status: 403, message: "Admin access required." };
-
   return { ok: true as const, supabase, user };
 }
 
-async function loadCurrentAssignment(supabase: AdminClient, bookingId: string) {
-  const { data, error } = await supabase
-    .from("booking_assignments")
-    .select("id, booking_id, employee_id, assigned_by, status, note, created_at, updated_at")
-    .eq("booking_id", bookingId)
-    .in("status", ["assigned", "accepted", "declined", "completed"])
-    .order("updated_at", { ascending: false })
-    .limit(1)
-    .maybeSingle<AssignmentRow>();
+async function loadBooking(supabase: AdminClient, bookingId: string) {
+  const { data, error } = await supabase.from("bookings").select("id, service, area, address, size_sqm, frequency, preferred_date, time_window, customer_name, customer_email, customer_phone, notes, status, created_at").eq("id", bookingId).maybeSingle<BookingRow>();
+  if (error) throw error;
+  return data;
+}
 
+async function loadEmployee(supabase: AdminClient, employeeId: string) {
+  const { data, error } = await supabase.from("employees").select("id, email, name, phone, role, active, has_car, max_hours_per_day").eq("id", employeeId).maybeSingle<EmployeeRow>();
+  if (error) throw error;
+  return data;
+}
+
+async function loadCurrentAssignment(supabase: AdminClient, bookingId: string) {
+  const { data, error } = await supabase.from("booking_assignments").select("id, booking_id, employee_id, assigned_by, status, note, created_at, updated_at").eq("booking_id", bookingId).in("status", ["assigned", "accepted", "declined", "completed"]).order("updated_at", { ascending: false }).limit(1).maybeSingle<AssignmentRow>();
   if (error) throw error;
   return data;
 }
@@ -192,18 +159,10 @@ async function loadCurrentAssignment(supabase: AdminClient, bookingId: string) {
 export async function GET(request: Request, { params }: { params: { id: string } }) {
   const admin = await verifyAdmin(request);
   if (!admin.ok) return NextResponse.json({ ok: false, message: admin.message }, { status: admin.status });
-
   try {
     const assignment = await loadCurrentAssignment(admin.supabase, params.id);
     if (!assignment) return NextResponse.json({ ok: true, assignment: null, employee: null });
-
-    const { data: employee, error: employeeError } = await admin.supabase
-      .from("employees")
-      .select("id, email, name, phone, role, active, has_car, max_hours_per_day")
-      .eq("id", assignment.employee_id)
-      .maybeSingle<EmployeeRow>();
-
-    if (employeeError) return NextResponse.json({ ok: false, message: employeeError.message }, { status: 500 });
+    const employee = await loadEmployee(admin.supabase, assignment.employee_id);
     return NextResponse.json({ ok: true, assignment, employee });
   } catch (error) {
     return NextResponse.json({ ok: false, message: error instanceof Error ? error.message : "Could not load assignment." }, { status: 500 });
@@ -213,70 +172,69 @@ export async function GET(request: Request, { params }: { params: { id: string }
 export async function POST(request: Request, { params }: { params: { id: string } }) {
   const admin = await verifyAdmin(request);
   if (!admin.ok) return NextResponse.json({ ok: false, message: admin.message }, { status: admin.status });
-
   const body = await request.json().catch(() => null) as AssignmentPayload | null;
   const employeeId = cleanText(body?.employee_id, 80);
   const note = cleanText(body?.note, 500) || null;
-
   if (!employeeId) return NextResponse.json({ ok: false, message: "employee_id is required." }, { status: 400 });
 
-  const { data: booking, error: bookingError } = await admin.supabase
-    .from("bookings")
-    .select("id, service, area, address, size_sqm, frequency, preferred_date, time_window, customer_name, customer_email, customer_phone, notes, status, created_at")
-    .eq("id", params.id)
-    .maybeSingle<BookingRow>();
-
-  if (bookingError) return NextResponse.json({ ok: false, message: bookingError.message }, { status: 500 });
-  if (!booking?.id) return NextResponse.json({ ok: false, message: "Booking not found." }, { status: 404 });
-
-  const { data: employee, error: employeeError } = await admin.supabase
-    .from("employees")
-    .select("id, email, name, phone, role, active, has_car, max_hours_per_day")
-    .eq("id", employeeId)
-    .maybeSingle<EmployeeRow>();
-
-  if (employeeError) return NextResponse.json({ ok: false, message: employeeError.message }, { status: 500 });
-  if (!employee?.id || !employee.active || employee.role !== "cleaner") {
-    return NextResponse.json({ ok: false, message: "Selected employee is not an active cleaner." }, { status: 400 });
-  }
-
   try {
+    const booking = await loadBooking(admin.supabase, params.id);
+    if (!booking?.id) return NextResponse.json({ ok: false, message: "Booking not found." }, { status: 404 });
+    const employee = await loadEmployee(admin.supabase, employeeId);
+    if (!employee?.id || !employee.active || employee.role !== "cleaner") return NextResponse.json({ ok: false, message: "Selected employee is not an active cleaner." }, { status: 400 });
+
     const existing = await loadCurrentAssignment(admin.supabase, params.id);
-    const payload = {
-      booking_id: params.id,
-      employee_id: employee.id,
-      assigned_by: admin.user.id,
-      status: "assigned",
-      note,
-      updated_at: new Date().toISOString()
-    };
+    if (existing?.status === "completed" && existing.employee_id !== employee.id) return NextResponse.json({ ok: false, message: "Completed assignment cannot be reassigned." }, { status: 400 });
 
+    let previousEmployee: EmployeeRow | null = null;
+    if (existing?.employee_id && existing.employee_id !== employee.id && existing.status !== "completed") previousEmployee = await loadEmployee(admin.supabase, existing.employee_id);
+
+    const payload = { booking_id: params.id, employee_id: employee.id, assigned_by: admin.user.id, status: "assigned", note, updated_at: new Date().toISOString() };
     const query = existing?.id
-      ? admin.supabase
-        .from("booking_assignments")
-        .update(payload)
-        .eq("id", existing.id)
-        .select("id, booking_id, employee_id, assigned_by, status, note, created_at, updated_at")
-        .single<AssignmentRow>()
-      : admin.supabase
-        .from("booking_assignments")
-        .insert(payload)
-        .select("id, booking_id, employee_id, assigned_by, status, note, created_at, updated_at")
-        .single<AssignmentRow>();
-
+      ? admin.supabase.from("booking_assignments").update(payload).eq("id", existing.id).select("id, booking_id, employee_id, assigned_by, status, note, created_at, updated_at").single<AssignmentRow>()
+      : admin.supabase.from("booking_assignments").insert(payload).select("id, booking_id, employee_id, assigned_by, status, note, created_at, updated_at").single<AssignmentRow>();
     const { data: assignment, error: assignmentError } = await query;
     if (assignmentError) return NextResponse.json({ ok: false, message: assignmentError.message }, { status: 500 });
 
-    let cleanerEmail = { sent: false, skipped: true, reason: "not_attempted" as string | null };
-    try {
-      cleanerEmail = await notifyAssignedCleaner({ booking, employee, note });
-    } catch (error) {
-      console.warn("IBOREN_ASSIGNED_CLEANER_EMAIL_FAILED", error);
-      cleanerEmail = { sent: false, skipped: false, reason: "exception" };
+    let previousCleanerEmail: EmailResult = { sent: false, skipped: true, reason: "not_needed" };
+    if (previousEmployee) {
+      try { previousCleanerEmail = await notifyCancelledCleaner({ booking, employee: previousEmployee }); }
+      catch (error) { console.warn("IBOREN_PREVIOUS_CLEANER_CANCEL_EMAIL_FAILED", error); previousCleanerEmail = { sent: false, skipped: false, reason: "exception" }; }
     }
 
-    return NextResponse.json({ ok: true, assignment, employee, cleanerEmail });
+    let cleanerEmail: EmailResult = { sent: false, skipped: true, reason: "not_attempted" };
+    try { cleanerEmail = await notifyAssignedCleaner({ booking, employee, note }); }
+    catch (error) { console.warn("IBOREN_ASSIGNED_CLEANER_EMAIL_FAILED", error); cleanerEmail = { sent: false, skipped: false, reason: "exception" }; }
+
+    return NextResponse.json({ ok: true, assignment, employee, cleanerEmail, previousCleanerEmail });
   } catch (error) {
     return NextResponse.json({ ok: false, message: error instanceof Error ? error.message : "Could not save assignment." }, { status: 500 });
+  }
+}
+
+export async function DELETE(request: Request, { params }: { params: { id: string } }) {
+  const admin = await verifyAdmin(request);
+  if (!admin.ok) return NextResponse.json({ ok: false, message: admin.message }, { status: admin.status });
+
+  try {
+    const booking = await loadBooking(admin.supabase, params.id);
+    if (!booking?.id) return NextResponse.json({ ok: false, message: "Booking not found." }, { status: 404 });
+    const existing = await loadCurrentAssignment(admin.supabase, params.id);
+    if (!existing?.id) return NextResponse.json({ ok: true, assignment: null, employee: null, cleanerEmail: { sent: false, skipped: true, reason: "no_assignment" } });
+    if (existing.status === "completed") return NextResponse.json({ ok: false, message: "Completed assignment cannot be cancelled here." }, { status: 400 });
+
+    const employee = await loadEmployee(admin.supabase, existing.employee_id);
+    const { error } = await admin.supabase.from("booking_assignments").update({ status: "cancelled", updated_at: new Date().toISOString() }).eq("id", existing.id);
+    if (error) return NextResponse.json({ ok: false, message: error.message }, { status: 500 });
+
+    let cleanerEmail: EmailResult = { sent: false, skipped: true, reason: "no_cleaner_email" };
+    if (employee?.id) {
+      try { cleanerEmail = await notifyCancelledCleaner({ booking, employee }); }
+      catch (error) { console.warn("IBOREN_CANCELLED_CLEANER_EMAIL_FAILED", error); cleanerEmail = { sent: false, skipped: false, reason: "exception" }; }
+    }
+
+    return NextResponse.json({ ok: true, assignment: null, employee: null, cleanerEmail });
+  } catch (error) {
+    return NextResponse.json({ ok: false, message: error instanceof Error ? error.message : "Could not cancel assignment." }, { status: 500 });
   }
 }
