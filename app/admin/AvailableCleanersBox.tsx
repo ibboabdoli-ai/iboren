@@ -25,11 +25,18 @@ type SuggestionsResponse = {
   suggestions?: Suggestion[];
 };
 
+type CleanerEmailResult = {
+  sent?: boolean;
+  skipped?: boolean;
+  reason?: string | null;
+};
+
 type AssignmentResponse = {
   ok?: boolean;
   message?: string;
   assignment?: { id: string; employee_id: string; status: string } | null;
   employee?: Suggestion["employee"] | null;
+  cleanerEmail?: CleanerEmailResult;
 };
 
 const headerName = ["Author", "ization"].join("");
@@ -61,6 +68,13 @@ function assignmentStatusLabel(status: string | null) {
   if (status === "declined") return "declined";
   if (status === "completed") return "completed by cleaner";
   return "assigned";
+}
+
+function emailStatusMessage(employee: Suggestion["employee"], cleanerEmail?: CleanerEmailResult) {
+  if (cleanerEmail?.sent) return `Assigned to ${employee.name}. Email sent to ${employee.email}.`;
+  if (cleanerEmail?.skipped) return `Assigned to ${employee.name}. Cleaner email was not sent: ${cleanerEmail.reason || "skipped"}.`;
+  if (cleanerEmail && cleanerEmail.sent === false) return `Assigned to ${employee.name}. Cleaner email failed: ${cleanerEmail.reason || "unknown error"}.`;
+  return `Assigned to ${employee.name}. Email status unknown.`;
 }
 
 export default function AvailableCleanersBox({ bookingId, getToken }: { bookingId: string; getToken: () => Promise<string | null> }) {
@@ -124,10 +138,11 @@ export default function AvailableCleanersBox({ bookingId, getToken }: { bookingI
       });
       const result = await response.json().catch(() => null) as AssignmentResponse | null;
       if (!response.ok || !result?.ok) throw new Error(result?.message || "Could not assign cleaner.");
-      setAssignedEmployee(result.employee || employee);
-      setAssignedEmployeeId(result.assignment?.employee_id || employee.id);
+      const assigned = result.employee || employee;
+      setAssignedEmployee(assigned);
+      setAssignedEmployeeId(result.assignment?.employee_id || assigned.id);
       setAssignmentStatus(result.assignment?.status || "assigned");
-      setMessage(`Assigned to ${result.employee?.name || employee.name}.`);
+      setMessage(emailStatusMessage(assigned, result.cleanerEmail));
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Could not assign cleaner.");
     }
