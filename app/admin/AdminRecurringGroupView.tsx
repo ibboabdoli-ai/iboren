@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { CalendarDays, CheckCircle2, ChevronDown, ChevronRight, Loader2, ShieldCheck, UserRound, XCircle } from "lucide-react";
+import { CalendarDays, CheckCircle2, ChevronDown, ChevronRight, Loader2, ShieldCheck, XCircle } from "lucide-react";
 import AdminNoteBox from "./AdminNoteBox";
 import AvailableCleanersBox from "./AvailableCleanersBox";
 
@@ -34,6 +34,14 @@ type RecurringGroup = {
   address: string | null;
   frequency: string | null;
   visits: AdminBooking[];
+};
+
+type BulkStatusResponse = {
+  ok?: boolean;
+  message?: string;
+  status?: string;
+  updatedIds?: string[];
+  count?: number;
 };
 
 function statusLabel(status: string | null) {
@@ -113,22 +121,64 @@ function countByStatus(visits: AdminBooking[], status: string) {
   return visits.filter((visit) => (visit.status || "new") === status).length;
 }
 
+function activeVisitIds(visits: AdminBooking[]) {
+  return visits
+    .filter((visit) => {
+      const status = visit.status || "new";
+      return status !== "completed" && status !== "cancelled";
+    })
+    .map((visit) => visit.id);
+}
+
 export default function AdminRecurringGroupView({
   bookings,
   updatingId,
   updateStatus,
-  getToken
+  getToken,
+  onBulkUpdated
 }: {
   bookings: AdminBooking[];
   updatingId: string | null;
   updateStatus: (bookingId: string, status: string) => Promise<void>;
   getToken: () => Promise<string | null>;
+  onBulkUpdated: () => Promise<void>;
 }) {
   const groups = useMemo(() => groupBookings(bookings), [bookings]);
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
+  const [bulkUpdatingKey, setBulkUpdatingKey] = useState<string | null>(null);
+  const [bulkMessage, setBulkMessage] = useState("");
 
   function toggleGroup(key: string) {
     setOpenGroups((current) => ({ ...current, [key]: !current[key] }));
+  }
+
+  async function bulkUpdate(group: RecurringGroup, status: "confirmed" | "completed" | "cancelled") {
+    const ids = activeVisitIds(group.visits);
+    if (!ids.length) {
+      setBulkMessage("No active visits to update in this group.");
+      return;
+    }
+
+    setBulkUpdatingKey(`${group.key}:${status}`);
+    setBulkMessage("");
+
+    try {
+      const token = await getToken();
+      if (!token) throw new Error("Du behöver logga in igen.");
+      const response = await fetch("/api/admin/bookings/bulk-status", {
+        method: "PATCH",
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ bookingIds: ids, status })
+      });
+      const result = await response.json().catch(() => null) as BulkStatusResponse | null;
+      if (!response.ok || !result?.ok) throw new Error(result?.message || "Could not update recurring visits.");
+      setBulkMessage(`Updated ${result.count || 0} visits to ${status}. Customer emails were skipped for bulk action.`);
+      await onBulkUpdated();
+    } catch (error) {
+      setBulkMessage(error instanceof Error ? error.message : "Could not update recurring visits.");
+    }
+
+    setBulkUpdatingKey(null);
   }
 
   if (!groups.length) {
@@ -137,6 +187,7 @@ export default function AdminRecurringGroupView({
 
   return (
     <div className="grid gap-4">
+      {bulkMessage && <p className="rounded-2xl bg-burgundy/10 p-4 text-sm font-bold text-burgundy">{bulkMessage}</p>}
       {groups.map((group) => {
         const isOpen = openGroups[group.key] ?? true;
         const unassigned = countByStatus(group.visits, "new");
@@ -145,6 +196,7 @@ export default function AdminRecurringGroupView({
         const cancelled = countByStatus(group.visits, "cancelled");
         const firstDate = group.visits[0]?.preferred_date || "—";
         const lastDate = group.visits[group.visits.length - 1]?.preferred_date || "—";
+        const activeCount = activeVisitIds(group.visits).length;
 
         return (
           <section key={group.key} className="rounded-[2rem] border border-burgundy/10 bg-porcelain p-5 shadow-sm">
@@ -166,10 +218,29 @@ export default function AdminRecurringGroupView({
                 <p className="mt-3 text-xs font-bold text-ink/45">Period: {firstDate} → {lastDate}</p>
               </div>
 
-              <button type="button" onClick={() => toggleGroup(group.key)} className="inline-flex items-center justify-center gap-2 rounded-full bg-burgundy px-5 py-3 text-sm font-black text-porcelain">
-                {isOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-                {isOpen ? "Hide visits" : "Show visits"}
+              <div className="flex flex-col gap-2">
+                <button type="button" onClick={() => toggleGroup(group.key)} className="inline-flex items-center justify-center gap-2 rounded-full bg-burgundy px-5 py-3 text-sm font-black text-porcelain">
+                  {isOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                  {isOpen ? "Hide visits" : "Show visits"}
+                </button>
+                <p className="text-center text-xs font-bold text-ink/45">Bulk updates active visits: {activeCount}</p>
+              </div>
+            </div>
+
+            <div className="mt-4 flex flex-wrap gap-2 rounded-2xl bg-cream p-3">
+              <button type="button" disabled={!activeCount || Boolean(bulkUpdatingKey)} onClick={() => bulkUpdate(group, "confirmed")} className="inline-flex items-center gap-2 rounded-full bg-green-100 px-4 py-2 text-xs font-black uppercase tracking-[.12em] text-green-800 ring-1 ring-green-200 disabled:opacity-50">
+                {bulkUpdatingKey === `${group.key}:confirmed` ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
+                Confirm active
               </button>
+              <button type="button" disabled={!activeCount || Boolean(bulkUpdatingKey)} onClick={() => bulkUpdate(group, "completed")} className="inline-flex items-center gap-2 rounded-full bg-ink px-4 py-2 text-xs font-black uppercase tracking-[.12em] text-porcelain ring-1 ring-ink/15 disabled:opacity-50">
+                {bulkUpdatingKey === `${group.key}:completed` ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
+                Mark active Klar
+              </button>
+              <button type="button" disabled={!activeCount || Boolean(bulkUpdatingKey)} onClick={() => bulkUpdate(group, "cancelled")} className="inline-flex items-center gap-2 rounded-full bg-red-100 px-4 py-2 text-xs font-black uppercase tracking-[.12em] text-red-800 ring-1 ring-red-200 disabled:opacity-50">
+                {bulkUpdatingKey === `${group.key}:cancelled` ? <Loader2 className="h-4 w-4 animate-spin" /> : <XCircle className="h-4 w-4" />}
+                Cancel active
+              </button>
+              <p className="w-full text-xs font-bold text-ink/45">Bulk actions do not send separate customer emails.</p>
             </div>
 
             {isOpen && (
