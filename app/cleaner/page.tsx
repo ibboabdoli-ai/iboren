@@ -148,7 +148,7 @@ export default function CleanerPage() {
               <div className="mb-5 grid h-14 w-14 place-items-center rounded-full bg-gold text-ink"><UserRound size={25} /></div>
               <p className="text-xs font-bold uppercase tracking-[.32em] text-gold">Iboren staff</p>
               <h1 className="display mt-3 text-5xl font-bold leading-[.9] md:text-7xl">Cleaner panel</h1>
-              <p className="mt-5 max-w-2xl leading-8 text-porcelain/70">Set availability and view assigned jobs.</p>
+              <p className="mt-5 max-w-2xl leading-8 text-porcelain/70">View assigned jobs, add them to your calendar and update your availability.</p>
             </div>
             <div className="rounded-[1.5rem] border border-gold/15 bg-night/20 p-4 text-sm font-bold text-porcelain/80">
               <p>{roleInfo?.email || user.email}</p>
@@ -157,10 +157,10 @@ export default function CleanerPage() {
           </div>
         </div>
 
-        <div className="mt-6 grid gap-5 lg:grid-cols-[1.15fr_.85fr]">
-          {accessToken ? <CleanerAvailabilityForm token={accessToken} /> : null}
-          <div className="grid gap-5">
-            {accessToken ? <CleanerJobsList token={accessToken} /> : null}
+        <div className="mt-6 grid gap-5">
+          {accessToken ? <CleanerJobsList token={accessToken} /> : null}
+          <div className="grid gap-5 xl:grid-cols-[1.15fr_.85fr]">
+            {accessToken ? <CleanerAvailabilityForm token={accessToken} /> : null}
             <article className="rounded-[2rem] bg-porcelain p-6 shadow-soft">
               <Lock className="mb-5 text-burgundy" />
               <h2 className="display text-3xl font-bold text-burgundy">Access control</h2>
