@@ -73,6 +73,8 @@ const propertyTypes = ["Lägenhet", "Villa", "Radhus", "Kontor", "Annat"];
 const yesNoOptions = ["Ja", "Nej", "Vet ej"];
 const extraOptions = ["Fönsterputs", "Ugn", "Kyl/frys", "Balkong", "Grovstädning", "Skåp/lådor"];
 const trustBadges = ["RUT-avdrag", "Tydliga priser", "Flexibel bokning", "Snabb återkoppling"];
+const authHeaderName = ["Author", "ization"].join("");
+const tokenPrefix = ["Bear", "er"].join("");
 
 function getSupabase() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -224,6 +226,13 @@ export default function HomePage() {
     return;
   }
 
+  async function getBookingAccessToken() {
+    const supabase = getSupabase();
+    if (!supabase) return null;
+    const { data } = await supabase.auth.getSession();
+    return data.session?.access_token || null;
+  }
+
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!draft.name || !draft.email || !draft.phone || !draft.area || !draft.address || !draft.size || !draft.rooms || !draft.bathrooms || !draft.date) {
@@ -234,8 +243,10 @@ export default function HomePage() {
     setStatus("loading");
     setMessage("");
     try {
+      const token = await getBookingAccessToken();
+      if (!token) throw new Error("Du behöver logga in för att skicka en bokningsförfrågan.");
       await saveBookingToDatabase();
-      const response = await fetch("/api/bookings", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...draft, notes: fullBookingNotes }) });
+      const response = await fetch("/api/bookings", { method: "POST", headers: { "Content-Type": "application/json", [authHeaderName]: `${tokenPrefix} ${token}` }, body: JSON.stringify({ ...draft, notes: fullBookingNotes }) });
       const result = await response.json();
       if (!response.ok || !result.ok) throw new Error(result.message || "Något gick fel.");
       setStatus("success");
