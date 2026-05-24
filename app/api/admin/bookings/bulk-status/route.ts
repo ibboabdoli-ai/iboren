@@ -1,10 +1,13 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { getBookingStatusLocale } from "../[id]/statusLocale";
 
 export const runtime = "nodejs";
 
 const allowedStatuses = ["new", "confirmed", "completed", "cancelled"] as const;
 type AllowedStatus = typeof allowedStatuses[number];
+const EMAIL_ENDPOINT = ["https://api.re", "send.com/emails"].join("");
+const EMAIL_WAIT_LIMIT_MS = 4500;
 
 type BulkStatusPayload = {
   bookingIds?: unknown;
@@ -13,7 +16,41 @@ type BulkStatusPayload = {
 
 type BookingRow = {
   id: string;
+  service: string;
+  area: string;
+  address: string | null;
+  size_sqm: number | null;
+  frequency: string | null;
+  preferred_date: string | null;
+  time_window: string | null;
+  customer_name: string;
+  customer_email: string;
+  customer_phone: string | null;
+  notes: string | null;
   status: string | null;
+  created_at: string;
+};
+
+type BulkEmailResult = {
+  sent: boolean;
+  skipped: boolean;
+  reason: string | null;
+};
+
+const englishLabels: Record<string, string> = {
+  Hemstädning: "Home cleaning",
+  Flyttstädning: "Move-out cleaning",
+  Kontorsstädning: "Office cleaning",
+  Fönsterputs: "Window cleaning",
+  Engång: "One-time",
+  "Varje vecka": "Every week",
+  "Varannan vecka": "Every other week",
+  "Varje månad": "Every month",
+  Morgon: "Morning",
+  Förmiddag: "Late morning",
+  Eftermiddag: "Afternoon",
+  Kväll: "Evening",
+  Flexibel: "Flexible"
 };
 
 function getAdminEmails() {
@@ -30,6 +67,15 @@ function getAdminClient() {
   return createClient(url, serviceKey, { auth: { persistSession: false, autoRefreshToken: false } });
 }
 
+function cleanText(value: unknown, max = 1200) {
+  return String(value ?? "").replace(/[<>]/g, "").trim().slice(0, max);
+}
+
+function english(value: string | null) {
+  const clean = cleanText(value || "");
+  return englishLabels[clean] || clean;
+}
+
 function normalizeBookingIds(value: unknown) {
   if (!Array.isArray(value)) return [];
   return [...new Set(value.map((item) => String(item || "").trim()).filter(Boolean))].slice(0, 100);
@@ -38,6 +84,14 @@ function normalizeBookingIds(value: unknown) {
 function normalizeStatus(value: unknown): AllowedStatus | null {
   const status = String(value || "").trim().toLowerCase();
   return allowedStatuses.includes(status as AllowedStatus) ? status as AllowedStatus : null;
+}
+
+function isValidEmail(email: string) {
+  return /^\S+@\S+\.\S+$/.test(email);
+}
+
+function wait(ms: number) {
+  return new Promise<"timeout">((resolve) => setTimeout(() => resolve("timeout"), ms));
 }
 
 async function verifyAdmin(request: Request) {
@@ -56,6 +110,104 @@ async function verifyAdmin(request: Request) {
   return { ok: true as const, supabase, user: data.user };
 }
 
+function sortByDate(bookings: BookingRow[]) {
+  return [...bookings].sort((a, b) => String(a.preferred_date || "9999-12-31").localeCompare(String(b.preferred_date || "9999-12-31")));
+}
+
+function statusTextSv(status: AllowedStatus) {
+  if (status === "confirmed") return "bekräftade";
+  if (status === "completed") return "markerade som klara";
+  if (status === "cancelled") return "avbokade";
+  return "uppdaterade";
+}
+
+function statusTextEn(status: AllowedStatus) {
+  if (status === "confirmed") return "confirmed";
+  if (status === "completed") return "marked as completed";
+  if (status === "cancelled") return "cancelled";
+  return "updated";
+}
+
+function buildBulkSummaryEmail(status: AllowedStatus, bookings: BookingRow[]) {
+  const sorted = sortByDate(bookings);
+  const first = sorted[0];
+  const locale = getBookingStatusLocale(first?.notes || null);
+  const dates = sorted.map((booking) => `${booking.preferred_date || "-"} · ${locale === "en" ? english(booking.time_window || "") || "Flexible" : booking.time_window || "Flexibel"}`).join("\n");
+  const count = sorted.length;
+
+  if (locale === "en") {
+    const action = statusTextEn(status);
+    const subject = `Iboren: ${count} recurring visits ${action}`;
+    const text = [
+      `Hi ${cleanText(first.customer_name) || "there"},`,
+      "",
+      `Your recurring cleaning plan has been updated. ${count} upcoming visit${count === 1 ? "" : "s"} have been ${action}.`,
+      "",
+      `Service: ${english(first.service)}`,
+      `Area: ${first.area}`,
+      `Address: ${first.address || "-"}`,
+      `Frequency: ${english(first.frequency || "") || "-"}`,
+      "",
+      "Updated visits:",
+      dates,
+      "",
+      "If anything is incorrect, please reply to this email or contact us at hej@iboren.se.",
+      "",
+      "Best regards,",
+      "Iboren"
+    ].join("\n");
+    return { subject, text };
+  }
+
+  const action = statusTextSv(status);
+  const subject = `Iboren: ${count} återkommande besök ${action}`;
+  const text = [
+    `Hej ${cleanText(first.customer_name) || "kund"},`,
+    "",
+    `Din återkommande städplan har uppdaterats. ${count} kommande besök är ${action}.`,
+    "",
+    `Tjänst: ${first.service}`,
+    `Område: ${first.area}`,
+    `Adress: ${first.address || "-"}`,
+    `Frekvens: ${first.frequency || "-"}`,
+    "",
+    "Uppdaterade besök:",
+    dates,
+    "",
+    "Om något inte stämmer kan du svara på det här mejlet eller kontakta oss på hej@iboren.se.",
+    "",
+    "Vänliga hälsningar,",
+    "Iboren"
+  ].join("\n");
+  return { subject, text };
+}
+
+async function sendBulkSummaryEmail(status: AllowedStatus, bookings: BookingRow[]): Promise<BulkEmailResult> {
+  const sorted = sortByDate(bookings);
+  const first = sorted[0];
+  const resendApiKey = process.env.RESEND_API_KEY;
+  const fromEmail = process.env.BOOKING_FROM_EMAIL || "Iboren <onboarding@resend.dev>";
+  const replyTo = process.env.BOOKING_TO_EMAIL || "hej@iboren.se";
+  const toEmail = cleanText(first?.customer_email || "").toLowerCase();
+
+  if (!sorted.length) return { sent: false, skipped: true, reason: "no_updated_bookings" };
+  if (!isValidEmail(toEmail)) return { sent: false, skipped: true, reason: "invalid_customer_email" };
+  if (!resendApiKey) return { sent: false, skipped: true, reason: "missing_resend_api_key" };
+
+  const content = buildBulkSummaryEmail(status, sorted);
+  const emailResult = await Promise.race([
+    fetch(EMAIL_ENDPOINT, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${resendApiKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ from: fromEmail, to: [toEmail], reply_to: replyTo, subject: content.subject, text: content.text })
+    }),
+    wait(EMAIL_WAIT_LIMIT_MS)
+  ]);
+
+  if (emailResult === "timeout") return { sent: false, skipped: false, reason: "timeout" };
+  return { sent: emailResult.ok, skipped: false, reason: emailResult.ok ? null : "resend_error" };
+}
+
 export async function PATCH(request: Request) {
   const admin = await verifyAdmin(request);
   if (!admin.ok) return NextResponse.json({ ok: false, message: admin.message }, { status: admin.status });
@@ -69,7 +221,7 @@ export async function PATCH(request: Request) {
 
   const { data: beforeRows, error: beforeError } = await admin.supabase
     .from("bookings")
-    .select("id, status")
+    .select("id, service, area, address, size_sqm, frequency, preferred_date, time_window, customer_name, customer_email, customer_phone, notes, status, created_at")
     .in("id", bookingIds)
     .returns<BookingRow[]>();
 
@@ -80,18 +232,28 @@ export async function PATCH(request: Request) {
     .map((row) => row.id);
 
   if (!editableIds.length) {
-    return NextResponse.json({ ok: true, status, updatedIds: [], count: 0, message: "No bookings needed update." });
+    return NextResponse.json({ ok: true, status, updatedIds: [], count: 0, message: "No bookings needed update.", email: { sent: false, skipped: true, reason: "no_changes" } });
   }
 
   const { data: updatedRows, error: updateError } = await admin.supabase
     .from("bookings")
     .update({ status })
     .in("id", editableIds)
-    .select("id, status")
+    .select("id, service, area, address, size_sqm, frequency, preferred_date, time_window, customer_name, customer_email, customer_phone, notes, status, created_at")
     .returns<BookingRow[]>();
 
   if (updateError) return NextResponse.json({ ok: false, message: updateError.message }, { status: 500 });
 
-  const updatedIds = (updatedRows || []).map((row) => row.id);
-  return NextResponse.json({ ok: true, status, updatedIds, count: updatedIds.length, email: { skipped: true, reason: "bulk_no_customer_email" } });
+  const updatedBookings = (updatedRows || []) as BookingRow[];
+  const updatedIds = updatedBookings.map((row) => row.id);
+
+  let email: BulkEmailResult = { sent: false, skipped: true, reason: "not_attempted" };
+  try {
+    email = await sendBulkSummaryEmail(status, updatedBookings);
+  } catch (error) {
+    console.warn("IBOREN_BULK_SUMMARY_EMAIL_FAILED", error);
+    email = { sent: false, skipped: false, reason: "exception" };
+  }
+
+  return NextResponse.json({ ok: true, status, updatedIds, count: updatedIds.length, email });
 }
