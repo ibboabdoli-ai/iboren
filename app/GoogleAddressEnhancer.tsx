@@ -5,6 +5,7 @@ import { useEffect } from "react";
 declare global {
   interface Window {
     google?: any;
+    initIborenGooglePlaces?: () => void;
     __iborenGoogleMapsLoading?: Promise<void>;
   }
 }
@@ -15,14 +16,31 @@ const AREA_SELECTORS = ['input[placeholder="Stockholm, Södertälje..."]'];
 
 function loadGooglePlaces(apiKey: string) {
   if (typeof window === "undefined") return Promise.resolve();
-  if (window.google?.maps?.places) return Promise.resolve();
+  if (window.google?.maps?.places?.Autocomplete) return Promise.resolve();
   if (window.__iborenGoogleMapsLoading) return window.__iborenGoogleMapsLoading;
 
   window.__iborenGoogleMapsLoading = new Promise<void>((resolve, reject) => {
+    const finish = () => {
+      if (window.google?.maps?.places?.Autocomplete) resolve();
+      else reject(new Error("Google Places Autocomplete did not load."));
+    };
+
+    window.initIborenGooglePlaces = finish;
+
     const existing = document.getElementById(GOOGLE_MAPS_SCRIPT_ID) as HTMLScriptElement | null;
     if (existing) {
-      existing.addEventListener("load", () => resolve(), { once: true });
-      existing.addEventListener("error", () => reject(new Error("Google Maps script failed to load.")), { once: true });
+      let tries = 0;
+      const timer = window.setInterval(() => {
+        tries += 1;
+        if (window.google?.maps?.places?.Autocomplete) {
+          window.clearInterval(timer);
+          resolve();
+        }
+        if (tries > 40) {
+          window.clearInterval(timer);
+          reject(new Error("Google Maps script timeout."));
+        }
+      }, 250);
       return;
     }
 
@@ -30,8 +48,7 @@ function loadGooglePlaces(apiKey: string) {
     script.id = GOOGLE_MAPS_SCRIPT_ID;
     script.async = true;
     script.defer = true;
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(apiKey)}&libraries=places&loading=async`;
-    script.onload = () => resolve();
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(apiKey)}&libraries=places&callback=initIborenGooglePlaces`;
     script.onerror = () => reject(new Error("Google Maps script failed to load."));
     document.head.appendChild(script);
   });
@@ -59,6 +76,7 @@ function attachAutocomplete(input: HTMLInputElement) {
   if (input.dataset.iborenGoogleAutocomplete === "1") return;
   if (!window.google?.maps?.places?.Autocomplete) return;
   input.dataset.iborenGoogleAutocomplete = "1";
+  input.setAttribute("autocomplete", "off");
 
   const autocomplete = new window.google.maps.places.Autocomplete(input, {
     componentRestrictions: { country: "se" },
@@ -79,9 +97,7 @@ function attachAutocomplete(input: HTMLInputElement) {
 }
 
 function attachAll() {
-  ADDRESS_SELECTORS.forEach((selector) => {
-    document.querySelectorAll<HTMLInputElement>(selector).forEach(attachAutocomplete);
-  });
+  ADDRESS_SELECTORS.forEach((selector) => document.querySelectorAll<HTMLInputElement>(selector).forEach(attachAutocomplete));
 }
 
 export default function GoogleAddressEnhancer() {
@@ -90,15 +106,22 @@ export default function GoogleAddressEnhancer() {
     if (!apiKey) return;
 
     let observer: MutationObserver | null = null;
+    let retryTimer: number | null = null;
+
     loadGooglePlaces(apiKey)
       .then(() => {
         attachAll();
+        retryTimer = window.setInterval(attachAll, 1000);
+        window.setTimeout(() => { if (retryTimer) window.clearInterval(retryTimer); }, 10000);
         observer = new MutationObserver(() => attachAll());
         observer.observe(document.body, { childList: true, subtree: true });
       })
-      .catch(() => undefined);
+      .catch((error) => console.warn("Iboren Google address autocomplete disabled:", error));
 
-    return () => observer?.disconnect();
+    return () => {
+      observer?.disconnect();
+      if (retryTimer) window.clearInterval(retryTimer);
+    };
   }, []);
 
   return null;
