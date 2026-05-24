@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { createClient, User } from "@supabase/supabase-js";
-import { ArrowLeft, Loader2, Lock, UserRound } from "lucide-react";
+import { ArrowLeft, CalendarDays, ChevronDown, Loader2, Lock, UserRound } from "lucide-react";
 import CleanerAvailabilityForm from "./CleanerAvailabilityForm";
 import CleanerJobsList from "./CleanerJobsList";
 
@@ -159,14 +159,28 @@ export default function CleanerPage() {
 
         <div className="mt-6 grid gap-5">
           {accessToken ? <CleanerJobsList token={accessToken} /> : null}
-          <div className="grid gap-5 xl:grid-cols-[1.15fr_.85fr]">
-            {accessToken ? <CleanerAvailabilityForm token={accessToken} /> : null}
-            <article className="rounded-[2rem] bg-porcelain p-6 shadow-soft">
-              <Lock className="mb-5 text-burgundy" />
-              <h2 className="display text-3xl font-bold text-burgundy">Access control</h2>
-              <p className="mt-3 leading-7 text-ink/65">Only cleaner, supervisor and admin roles can open this panel.</p>
-            </article>
-          </div>
+
+          <details className="group rounded-[2rem] bg-porcelain p-5 shadow-soft md:p-6">
+            <summary className="flex cursor-pointer list-none items-center justify-between gap-4">
+              <div className="flex items-center gap-4">
+                <span className="grid h-11 w-11 place-items-center rounded-full bg-cream text-burgundy"><CalendarDays size={18} /></span>
+                <div>
+                  <h2 className="display text-3xl font-bold text-burgundy">Availability</h2>
+                  <p className="mt-1 text-sm text-ink/55">Open only when you need to change working days or hours.</p>
+                </div>
+              </div>
+              <ChevronDown className="h-5 w-5 text-burgundy transition-transform group-open:rotate-180" />
+            </summary>
+            <div className="mt-5 border-t border-burgundy/10 pt-5">
+              {accessToken ? <CleanerAvailabilityForm token={accessToken} /> : null}
+            </div>
+          </details>
+
+          <article className="rounded-[2rem] bg-porcelain p-6 shadow-soft">
+            <Lock className="mb-5 text-burgundy" />
+            <h2 className="display text-3xl font-bold text-burgundy">Access control</h2>
+            <p className="mt-3 leading-7 text-ink/65">Only cleaner, supervisor and admin roles can open this panel.</p>
+          </article>
         </div>
       </section>
     </main>
