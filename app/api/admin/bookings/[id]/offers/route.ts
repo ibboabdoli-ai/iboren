@@ -7,7 +7,7 @@ const HEADER_NAME = ["Author", "ization"].join("");
 const TOKEN_WORD = ["Bear", "er"].join("");
 const EMAIL_ENDPOINT = ["https://api.re", "send.com/emails"].join("");
 const EMAIL_WAIT_LIMIT_MS = 4500;
-const ACTIVE_STATUSES = ["assigned", "accepted", "declined", "confirmed", "completed"];
+const ACTIVE_STATUSES = ["assigned", "accepted", "declined", "confirmed", "completed", "not_selected"];
 
 type OfferPayload = { employee_id?: string; assignment_id?: string; status?: string; note?: string };
 type EmployeeRow = { id: string; email: string; name: string; phone: string | null; role: string; active: boolean; has_car: boolean; max_hours_per_day: number };
