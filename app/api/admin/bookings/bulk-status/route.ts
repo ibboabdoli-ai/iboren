@@ -9,11 +9,7 @@ type AllowedStatus = typeof allowedStatuses[number];
 const EMAIL_ENDPOINT = ["https://api.re", "send.com/emails"].join("");
 const EMAIL_WAIT_LIMIT_MS = 4500;
 
-type BulkStatusPayload = {
-  bookingIds?: unknown;
-  status?: unknown;
-};
-
+type BulkStatusPayload = { bookingIds?: unknown; status?: unknown };
 type BookingRow = {
   id: string;
   service: string;
@@ -30,12 +26,7 @@ type BookingRow = {
   status: string | null;
   created_at: string;
 };
-
-type BulkEmailResult = {
-  sent: boolean;
-  skipped: boolean;
-  reason: string | null;
-};
+type BulkEmailResult = { sent: boolean; skipped: boolean; reason: string | null };
 
 const englishLabels: Record<string, string> = {
   Hemstädning: "Home cleaning",
@@ -46,50 +37,36 @@ const englishLabels: Record<string, string> = {
   "Varje vecka": "Every week",
   "Varannan vecka": "Every other week",
   "Varje månad": "Every month",
-  Morgon: "Morning",
-  Förmiddag: "Late morning",
-  Eftermiddag: "Afternoon",
-  Kväll: "Evening",
   Flexibel: "Flexible"
 };
 
-function getAdminEmails() {
-  return (process.env.ADMIN_EMAILS || "ibbo.abdoli@gmail.com")
-    .split(",")
-    .map((email) => email.trim().toLowerCase())
-    .filter(Boolean);
+function cleanText(value: unknown, max = 1200) {
+  return String(value ?? "").replace(/[<>]/g, "").trim().slice(0, max);
 }
-
+function english(value: string | null) {
+  const clean = cleanText(value || "");
+  return englishLabels[clean] || clean;
+}
+function getAdminEmails() {
+  return (process.env.ADMIN_EMAILS || "ibbo.abdoli@gmail.com").split(",").map((email) => email.trim().toLowerCase()).filter(Boolean);
+}
 function getAdminClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!url || !serviceKey) return null;
   return createClient(url, serviceKey, { auth: { persistSession: false, autoRefreshToken: false } });
 }
-
-function cleanText(value: unknown, max = 1200) {
-  return String(value ?? "").replace(/[<>]/g, "").trim().slice(0, max);
-}
-
-function english(value: string | null) {
-  const clean = cleanText(value || "");
-  return englishLabels[clean] || clean;
-}
-
 function normalizeBookingIds(value: unknown) {
   if (!Array.isArray(value)) return [];
   return [...new Set(value.map((item) => String(item || "").trim()).filter(Boolean))].slice(0, 100);
 }
-
 function normalizeStatus(value: unknown): AllowedStatus | null {
   const status = String(value || "").trim().toLowerCase();
   return allowedStatuses.includes(status as AllowedStatus) ? status as AllowedStatus : null;
 }
-
 function isValidEmail(email: string) {
   return /^\S+@\S+\.\S+$/.test(email);
 }
-
 function wait(ms: number) {
   return new Promise<"timeout">((resolve) => setTimeout(() => resolve("timeout"), ms));
 }
@@ -97,35 +74,39 @@ function wait(ms: number) {
 async function verifyAdmin(request: Request) {
   const supabase = getAdminClient();
   if (!supabase) return { ok: false as const, status: 500, message: "Missing Supabase admin environment variables." };
-
-  const authHeader = request.headers.get("authorization") || "";
-  const token = authHeader.replace(/^Bearer\s+/i, "").trim();
+  const token = (request.headers.get("authorization") || "").replace(/^Bearer\s+/i, "").trim();
   if (!token) return { ok: false as const, status: 401, message: "Missing access token." };
-
   const { data, error } = await supabase.auth.getUser(token);
   const email = data.user?.email?.toLowerCase();
   if (error || !email) return { ok: false as const, status: 401, message: "Invalid session." };
   if (!getAdminEmails().includes(email)) return { ok: false as const, status: 403, message: "Admin access required." };
-
   return { ok: true as const, supabase, user: data.user };
 }
 
 function sortByDate(bookings: BookingRow[]) {
   return [...bookings].sort((a, b) => String(a.preferred_date || "9999-12-31").localeCompare(String(b.preferred_date || "9999-12-31")));
 }
-
 function statusTextSv(status: AllowedStatus) {
   if (status === "confirmed") return "bekräftade";
   if (status === "completed") return "markerade som klara";
   if (status === "cancelled") return "avbokade";
   return "uppdaterade";
 }
-
 function statusTextEn(status: AllowedStatus) {
   if (status === "confirmed") return "confirmed";
   if (status === "completed") return "marked as completed";
   if (status === "cancelled") return "cancelled";
   return "updated";
+}
+function continuationTextSv(status: AllowedStatus) {
+  if (status === "confirmed") return "Din återkommande städning är bekräftad och fortsätter enligt vald frekvens tills du ber oss stoppa eller ändra upplägget.";
+  if (status === "cancelled") return "Din återkommande städning är avbokad för de planerade besöken nedan. Kontakta oss om du vill starta den igen.";
+  return "Din återkommande städning har uppdaterats för de planerade besöken nedan.";
+}
+function continuationTextEn(status: AllowedStatus) {
+  if (status === "confirmed") return "Your recurring cleaning service is confirmed and will continue according to the selected frequency until you ask us to stop it or change the setup.";
+  if (status === "cancelled") return "Your recurring cleaning service has been cancelled for the planned visits below. Contact us if you would like to start it again.";
+  return "Your recurring cleaning service has been updated for the planned visits below.";
 }
 
 function buildBulkSummaryEmail(status: AllowedStatus, bookings: BookingRow[]) {
@@ -137,51 +118,47 @@ function buildBulkSummaryEmail(status: AllowedStatus, bookings: BookingRow[]) {
 
   if (locale === "en") {
     const action = statusTextEn(status);
-    const subject = `Iboren: planned upcoming visits ${action}`;
-    const text = [
+    const subject = status === "confirmed" ? "Iboren: your recurring cleaning is confirmed" : `Iboren: planned visits ${action}`;
+    return { subject, text: [
       `Hi ${cleanText(first.customer_name) || "there"},`,
       "",
-      `The following ${count} planned upcoming cleaning visit${count === 1 ? "" : "s"} have been ${action}.`,
-      "This message only applies to the dates listed below. For visits after these dates, Iboren will coordinate with you separately.",
+      continuationTextEn(status),
       "",
       `Service: ${english(first.service)}`,
       `Area: ${first.area}`,
       `Address: ${first.address || "-"}`,
-      `Frequency requested: ${english(first.frequency || "") || "-"}`,
+      `Frequency: ${english(first.frequency || "") || "-"}`,
       "",
-      "Planned visits:",
+      `First planned visits (${count}):`,
       dates,
       "",
       "If anything is incorrect, please reply to this email or contact us at hej@iboren.se.",
       "",
       "Best regards,",
       "Iboren"
-    ].join("\n");
-    return { subject, text };
+    ].join("\n") };
   }
 
   const action = statusTextSv(status);
-  const subject = `Iboren: planerade kommande besök ${action}`;
-  const text = [
+  const subject = status === "confirmed" ? "Iboren: din återkommande städning är bekräftad" : `Iboren: planerade besök ${action}`;
+  return { subject, text: [
     `Hej ${cleanText(first.customer_name) || "kund"},`,
     "",
-    `Följande ${count} planerade kommande städbesök är ${action}.`,
-    "Det här meddelandet gäller bara datumen nedan. För besök efter dessa datum samordnar Iboren med dig separat.",
+    continuationTextSv(status),
     "",
     `Tjänst: ${first.service}`,
     `Område: ${first.area}`,
     `Adress: ${first.address || "-"}`,
-    `Önskad frekvens: ${first.frequency || "-"}`,
+    `Frekvens: ${first.frequency || "-"}`,
     "",
-    "Planerade besök:",
+    `Första planerade besök (${count}):`,
     dates,
     "",
     "Om något inte stämmer kan du svara på det här mejlet eller kontakta oss på hej@iboren.se.",
     "",
     "Vänliga hälsningar,",
     "Iboren"
-  ].join("\n");
-  return { subject, text };
+  ].join("\n") };
 }
 
 async function sendBulkSummaryEmail(status: AllowedStatus, bookings: BookingRow[]): Promise<BulkEmailResult> {
@@ -191,7 +168,6 @@ async function sendBulkSummaryEmail(status: AllowedStatus, bookings: BookingRow[
   const fromEmail = process.env.BOOKING_FROM_EMAIL || "Iboren <onboarding@resend.dev>";
   const replyTo = process.env.BOOKING_TO_EMAIL || "hej@iboren.se";
   const toEmail = cleanText(first?.customer_email || "").toLowerCase();
-
   if (!sorted.length) return { sent: false, skipped: true, reason: "no_updated_bookings" };
   if (!isValidEmail(toEmail)) return { sent: false, skipped: true, reason: "invalid_customer_email" };
   if (!resendApiKey) return { sent: false, skipped: true, reason: "missing_resend_api_key" };
@@ -205,7 +181,6 @@ async function sendBulkSummaryEmail(status: AllowedStatus, bookings: BookingRow[
     }),
     wait(EMAIL_WAIT_LIMIT_MS)
   ]);
-
   if (emailResult === "timeout") return { sent: false, skipped: false, reason: "timeout" };
   return { sent: emailResult.ok, skipped: false, reason: emailResult.ok ? null : "resend_error" };
 }
@@ -213,11 +188,9 @@ async function sendBulkSummaryEmail(status: AllowedStatus, bookings: BookingRow[
 export async function PATCH(request: Request) {
   const admin = await verifyAdmin(request);
   if (!admin.ok) return NextResponse.json({ ok: false, message: admin.message }, { status: admin.status });
-
   const body = await request.json().catch(() => null) as BulkStatusPayload | null;
   const bookingIds = normalizeBookingIds(body?.bookingIds);
   const status = normalizeStatus(body?.status);
-
   if (!bookingIds.length) return NextResponse.json({ ok: false, message: "bookingIds is required." }, { status: 400 });
   if (!status) return NextResponse.json({ ok: false, message: "Invalid status." }, { status: 400 });
 
@@ -226,16 +199,10 @@ export async function PATCH(request: Request) {
     .select("id, service, area, address, size_sqm, frequency, preferred_date, time_window, customer_name, customer_email, customer_phone, notes, status, created_at")
     .in("id", bookingIds)
     .returns<BookingRow[]>();
-
   if (beforeError) return NextResponse.json({ ok: false, message: beforeError.message }, { status: 500 });
 
-  const editableIds = (beforeRows || [])
-    .filter((row) => (row.status || "new") !== status)
-    .map((row) => row.id);
-
-  if (!editableIds.length) {
-    return NextResponse.json({ ok: true, status, updatedIds: [], count: 0, message: "No bookings needed update.", email: { sent: false, skipped: true, reason: "no_changes" } });
-  }
+  const editableIds = (beforeRows || []).filter((row) => (row.status || "new") !== status).map((row) => row.id);
+  if (!editableIds.length) return NextResponse.json({ ok: true, status, updatedIds: [], count: 0, message: "No bookings needed update.", email: { sent: false, skipped: true, reason: "no_changes" } });
 
   const { data: updatedRows, error: updateError } = await admin.supabase
     .from("bookings")
@@ -243,12 +210,10 @@ export async function PATCH(request: Request) {
     .in("id", editableIds)
     .select("id, service, area, address, size_sqm, frequency, preferred_date, time_window, customer_name, customer_email, customer_phone, notes, status, created_at")
     .returns<BookingRow[]>();
-
   if (updateError) return NextResponse.json({ ok: false, message: updateError.message }, { status: 500 });
 
   const updatedBookings = (updatedRows || []) as BookingRow[];
   const updatedIds = updatedBookings.map((row) => row.id);
-
   let email: BulkEmailResult = { sent: false, skipped: true, reason: "not_attempted" };
   try {
     email = await sendBulkSummaryEmail(status, updatedBookings);
@@ -256,6 +221,5 @@ export async function PATCH(request: Request) {
     console.warn("IBOREN_BULK_SUMMARY_EMAIL_FAILED", error);
     email = { sent: false, skipped: false, reason: "exception" };
   }
-
   return NextResponse.json({ ok: true, status, updatedIds, count: updatedIds.length, email });
 }
