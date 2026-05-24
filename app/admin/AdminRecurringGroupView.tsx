@@ -36,7 +36,8 @@ type RecurringGroup = {
   visits: AdminBooking[];
 };
 
-type BulkStatusResponse = { ok?: boolean; message?: string; count?: number };
+type BulkEmailResult = { sent?: boolean; skipped?: boolean; reason?: string | null };
+type BulkStatusResponse = { ok?: boolean; message?: string; count?: number; email?: BulkEmailResult };
 
 type Props = {
   bookings: AdminBooking[];
@@ -118,6 +119,13 @@ function activeVisitIds(visits: AdminBooking[]) {
   return visits.filter((visit) => !["completed", "cancelled"].includes(visit.status || "new")).map((visit) => visit.id);
 }
 
+function bulkEmailMessage(email?: BulkEmailResult) {
+  if (email?.sent) return "One summary email was sent to the customer.";
+  if (email?.skipped) return `Summary email was not sent: ${email.reason || "skipped"}.`;
+  if (email && email.sent === false) return `Summary email failed: ${email.reason || "unknown error"}.`;
+  return "Summary email status unknown.";
+}
+
 export default function AdminRecurringGroupView({ bookings, updatingId, updateStatus, getToken, onBulkUpdated }: Props) {
   const groups = useMemo(() => groupBookings(bookings), [bookings]);
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
@@ -155,7 +163,7 @@ export default function AdminRecurringGroupView({ bookings, updatingId, updateSt
       });
       const result = await response.json().catch(() => null) as BulkStatusResponse | null;
       if (!response.ok || !result?.ok) throw new Error(result?.message || "Could not update recurring visits.");
-      setBulkMessage(`Updated ${result.count || 0} visits to ${status}. Customer emails were skipped for bulk action.`);
+      setBulkMessage(`Updated ${result.count || 0} visits to ${status}. ${bulkEmailMessage(result.email)}`);
       await refreshAfterBulk();
     } catch (error) {
       setBulkMessage(error instanceof Error ? error.message : "Could not update recurring visits.");
@@ -219,7 +227,7 @@ export default function AdminRecurringGroupView({ bookings, updatingId, updateSt
                 {bulkUpdatingKey === `${group.key}:cancelled` ? <Loader2 className="h-4 w-4 animate-spin" /> : <XCircle className="h-4 w-4" />}
                 Cancel active
               </button>
-              <p className="w-full text-xs font-bold text-ink/45">Bulk actions do not send separate customer emails.</p>
+              <p className="w-full text-xs font-bold text-ink/45">Bulk actions send one summary email to the customer, not one email per visit.</p>
             </div>
 
             {isOpen && (
