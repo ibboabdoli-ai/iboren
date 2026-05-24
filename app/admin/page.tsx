@@ -30,8 +30,16 @@ type AdminBooking = {
 
 const statuses = ["all", "new", "confirmed", "completed", "cancelled"];
 const adminEmails = ["ibbo.abdoli@gmail.com"];
+const workflowFilters = [
+  { id: "needs_action", label: "Needs action", hint: "Active bookings only" },
+  { id: "this_week", label: "This week", hint: "Next 7 days" },
+  { id: "next_30", label: "Next 30 days", hint: "Upcoming" },
+  { id: "recurring", label: "Recurring", hint: "Repeated visits" },
+  { id: "all", label: "All", hint: "Everything" }
+] as const;
 
 type SortMode = "newest" | "oldest" | "booking_date" | "customer";
+type WorkflowFilter = typeof workflowFilters[number]["id"];
 
 function getSupabase() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -96,6 +104,60 @@ function searchableText(booking: AdminBooking) {
   ].filter(Boolean).join(" ").toLowerCase();
 }
 
+function parseBookingDate(value: string | null) {
+  if (!value) return null;
+  const date = new Date(`${value}T12:00:00`);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function startOfToday() {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return today;
+}
+
+function daysFromToday(value: string | null) {
+  const date = parseBookingDate(value);
+  if (!date) return null;
+  const today = startOfToday();
+  return Math.floor((date.getTime() - today.getTime()) / (24 * 60 * 60 * 1000));
+}
+
+function isUpcomingWithin(value: string | null, days: number) {
+  const diff = daysFromToday(value);
+  return diff !== null && diff >= 0 && diff <= days;
+}
+
+function getRecurringInfo(booking: AdminBooking) {
+  const notes = booking.notes || "";
+  const match = notes.match(/Visit:\s*(\d+)\s*of\s*(\d+)/i);
+  if (match) return { current: Number(match[1]), total: Number(match[2]) };
+
+  const frequency = (booking.frequency || "").toLowerCase();
+  const recurringFrequency = ["varje vecka", "every week", "varannan vecka", "every other week", "varje månad", "every month", "weekly", "biweekly", "monthly"];
+  if (recurringFrequency.includes(frequency)) return { current: null, total: null };
+
+  return null;
+}
+
+function isRecurringBooking(booking: AdminBooking) {
+  return Boolean(getRecurringInfo(booking));
+}
+
+function workflowMatches(booking: AdminBooking, view: WorkflowFilter) {
+  const status = booking.status || "new";
+  if (view === "all") return true;
+  if (view === "needs_action") return status !== "completed" && status !== "cancelled";
+  if (view === "this_week") return isUpcomingWithin(booking.preferred_date, 7) && status !== "completed" && status !== "cancelled";
+  if (view === "next_30") return isUpcomingWithin(booking.preferred_date, 30) && status !== "completed" && status !== "cancelled";
+  if (view === "recurring") return isRecurringBooking(booking) && status !== "completed" && status !== "cancelled";
+  return true;
+}
+
+function workflowCount(bookings: AdminBooking[], view: WorkflowFilter) {
+  return bookings.filter((booking) => workflowMatches(booking, view)).length;
+}
+
 export default function AdminPage() {
   const [loading, setLoading] = useState(true);
   const [bookingsLoading, setBookingsLoading] = useState(false);
@@ -104,8 +166,9 @@ export default function AdminPage() {
   const [rawCount, setRawCount] = useState<number | null>(null);
   const [duplicateCount, setDuplicateCount] = useState(0);
   const [filter, setFilter] = useState("all");
+  const [workflowFilter, setWorkflowFilter] = useState<WorkflowFilter>("needs_action");
   const [search, setSearch] = useState("");
-  const [sortMode, setSortMode] = useState<SortMode>("newest");
+  const [sortMode, setSortMode] = useState<SortMode>("booking_date");
   const [message, setMessage] = useState("");
   const [updatingId, setUpdatingId] = useState<string | null>(null);
 
@@ -114,9 +177,10 @@ export default function AdminPage() {
   const filteredBookings = useMemo(() => {
     const query = search.trim().toLowerCase();
     const filtered = bookings.filter((booking) => {
+      const workflowOk = workflowMatches(booking, workflowFilter);
       const statusOk = filter === "all" || (booking.status || "new") === filter;
       const searchOk = !query || searchableText(booking).includes(query);
-      return statusOk && searchOk;
+      return workflowOk && statusOk && searchOk;
     });
 
     return [...filtered].sort((a, b) => {
@@ -125,9 +189,10 @@ export default function AdminPage() {
       if (sortMode === "customer") return a.customer_name.localeCompare(b.customer_name, "sv");
       return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
     });
-  }, [bookings, filter, search, sortMode]);
+  }, [bookings, filter, workflowFilter, search, sortMode]);
 
   const quickStats = useMemo(() => statuses.map((status) => ({ status, count: statusCount(bookings, status) })), [bookings]);
+  const workflowStats = useMemo(() => workflowFilters.map((item) => ({ ...item, count: workflowCount(bookings, item.id) })), [bookings]);
 
   async function getToken() {
     const supabase = getSupabase();
@@ -245,7 +310,7 @@ export default function AdminPage() {
               <p className="mt-5 max-w-2xl leading-8 text-porcelain/70">Hantera inkommande bokningar, följ status och uppdatera orderflödet.</p>
               {rawCount !== null && (
                 <div className="mt-5 grid gap-2 text-sm font-bold text-porcelain/75 sm:grid-cols-3">
-                  <p className="rounded-2xl border border-gold/15 bg-night/20 px-4 py-3">Visade: {bookings.length}</p>
+                  <p className="rounded-2xl border border-gold/15 bg-night/20 px-4 py-3">Visade: {filteredBookings.length}</p>
                   <p className="rounded-2xl border border-gold/15 bg-night/20 px-4 py-3">Databas: {rawCount}</p>
                   <p className="rounded-2xl border border-gold/15 bg-night/20 px-4 py-3">Dolda dubletter: {duplicateCount}</p>
                 </div>
@@ -265,11 +330,21 @@ export default function AdminPage() {
         <AdminRoleManager getToken={getToken} />
 
         <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+          {workflowStats.map(({ id, label, hint, count }) => (
+            <button key={id} onClick={() => setWorkflowFilter(id)} className={`rounded-[1.4rem] border p-4 text-left transition hover:-translate-y-0.5 ${workflowFilter === id ? "border-burgundy bg-burgundy text-porcelain shadow-soft" : "border-burgundy/10 bg-porcelain text-ink shadow-sm"}`}>
+              <p className={`inline-flex rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-[.18em] ${workflowFilter === id ? "bg-gold text-ink" : "bg-cream text-ink/65 ring-1 ring-burgundy/10"}`}>{label}</p>
+              <p className="display mt-5 text-4xl font-bold">{count}</p>
+              <p className={`mt-1 text-xs font-bold uppercase tracking-[.18em] ${workflowFilter === id ? "text-porcelain/65" : "text-ink/45"}`}>{hint}</p>
+            </button>
+          ))}
+        </div>
+
+        <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
           {quickStats.map(({ status, count }) => (
             <button key={status} onClick={() => setFilter(status)} className={`rounded-[1.4rem] border p-4 text-left transition hover:-translate-y-0.5 ${filter === status ? "border-burgundy bg-burgundy text-porcelain shadow-soft" : "border-burgundy/10 bg-porcelain text-ink shadow-sm"}`}>
               <p className={`inline-flex rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-[.18em] ${filter === status ? "bg-gold text-ink" : statusPillClass(status)}`}>{status === "all" ? "Alla" : statusLabel(status)}</p>
               <p className="display mt-5 text-4xl font-bold">{count}</p>
-              <p className={`mt-1 text-xs font-bold uppercase tracking-[.18em] ${filter === status ? "text-porcelain/65" : "text-ink/45"}`}>bokningar</p>
+              <p className={`mt-1 text-xs font-bold uppercase tracking-[.18em] ${filter === status ? "text-porcelain/65" : "text-ink/45"}`}>status</p>
             </button>
           ))}
         </div>
@@ -278,13 +353,21 @@ export default function AdminPage() {
           <div className="flex flex-col gap-4">
             <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
               <div className="flex flex-wrap gap-2">
-                {statuses.map((status) => (
-                  <button key={status} onClick={() => setFilter(status)} className={`rounded-full px-4 py-2 text-sm font-bold ${filter === status ? "bg-burgundy text-porcelain" : "bg-cream text-ink/65"}`}>
-                    {status === "all" ? "Alla" : statusLabel(status)}
+                {workflowStats.map(({ id, label }) => (
+                  <button key={id} onClick={() => setWorkflowFilter(id)} className={`rounded-full px-4 py-2 text-sm font-bold ${workflowFilter === id ? "bg-burgundy text-porcelain" : "bg-cream text-ink/65"}`}>
+                    {label}
                   </button>
                 ))}
               </div>
               <p className="text-sm font-bold text-ink/55">{filteredBookings.length} av {bookings.length} bokningar</p>
+            </div>
+
+            <div className="flex flex-wrap gap-2">
+              {statuses.map((status) => (
+                <button key={status} onClick={() => setFilter(status)} className={`rounded-full px-4 py-2 text-sm font-bold ${filter === status ? "bg-ink text-porcelain" : "bg-cream text-ink/65"}`}>
+                  {status === "all" ? "Alla statusar" : statusLabel(status)}
+                </button>
+              ))}
             </div>
 
             <div className="grid gap-3 lg:grid-cols-[1fr_260px]">
@@ -300,9 +383,9 @@ export default function AdminPage() {
               <label className="relative block">
                 <ArrowDownUp className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-burgundy/55" />
                 <select value={sortMode} onChange={(event) => setSortMode(event.target.value as SortMode)} className="w-full rounded-2xl border border-burgundy/10 bg-cream py-3 pl-11 pr-4 text-sm font-bold text-ink outline-none focus:border-burgundy/40">
+                  <option value="booking_date">Sortera: bokningsdatum</option>
                   <option value="newest">Sortera: nyast först</option>
                   <option value="oldest">Sortera: äldst först</option>
-                  <option value="booking_date">Sortera: bokningsdatum</option>
                   <option value="customer">Sortera: kundnamn</option>
                 </select>
               </label>
@@ -320,13 +403,21 @@ export default function AdminPage() {
               filteredBookings.map((booking) => {
                 const currentStatus = booking.status || "new";
                 const isUpdating = updatingId === booking.id;
+                const recurring = getRecurringInfo(booking);
 
                 return (
                   <article key={booking.id} className={`relative overflow-hidden rounded-[2rem] border p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-soft ${statusCardClass(currentStatus)}`}>
                     <span className={`absolute inset-y-0 left-0 w-1.5 ${statusAccentClass(currentStatus)}`} />
                     <div className="flex flex-col gap-4 pl-1 xl:flex-row xl:items-start xl:justify-between">
                       <div className="min-w-0">
-                        <p className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-bold uppercase tracking-[.18em] ${statusPillClass(currentStatus)}`}><ShieldCheck className="h-3.5 w-3.5" /> {statusLabel(currentStatus)}</p>
+                        <div className="flex flex-wrap gap-2">
+                          <p className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-bold uppercase tracking-[.18em] ${statusPillClass(currentStatus)}`}><ShieldCheck className="h-3.5 w-3.5" /> {statusLabel(currentStatus)}</p>
+                          {recurring && (
+                            <p className="inline-flex items-center rounded-full bg-gold px-3 py-1 text-xs font-black uppercase tracking-[.16em] text-ink">
+                              Recurring {recurring.current && recurring.total ? `${recurring.current}/${recurring.total}` : "visit"}
+                            </p>
+                          )}
+                        </div>
                         <h2 className="display mt-3 break-words text-3xl font-bold text-burgundy">{booking.service}</h2>
                         <p className="mt-2 break-words leading-7 text-ink/70">{booking.area}{booking.address ? ` · ${booking.address}` : ""}</p>
                       </div>
