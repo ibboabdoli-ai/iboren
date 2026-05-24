@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { CalendarDays, CheckCircle2, ChevronDown, ChevronRight, Loader2, ShieldCheck, XCircle } from "lucide-react";
+import { CalendarDays, CheckCircle2, ChevronDown, ChevronRight, Loader2, PlusCircle, ShieldCheck, XCircle } from "lucide-react";
 import AdminNoteBox from "./AdminNoteBox";
 import AvailableCleanersBox from "./AvailableCleanersBox";
 
@@ -38,6 +38,7 @@ type RecurringGroup = {
 
 type BulkEmailResult = { sent?: boolean; skipped?: boolean; reason?: string | null };
 type BulkStatusResponse = { ok?: boolean; message?: string; count?: number; email?: BulkEmailResult };
+type RenewResponse = { ok?: boolean; message?: string; count?: number; dates?: string[] };
 
 type Props = {
   bookings: AdminBooking[];
@@ -171,6 +172,28 @@ export default function AdminRecurringGroupView({ bookings, updatingId, updateSt
     setBulkUpdatingKey(null);
   }
 
+  async function renewGroup(group: RecurringGroup) {
+    const ids = group.visits.map((visit) => visit.id);
+    setBulkUpdatingKey(`${group.key}:renew`);
+    setBulkMessage("");
+    try {
+      const token = await getToken();
+      if (!token) throw new Error("Du behöver logga in igen.");
+      const response = await fetch("/api/admin/bookings/renew-recurring", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ bookingIds: ids })
+      });
+      const result = await response.json().catch(() => null) as RenewResponse | null;
+      if (!response.ok || !result?.ok) throw new Error(result?.message || "Could not renew recurring visits.");
+      setBulkMessage(`Renewed ${result.count || 0} next visits. ${result.dates?.length ? `Dates: ${result.dates.join(", ")}` : result.message || ""}`);
+      await refreshAfterBulk();
+    } catch (error) {
+      setBulkMessage(error instanceof Error ? error.message : "Could not renew recurring visits.");
+    }
+    setBulkUpdatingKey(null);
+  }
+
   if (!groups.length) return <div className="rounded-[2rem] border border-dashed border-burgundy/20 bg-cream p-6 text-ink/65">Inga recurring-bokningar matchar filter/sökning.</div>;
 
   return (
@@ -215,6 +238,10 @@ export default function AdminRecurringGroupView({ bookings, updatingId, updateSt
             </div>
 
             <div className="mt-4 flex flex-wrap gap-2 rounded-2xl bg-cream p-3">
+              <button type="button" disabled={Boolean(bulkUpdatingKey)} onClick={() => renewGroup(group)} className="inline-flex items-center gap-2 rounded-full bg-gold px-4 py-2 text-xs font-black uppercase tracking-[.12em] text-ink ring-1 ring-gold/30 disabled:opacity-50">
+                {bulkUpdatingKey === `${group.key}:renew` ? <Loader2 className="h-4 w-4 animate-spin" /> : <PlusCircle className="h-4 w-4" />}
+                Renew next visits
+              </button>
               <button type="button" disabled={!activeCount || Boolean(bulkUpdatingKey)} onClick={() => bulkUpdate(group, "confirmed")} className="inline-flex items-center gap-2 rounded-full bg-green-100 px-4 py-2 text-xs font-black uppercase tracking-[.12em] text-green-800 ring-1 ring-green-200 disabled:opacity-50">
                 {bulkUpdatingKey === `${group.key}:confirmed` ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
                 Confirm active
@@ -227,7 +254,7 @@ export default function AdminRecurringGroupView({ bookings, updatingId, updateSt
                 {bulkUpdatingKey === `${group.key}:cancelled` ? <Loader2 className="h-4 w-4 animate-spin" /> : <XCircle className="h-4 w-4" />}
                 Cancel active
               </button>
-              <p className="w-full text-xs font-bold text-ink/45">Bulk actions send one summary email to the customer, not one email per visit.</p>
+              <p className="w-full text-xs font-bold text-ink/45">Renew creates the next planned visits for this recurring customer. Bulk status actions send one summary email to the customer.</p>
             </div>
 
             {isOpen && (
