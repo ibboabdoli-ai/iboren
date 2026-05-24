@@ -1,4 +1,4 @@
-Trigger production deployment after English pages update.
-Expected prices marker: English price calculator enabled
-Expected jobs marker: English job application form enabled
-Timestamp marker: 2026-05-22T09:14Z
+Trigger production deployment after cleaner completed flow update.
+Expected cleaner marker: cleaner job Klar button enabled
+Expected admin marker: completed cleaner assignment visible
+Timestamp marker: 2026-05-24T08:20Z
