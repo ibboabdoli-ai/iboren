@@ -10,8 +10,10 @@ type Summary = { employee_id: string; employee_name: string; employee_email: str
 function getAdminEmails() { return (process.env.ADMIN_EMAILS || "ibbo.abdoli@gmail.com").split(",").map((email) => email.trim().toLowerCase()).filter(Boolean); }
 function getAdminClient() { const url = process.env.NEXT_PUBLIC_SUPABASE_URL; const key = process.env.SUPABASE_SERVICE_ROLE_KEY; if (!url || !key) return null; return createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } }); }
 function validDate(value: string) { return /^\d{4}-\d{2}-\d{2}$/.test(value) && !Number.isNaN(new Date(`${value}T12:00:00`).getTime()); }
+function dateString(date: Date) { return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`; }
 function monthStart() { const now = new Date(); return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-01`; }
-function nextMonthStart(start: string) { const date = new Date(`${start}T12:00:00`); date.setMonth(date.getMonth() + 1); return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-01`; }
+function monthEnd(start: string) { const date = new Date(`${start}T12:00:00`); date.setMonth(date.getMonth() + 1); date.setDate(0); return dateString(date); }
+function nextDay(value: string) { const date = new Date(`${value}T12:00:00`); date.setDate(date.getDate() + 1); return dateString(date); }
 function migrationMissing(error: { code?: string; message?: string } | null) { const text = String(error?.message || "").toLowerCase(); return error?.code === "42P01" || text.includes("time_entries") || text.includes("does not exist"); }
 function hours(minutes: number) { return Math.round((Number(minutes || 0) / 60) * 100) / 100; }
 function csv(value: unknown) { return `"${String(value ?? "").replace(/"/g, '""')}"`; }
@@ -35,11 +37,12 @@ export async function GET(request: Request) {
 
   const url = new URL(request.url);
   const start = url.searchParams.get("start") || monthStart();
-  const end = url.searchParams.get("end") || nextMonthStart(start);
+  const end = url.searchParams.get("end") || monthEnd(start);
+  const exclusiveEnd = nextDay(end);
   const format = (url.searchParams.get("format") || "json").toLowerCase();
   if (!validDate(start) || !validDate(end)) return NextResponse.json({ ok: false, message: "Use start/end as YYYY-MM-DD." }, { status: 400 });
 
-  const { data: entries, error } = await admin.supabase.from("time_entries").select("employee_id, worked_minutes, break_minutes, travel_minutes, mileage_km").eq("status", "approved").gte("work_date", start).lt("work_date", end).returns<TimeEntry[]>();
+  const { data: entries, error } = await admin.supabase.from("time_entries").select("employee_id, worked_minutes, break_minutes, travel_minutes, mileage_km").eq("status", "approved").gte("work_date", start).lt("work_date", exclusiveEnd).returns<TimeEntry[]>();
   if (error) {
     if (migrationMissing(error)) return NextResponse.json({ ok: true, needsMigration: true, start, end, summaries: [], message: "Run Step 25A SQL in Supabase first." });
     return NextResponse.json({ ok: false, message: error.message }, { status: 500 });
