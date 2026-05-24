@@ -175,45 +175,29 @@ function message(language: Language, sv: string, en: string) { return language =
 
 function validateBookingPayload(payload: NormalizedBookingPayload, language: Language) {
   const size = numberFromText(payload.size);
-  if (!size || size < 10 || size > 500) {
-    throw new BookingValidationError(message(language, "Storlek måste vara mellan 10 och 500 kvm.", "Size must be between 10 and 500 sqm."));
-  }
+  if (!size || size < 10 || size > 500) throw new BookingValidationError(message(language, "Storlek måste vara mellan 10 och 500 kvm.", "Size must be between 10 and 500 sqm."));
 
   const rooms = detailNumber(payload.notes, ["Antal rum", "Rooms", "Number of rooms"]);
-  if (rooms !== null && (rooms < 1 || rooms > 20)) {
-    throw new BookingValidationError(message(language, "Antal rum verkar fel. Ange ett värde mellan 1 och 20.", "Number of rooms looks incorrect. Use a value between 1 and 20."));
-  }
+  if (rooms !== null && (rooms < 1 || rooms > 20)) throw new BookingValidationError(message(language, "Antal rum verkar fel. Ange ett värde mellan 1 och 20.", "Number of rooms looks incorrect. Use a value between 1 and 20."));
 
   const bathrooms = detailNumber(payload.notes, ["Antal badrum", "Bathrooms", "Number of bathrooms"]);
-  if (bathrooms !== null && (bathrooms < 1 || bathrooms > 10)) {
-    throw new BookingValidationError(message(language, "Antal badrum verkar fel. Ange ett värde mellan 1 och 10.", "Number of bathrooms looks incorrect. Use a value between 1 and 10."));
-  }
+  if (bathrooms !== null && (bathrooms < 1 || bathrooms > 10)) throw new BookingValidationError(message(language, "Antal badrum verkar fel. Ange ett värde mellan 1 och 10.", "Number of bathrooms looks incorrect. Use a value between 1 and 10."));
 
   const floor = detailNumber(payload.notes, ["Våning", "Floor"]);
-  if (floor !== null && (floor < 0 || floor > 60)) {
-    throw new BookingValidationError(message(language, "Våning verkar fel. Ange ett värde mellan 0 och 60.", "Floor looks incorrect. Use a value between 0 and 60."));
-  }
+  if (floor !== null && (floor < 0 || floor > 60)) throw new BookingValidationError(message(language, "Våning verkar fel. Ange ett värde mellan 0 och 60.", "Floor looks incorrect. Use a value between 0 and 60."));
 
   const phoneDigits = payload.phone.replace(/\D/g, "");
-  if (phoneDigits.length < 7 || phoneDigits.length > 15) {
-    throw new BookingValidationError(message(language, "Telefonnummer verkar fel. Kontrollera numret.", "Phone number looks incorrect. Please check it."));
-  }
+  if (phoneDigits.length < 7 || phoneDigits.length > 15) throw new BookingValidationError(message(language, "Telefonnummer verkar fel. Kontrollera numret.", "Phone number looks incorrect. Please check it."));
 
-  if (payload.address.length < 5 || !/[0-9]/.test(payload.address)) {
-    throw new BookingValidationError(message(language, "Adress måste innehålla gata och nummer.", "Address must include street and number."));
-  }
+  if (payload.address.length < 5 || !/[0-9]/.test(payload.address)) throw new BookingValidationError(message(language, "Adress måste innehålla gata och nummer.", "Address must include street and number."));
 
   const bookingDate = parseDate(payload.date);
-  if (!bookingDate) {
-    throw new BookingValidationError(message(language, "Datum är inte giltigt.", "Date is not valid."));
-  }
+  if (!bookingDate) throw new BookingValidationError(message(language, "Datum är inte giltigt.", "Date is not valid."));
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   bookingDate.setHours(0, 0, 0, 0);
-  if (bookingDate.getTime() < today.getTime()) {
-    throw new BookingValidationError(message(language, "Datum kan inte vara bakåt i tiden.", "Date cannot be in the past."));
-  }
+  if (bookingDate.getTime() < today.getTime()) throw new BookingValidationError(message(language, "Datum kan inte vara bakåt i tiden.", "Date cannot be in the past."));
 }
 
 function getRecurringPlan(frequency: string): RecurringPlan {
@@ -245,7 +229,7 @@ function getSupabase(token?: string) {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   if (!url || !key) return null;
-  return createClient(url, { auth: { persistSession: false, autoRefreshToken: false }, global: token ? { headers: { [AUTH_HEADER]: `${TOKEN_PREFIX} ${token}` } } : undefined } as never);
+  return createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false }, global: token ? { headers: { [AUTH_HEADER]: `${TOKEN_PREFIX} ${token}` } } : undefined });
 }
 
 async function getAuthContext(request: Request): Promise<AuthContext | null> {
@@ -290,13 +274,10 @@ async function saveBooking(payload: NormalizedBookingPayload, auth: AuthContext,
   if (!supabase) throw new Error("Supabase saknas.");
   const size = Number.parseInt(payload.size, 10);
   const sizeSqm = Number.isFinite(size) ? size : null;
-
   const { data: existing, error: lookupError } = await supabase.from("bookings").select("id").eq("user_id", auth.user.id).eq("service", payload.service).eq("address", payload.address).eq("preferred_date", payload.date).eq("size_sqm", sizeSqm).eq("frequency", payload.frequency).eq("time_window", payload.timeWindow).eq("customer_email", payload.email).neq("status", "cancelled").limit(1).maybeSingle();
   if (lookupError) throw new Error(`Kunde inte kontrollera tidigare bokning: ${lookupError.message}`);
   if (existing?.id) return { id: existing.id as string, duplicate: true, date: payload.date };
-
   const notesWithRut = [payload.notes || "", "", "--- Kundtyp & RUT ---", `Kundtyp: ${payload.customerType}`, `RUT önskas: ${payload.rutRequested ? "Ja" : "Nej"}`, `Språk / Language: ${language}`].join("\n").trim();
-
   const { data, error } = await supabase.from("bookings").insert({ user_id: auth.user.id, service: payload.service, area: payload.area, address: payload.address || null, size_sqm: sizeSqm, frequency: payload.frequency, preferred_date: payload.date, time_window: payload.timeWindow, customer_name: payload.name, customer_email: payload.email, customer_phone: payload.phone || null, notes: notesWithRut || null, status: "new" }).select("id").single();
   if (error) {
     if (isUniqueDuplicateError(error)) throw new DuplicateBookingError();
@@ -308,10 +289,7 @@ async function saveBooking(payload: NormalizedBookingPayload, auth: AuthContext,
 async function saveRecurringBookings(payload: NormalizedBookingPayload, auth: AuthContext, language: Language) {
   const dates = buildVisitDates(payload.date, payload.frequency);
   const results: SaveBookingResult[] = [];
-  for (let index = 0; index < dates.length; index += 1) {
-    const visitPayload = withVisitDate(payload, dates[index], index, dates.length);
-    results.push(await saveBooking(visitPayload, auth, language));
-  }
+  for (let index = 0; index < dates.length; index += 1) results.push(await saveBooking(withVisitDate(payload, dates[index], index, dates.length), auth, language));
   const created = results.filter((result) => !result.duplicate);
   const duplicates = results.filter((result) => result.duplicate);
   const first = created[0] || results[0];
@@ -328,7 +306,6 @@ export async function POST(request: Request) {
   try {
     const auth = await getAuthContext(request);
     if (!auth) return NextResponse.json({ ok: false, message: "Du behöver logga in för att skicka en bokningsförfrågan." }, { status: 401 });
-
     const json = (await request.json()) as BookingPayload;
     const language = getRequestLanguage(request, json);
     const customerType = normalizeCustomerType(json.customerType);
@@ -342,7 +319,6 @@ export async function POST(request: Request) {
     }
 
     validateBookingPayload(payload, language);
-
     if (!/^\S+@\S+\.\S+$/.test(payload.email)) return NextResponse.json({ ok: false, message: "Invalid email address." }, { status: 400 });
     if (auth.user.email && payload.email.toLowerCase() !== auth.user.email.toLowerCase()) return NextResponse.json({ ok: false, message: language === "en" ? "The booking email must match your logged-in account." : "Bokningens e-post måste matcha ditt inloggade konto." }, { status: 403 });
 
