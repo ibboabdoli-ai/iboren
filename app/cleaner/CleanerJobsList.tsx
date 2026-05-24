@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { CalendarDays, CheckCircle2, Download, Loader2, MapPin, RefreshCw, ShieldCheck, XCircle } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { CalendarDays, CheckCircle2, Download, Loader2, MapPin, Phone, RefreshCw, ShieldCheck, XCircle } from "lucide-react";
 
 type JobStatus = "accepted" | "declined" | "completed";
 
@@ -35,7 +35,27 @@ function statusClass(status: string | null | undefined) {
 
 function formatDate(value: string | null | undefined) {
   if (!value) return "No date";
-  return new Date(`${value}T12:00:00`).toLocaleDateString("sv-SE", { weekday: "short", year: "numeric", month: "short", day: "numeric" });
+  return new Date(`${value}T12:00:00`).toLocaleDateString("sv-SE", { weekday: "long", year: "numeric", month: "long", day: "numeric" });
+}
+
+function cleanNoteLine(line: string) {
+  return line
+    .replace(/^[-•\s]+/, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function parseNotes(notes: string | null) {
+  if (!notes) return [];
+  return notes
+    .split(/\n|\s\|\s|Recurring visit|Customer:/i)
+    .map(cleanNoteLine)
+    .filter((line) => line && !line.toLowerCase().startsWith("recurring") && !line.toLowerCase().startsWith("language:"))
+    .slice(0, 12);
+}
+
+function Detail({ label, value }: { label: string; value: string | number | null | undefined }) {
+  return <p className="rounded-2xl bg-cream px-4 py-3"><strong className="block text-[11px] uppercase tracking-[.14em] text-ink/45">{label}</strong><span className="mt-1 block text-sm font-bold text-ink">{value || "—"}</span></p>;
 }
 
 export default function CleanerJobsList({ token }: { token: string }) {
@@ -45,6 +65,8 @@ export default function CleanerJobsList({ token }: { token: string }) {
   const [message, setMessage] = useState("");
   const [role, setRole] = useState("");
   const [jobs, setJobs] = useState<Job[]>([]);
+
+  const jobCount = useMemo(() => jobs.filter((job) => job.booking).length, [jobs]);
 
   function requestHeaders(contentType = false) {
     const headers: Record<string, string> = {};
@@ -80,7 +102,7 @@ export default function CleanerJobsList({ token }: { token: string }) {
       const result = await response.json().catch(() => null) as StatusResponse | null;
       if (!response.ok || !result?.ok || !result.assignment) throw new Error(result?.message || "Could not update job status.");
       setJobs((current) => current.map((job) => job.assignment.id === assignmentId ? { ...job, assignment: { ...job.assignment, ...result.assignment } } : job));
-      if (status === "accepted") setMessage("Job accepted.");
+      if (status === "accepted") setMessage("Job accepted. Klar button is now available when the work is done.");
       else if (status === "declined") setMessage("Job declined.");
       else setMessage("Job marked as completed. Admin has been notified.");
     } catch (error) {
@@ -121,9 +143,12 @@ export default function CleanerJobsList({ token }: { token: string }) {
       <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
         <div>
           <ShieldCheck className="mb-5 text-burgundy" />
-          <h2 className="display text-3xl font-bold text-burgundy">My jobs</h2>
-          <p className="mt-3 leading-7 text-ink/65">Assigned bookings from admin appear here.</p>
-          {role && <p className="mt-2 text-sm font-bold text-ink/45">View mode: {role}</p>}
+          <h2 className="display text-4xl font-bold text-burgundy">My jobs</h2>
+          <p className="mt-3 leading-7 text-ink/65">Assigned bookings from admin appear here. Accept the job, save it to calendar, and mark it Klar after the work is done.</p>
+          <div className="mt-3 flex flex-wrap gap-2 text-xs font-black uppercase tracking-[.14em]">
+            <span className="rounded-full bg-cream px-3 py-1 text-ink/55 ring-1 ring-burgundy/10">{jobCount} jobs</span>
+            {role && <span className="rounded-full bg-gold px-3 py-1 text-ink">{role}</span>}
+          </div>
         </div>
         <button type="button" onClick={loadJobs} className="inline-flex items-center justify-center gap-2 rounded-full bg-cream px-4 py-2 text-sm font-bold text-burgundy">
           {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
@@ -134,55 +159,62 @@ export default function CleanerJobsList({ token }: { token: string }) {
       {message && <p className="mt-5 rounded-2xl bg-burgundy/10 p-4 text-sm font-bold text-burgundy">{message}</p>}
 
       {loading ? <div className="grid min-h-32 place-items-center text-burgundy"><Loader2 className="h-7 w-7 animate-spin" /></div> : jobs.length === 0 ? <div className="mt-6 rounded-2xl border border-dashed border-burgundy/20 bg-cream p-5 text-sm leading-7 text-ink/65">No assigned jobs yet.</div> : (
-        <div className="mt-6 grid gap-4">
+        <div className="mt-6 grid gap-5">
           {jobs.map((job) => {
             const booking = job.booking;
             if (!booking) return null;
+            const noteLines = parseNotes(booking.notes);
             const isUpdating = updatingId === job.assignment.id;
             const isCalendarLoading = calendarLoadingId === job.assignment.id;
+            const isAssigned = !["accepted", "declined", "completed", "cancelled"].includes(job.assignment.status);
             const isAccepted = job.assignment.status === "accepted";
             const isDeclined = job.assignment.status === "declined";
             const isCompleted = job.assignment.status === "completed";
             return (
-              <article key={job.assignment.id} className="rounded-[1.5rem] bg-cream p-4 text-sm ring-1 ring-burgundy/10">
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <article key={job.assignment.id} className="rounded-[2rem] bg-cream p-5 text-sm ring-1 ring-burgundy/10 md:p-6">
+                <div className="grid gap-4 lg:grid-cols-[1fr_260px] lg:items-start">
                   <div>
                     <span className={`inline-flex rounded-full px-3 py-1 text-xs font-black uppercase tracking-[.14em] ${statusClass(job.assignment.status)}`}>{statusLabel(job.assignment.status)}</span>
-                    <h3 className="display mt-3 text-2xl font-bold text-burgundy">{booking.service}</h3>
-                    <p className="mt-2 inline-flex items-center gap-2 text-ink/65"><MapPin className="h-4 w-4 text-burgundy" /> {booking.area}{booking.address ? ` · ${booking.address}` : ""}</p>
+                    <h3 className="display mt-3 text-3xl font-bold text-burgundy md:text-4xl">{booking.service}</h3>
+                    <p className="mt-3 flex items-start gap-2 text-base font-bold text-ink"><MapPin className="mt-1 h-4 w-4 shrink-0 text-burgundy" /> {booking.address || booking.area}</p>
+                    <p className="mt-2 text-sm text-ink/55">{booking.area}</p>
                   </div>
-                  <div className="rounded-2xl bg-porcelain p-3 text-xs font-bold text-ink/60">
-                    <p className="inline-flex items-center gap-2"><CalendarDays className="h-4 w-4 text-burgundy" /> {formatDate(booking.preferred_date)}</p>
-                    <p className="mt-1">{booking.time_window || "No time window"}</p>
+                  <div className="rounded-[1.5rem] bg-porcelain p-4 text-sm font-bold text-ink">
+                    <p className="flex items-start gap-2"><CalendarDays className="mt-0.5 h-4 w-4 shrink-0 text-burgundy" /> <span>{formatDate(booking.preferred_date)}</span></p>
+                    <p className="mt-2 rounded-full bg-cream px-3 py-2 text-xs uppercase tracking-[.12em] text-ink/60">{booking.time_window || "Flexible"}</p>
                   </div>
                 </div>
 
-                <div className="mt-4 flex flex-wrap gap-2">
-                  <button type="button" disabled={isUpdating || isAccepted} onClick={() => updateJobStatus(job.assignment.id, "accepted")} className="inline-flex items-center gap-2 rounded-full bg-green-100 px-4 py-2 text-xs font-black uppercase tracking-[.12em] text-green-800 ring-1 ring-green-200 disabled:opacity-50">
-                    {isUpdating ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}{isAccepted ? "Accepted" : "Accept"}
-                  </button>
-                  <button type="button" disabled={isUpdating || isDeclined} onClick={() => updateJobStatus(job.assignment.id, "declined")} className="inline-flex items-center gap-2 rounded-full bg-red-100 px-4 py-2 text-xs font-black uppercase tracking-[.12em] text-red-800 ring-1 ring-red-200 disabled:opacity-50">
-                    {isUpdating ? <Loader2 className="h-4 w-4 animate-spin" /> : <XCircle className="h-4 w-4" />}{isDeclined ? "Declined" : "Decline"}
-                  </button>
-                  <button type="button" disabled={isUpdating || isCompleted} onClick={() => updateJobStatus(job.assignment.id, "completed")} className="inline-flex items-center gap-2 rounded-full bg-ink px-4 py-2 text-xs font-black uppercase tracking-[.12em] text-porcelain ring-1 ring-ink/15 disabled:opacity-50">
-                    {isUpdating ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}{isCompleted ? "Completed" : "Klar"}
-                  </button>
-                  <button type="button" disabled={isCalendarLoading} onClick={() => downloadCalendar(job.assignment.id)} className="inline-flex items-center gap-2 rounded-full bg-porcelain px-4 py-2 text-xs font-black uppercase tracking-[.12em] text-burgundy ring-1 ring-burgundy/10 disabled:opacity-50">
-                    {isCalendarLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}Add to calendar
-                  </button>
+                <div className="mt-5 flex flex-wrap gap-2">
+                  {isAssigned && <button type="button" disabled={isUpdating} onClick={() => updateJobStatus(job.assignment.id, "accepted")} className="inline-flex items-center gap-2 rounded-full bg-green-100 px-5 py-3 text-xs font-black uppercase tracking-[.12em] text-green-800 ring-1 ring-green-200 disabled:opacity-50">{isUpdating ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}Accept</button>}
+                  {isAssigned && <button type="button" disabled={isUpdating} onClick={() => updateJobStatus(job.assignment.id, "declined")} className="inline-flex items-center gap-2 rounded-full bg-red-100 px-5 py-3 text-xs font-black uppercase tracking-[.12em] text-red-800 ring-1 ring-red-200 disabled:opacity-50">{isUpdating ? <Loader2 className="h-4 w-4 animate-spin" /> : <XCircle className="h-4 w-4" />}Decline</button>}
+                  {isAccepted && <button type="button" disabled={isUpdating} onClick={() => updateJobStatus(job.assignment.id, "completed")} className="inline-flex items-center gap-2 rounded-full bg-ink px-5 py-3 text-xs font-black uppercase tracking-[.12em] text-porcelain ring-1 ring-ink/15 disabled:opacity-50">{isUpdating ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}Mark Klar</button>}
+                  {isDeclined && <span className="rounded-full bg-red-100 px-5 py-3 text-xs font-black uppercase tracking-[.12em] text-red-800 ring-1 ring-red-200">Declined</span>}
+                  {isCompleted && <span className="rounded-full bg-ink px-5 py-3 text-xs font-black uppercase tracking-[.12em] text-porcelain">Completed</span>}
+                  <button type="button" disabled={isCalendarLoading} onClick={() => downloadCalendar(job.assignment.id)} className="inline-flex items-center gap-2 rounded-full bg-porcelain px-5 py-3 text-xs font-black uppercase tracking-[.12em] text-burgundy ring-1 ring-burgundy/10 disabled:opacity-50">{isCalendarLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}Add to calendar</button>
                 </div>
 
-                <div className="mt-4 grid gap-2 rounded-2xl bg-porcelain p-3 text-xs leading-6 text-ink/65 sm:grid-cols-2">
-                  <p><strong className="text-ink">Customer:</strong> {booking.customer_name}</p>
-                  <p><strong className="text-ink">Phone:</strong> {booking.customer_phone || "—"}</p>
-                  <p><strong className="text-ink">Size:</strong> {booking.size_sqm ? `${booking.size_sqm} sqm` : "—"}</p>
-                  <p><strong className="text-ink">Frequency:</strong> {booking.frequency || "—"}</p>
-                  {job.employee && <p><strong className="text-ink">Assigned to:</strong> {job.employee.name}</p>}
-                  <p><strong className="text-ink">Booking status:</strong> {booking.status || "new"}</p>
+                <div className="mt-5 grid gap-3 rounded-[1.5rem] bg-porcelain p-4 sm:grid-cols-2 lg:grid-cols-4">
+                  <Detail label="Customer" value={booking.customer_name} />
+                  <Detail label="Phone" value={booking.customer_phone || "—"} />
+                  <Detail label="Size" value={booking.size_sqm ? `${booking.size_sqm} sqm` : "—"} />
+                  <Detail label="Frequency" value={booking.frequency || "—"} />
                 </div>
 
-                {booking.notes && <p className="mt-3 rounded-2xl bg-porcelain p-3 text-xs leading-6 text-ink/65"><strong>Notes:</strong><br />{booking.notes}</p>}
-                {job.assignment.note && <p className="mt-3 rounded-2xl bg-gold/20 p-3 text-xs leading-6 text-ink/70"><strong>Admin note:</strong><br />{job.assignment.note}</p>}
+                <div className="mt-4 flex flex-wrap gap-2 text-xs font-bold text-ink/55">
+                  {job.employee && <span className="rounded-full bg-porcelain px-3 py-1 ring-1 ring-burgundy/10">Assigned to: {job.employee.name}</span>}
+                  <span className="rounded-full bg-porcelain px-3 py-1 ring-1 ring-burgundy/10">Booking status: {booking.status || "new"}</span>
+                </div>
+
+                {noteLines.length > 0 && (
+                  <div className="mt-4 rounded-[1.5rem] bg-porcelain p-4 text-sm leading-7 text-ink/70">
+                    <strong className="text-ink">Job details</strong>
+                    <ul className="mt-3 grid gap-2 md:grid-cols-2">
+                      {noteLines.map((line, index) => <li key={`${line}-${index}`} className="rounded-2xl bg-cream px-4 py-2">{line}</li>)}
+                    </ul>
+                  </div>
+                )}
+                {job.assignment.note && <p className="mt-4 rounded-2xl bg-gold/20 p-4 text-sm leading-7 text-ink/70"><strong>Admin note:</strong><br />{job.assignment.note}</p>}
               </article>
             );
           })}
