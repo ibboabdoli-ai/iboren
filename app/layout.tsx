@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import StructuredData from "./StructuredData";
 import GoogleAddressEnhancer from "./GoogleAddressEnhancer";
 import BookingFormValidationEnhancer from "./BookingFormValidationEnhancer";
+import PwaManifestSwitcher from "./PwaManifestSwitcher";
 import "./globals.css";
 
 const title = "Iboren – Städning i Södertälje och Stockholm";
@@ -30,13 +31,18 @@ export const metadata: Metadata = {
     images: ["/twitter-image"]
   },
   alternates: { canonical: "https://iboren.se" },
-  manifest: "/manifest.webmanifest",
+  manifest: "/api/pwa-manifest?start=/",
   icons: {
     icon: [
       { url: "/icon", type: "image/png" },
       { url: "/favicon.svg", type: "image/svg+xml" }
     ],
     apple: [{ url: "/apple-icon", type: "image/png" }]
+  },
+  appleWebApp: {
+    capable: true,
+    title: "Iboren",
+    statusBarStyle: "black-translucent"
   }
 };
 
@@ -52,11 +58,16 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="sv">
       <head>
         <link rel="preload" as="image" href="/cinematic/03-home-after.webp" fetchPriority="high" />
+        <meta name="mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <meta name="apple-mobile-web-app-title" content="Iboren" />
       </head>
       <body>
         <StructuredData />
         <GoogleAddressEnhancer />
         <BookingFormValidationEnhancer />
+        <PwaManifestSwitcher />
         {children}
       </body>
     </html>
