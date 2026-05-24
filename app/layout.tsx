@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import StructuredData from "./StructuredData";
+import GoogleAddressEnhancer from "./GoogleAddressEnhancer";
 import "./globals.css";
 
 const title = "Iboren – Städning i Södertälje och Stockholm";
@@ -53,6 +54,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body>
         <StructuredData />
+        <GoogleAddressEnhancer />
         {children}
       </body>
     </html>
