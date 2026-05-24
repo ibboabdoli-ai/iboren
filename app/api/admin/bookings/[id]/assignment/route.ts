@@ -5,6 +5,8 @@ export const runtime = "nodejs";
 
 const HEADER_NAME = ["Author", "ization"].join("");
 const TOKEN_WORD = ["Bear", "er"].join("");
+const EMAIL_ENDPOINT = ["https://api.re", "send.com/emails"].join("");
+const EMAIL_WAIT_LIMIT_MS = 4500;
 
 type AssignmentPayload = {
   employee_id?: string;
@@ -33,6 +35,23 @@ type AssignmentRow = {
   updated_at: string;
 };
 
+type BookingRow = {
+  id: string;
+  service: string;
+  area: string;
+  address: string | null;
+  size_sqm: number | null;
+  frequency: string | null;
+  preferred_date: string | null;
+  time_window: string | null;
+  customer_name: string;
+  customer_email: string;
+  customer_phone: string | null;
+  notes: string | null;
+  status: string | null;
+  created_at: string;
+};
+
 function getAdminClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -58,6 +77,75 @@ function getToken(request: Request) {
 
 function cleanText(value: unknown, max = 500) {
   return String(value || "").replace(/[<>]/g, "").trim().slice(0, max);
+}
+
+function isValidEmail(email: string) {
+  return /^\S+@\S+\.\S+$/.test(email);
+}
+
+function buildCleanerAssignmentEmailText(params: { booking: BookingRow; employee: EmployeeRow; note: string | null }) {
+  const { booking, employee, note } = params;
+  return [
+    `Hi ${employee.name || "there"},`,
+    "",
+    "You have been assigned a cleaning job in Iboren.",
+    "",
+    `Service: ${booking.service}`,
+    `Area: ${booking.area}`,
+    `Address: ${booking.address || "-"}`,
+    `Date: ${booking.preferred_date || "-"}`,
+    `Time window: ${booking.time_window || "-"}`,
+    `Size: ${booking.size_sqm ? `${booking.size_sqm} sqm` : "-"}`,
+    `Frequency: ${booking.frequency || "-"}`,
+    "",
+    `Customer: ${booking.customer_name}`,
+    `Customer phone: ${booking.customer_phone || "-"}`,
+    "",
+    note ? `Admin note: ${note}` : "Admin note: -",
+    "",
+    "Please log in to your cleaner panel and accept or decline the job:",
+    "https://iboren.se/cleaner",
+    "",
+    "Best regards,",
+    "Iboren"
+  ].join("\n");
+}
+
+async function sendEmail(params: { apiKey: string; from: string; to: string; replyTo?: string; subject: string; text: string }) {
+  return fetch(EMAIL_ENDPOINT, {
+    method: "POST",
+    headers: { [HEADER_NAME]: `${TOKEN_WORD} ${params.apiKey}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ from: params.from, to: [params.to], reply_to: params.replyTo, subject: params.subject, text: params.text })
+  });
+}
+
+function wait(ms: number) {
+  return new Promise<"timeout">((resolve) => setTimeout(() => resolve("timeout"), ms));
+}
+
+async function notifyAssignedCleaner(params: { booking: BookingRow; employee: EmployeeRow; note: string | null }) {
+  const resendApiKey = process.env.RESEND_API_KEY;
+  const fromEmail = process.env.BOOKING_FROM_EMAIL || "Iboren <onboarding@resend.dev>";
+  const replyTo = process.env.BOOKING_TO_EMAIL || "hej@iboren.se";
+  const toEmail = params.employee.email.trim().toLowerCase();
+
+  if (!isValidEmail(toEmail)) return { sent: false, skipped: true, reason: "invalid_cleaner_email" };
+
+  const subject = `Iboren: New assigned job · ${params.booking.service}`;
+  const text = buildCleanerAssignmentEmailText(params);
+
+  if (!resendApiKey) {
+    console.info("IBOREN_ASSIGNED_CLEANER_EMAIL", { to: toEmail, text });
+    return { sent: false, skipped: true, reason: "missing_resend_api_key" };
+  }
+
+  const emailResult = await Promise.race([
+    sendEmail({ apiKey: resendApiKey, from: fromEmail, to: toEmail, replyTo, subject, text }),
+    wait(EMAIL_WAIT_LIMIT_MS)
+  ]);
+
+  if (emailResult === "timeout") return { sent: false, skipped: false, reason: "timeout" };
+  return { sent: emailResult.ok, skipped: false, reason: emailResult.ok ? null : "resend_error" };
 }
 
 async function verifyAdmin(request: Request) {
@@ -134,9 +222,9 @@ export async function POST(request: Request, { params }: { params: { id: string 
 
   const { data: booking, error: bookingError } = await admin.supabase
     .from("bookings")
-    .select("id")
+    .select("id, service, area, address, size_sqm, frequency, preferred_date, time_window, customer_name, customer_email, customer_phone, notes, status, created_at")
     .eq("id", params.id)
-    .maybeSingle<{ id: string }>();
+    .maybeSingle<BookingRow>();
 
   if (bookingError) return NextResponse.json({ ok: false, message: bookingError.message }, { status: 500 });
   if (!booking?.id) return NextResponse.json({ ok: false, message: "Booking not found." }, { status: 404 });
@@ -179,7 +267,15 @@ export async function POST(request: Request, { params }: { params: { id: string 
     const { data: assignment, error: assignmentError } = await query;
     if (assignmentError) return NextResponse.json({ ok: false, message: assignmentError.message }, { status: 500 });
 
-    return NextResponse.json({ ok: true, assignment, employee });
+    let cleanerEmail = { sent: false, skipped: true, reason: "not_attempted" as string | null };
+    try {
+      cleanerEmail = await notifyAssignedCleaner({ booking, employee, note });
+    } catch (error) {
+      console.warn("IBOREN_ASSIGNED_CLEANER_EMAIL_FAILED", error);
+      cleanerEmail = { sent: false, skipped: false, reason: "exception" };
+    }
+
+    return NextResponse.json({ ok: true, assignment, employee, cleanerEmail });
   } catch (error) {
     return NextResponse.json({ ok: false, message: error instanceof Error ? error.message : "Could not save assignment." }, { status: 500 });
   }
