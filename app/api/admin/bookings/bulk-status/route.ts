@@ -137,18 +137,19 @@ function buildBulkSummaryEmail(status: AllowedStatus, bookings: BookingRow[]) {
 
   if (locale === "en") {
     const action = statusTextEn(status);
-    const subject = `Iboren: ${count} recurring visits ${action}`;
+    const subject = `Iboren: planned upcoming visits ${action}`;
     const text = [
       `Hi ${cleanText(first.customer_name) || "there"},`,
       "",
-      `Your recurring cleaning plan has been updated. ${count} upcoming visit${count === 1 ? "" : "s"} have been ${action}.`,
+      `The following ${count} planned upcoming cleaning visit${count === 1 ? "" : "s"} have been ${action}.`,
+      "This message only applies to the dates listed below. For visits after these dates, Iboren will coordinate with you separately.",
       "",
       `Service: ${english(first.service)}`,
       `Area: ${first.area}`,
       `Address: ${first.address || "-"}`,
-      `Frequency: ${english(first.frequency || "") || "-"}`,
+      `Frequency requested: ${english(first.frequency || "") || "-"}`,
       "",
-      "Updated visits:",
+      "Planned visits:",
       dates,
       "",
       "If anything is incorrect, please reply to this email or contact us at hej@iboren.se.",
@@ -160,18 +161,19 @@ function buildBulkSummaryEmail(status: AllowedStatus, bookings: BookingRow[]) {
   }
 
   const action = statusTextSv(status);
-  const subject = `Iboren: ${count} återkommande besök ${action}`;
+  const subject = `Iboren: planerade kommande besök ${action}`;
   const text = [
     `Hej ${cleanText(first.customer_name) || "kund"},`,
     "",
-    `Din återkommande städplan har uppdaterats. ${count} kommande besök är ${action}.`,
+    `Följande ${count} planerade kommande städbesök är ${action}.`,
+    "Det här meddelandet gäller bara datumen nedan. För besök efter dessa datum samordnar Iboren med dig separat.",
     "",
     `Tjänst: ${first.service}`,
     `Område: ${first.area}`,
     `Adress: ${first.address || "-"}`,
-    `Frekvens: ${first.frequency || "-"}`,
+    `Önskad frekvens: ${first.frequency || "-"}`,
     "",
-    "Uppdaterade besök:",
+    "Planerade besök:",
     dates,
     "",
     "Om något inte stämmer kan du svara på det här mejlet eller kontakta oss på hej@iboren.se.",
