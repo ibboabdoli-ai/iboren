@@ -7,7 +7,7 @@ const HEADER_NAME = ["Author", "ization"].join("");
 const TOKEN_WORD = ["Bear", "er"].join("");
 
 type CrewPayload = { cleaners_needed?: unknown };
-type BookingCrewRow = { id: string; cleaners_needed: number | null };
+type BookingCrewRow = { id: string; cleaners_needed: number | null; size_sqm: number | null; service: string | null; frequency: string | null; notes: string | null };
 
 function getAdminClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -29,6 +29,29 @@ function parseNeeded(value: unknown) {
   const numberValue = Number(value);
   if (!Number.isInteger(numberValue) || numberValue < 1 || numberValue > 20) return null;
   return numberValue;
+}
+
+function roundHalf(value: number) {
+  return Math.max(1, Math.round(value * 2) / 2);
+}
+
+function estimateCrew(booking: BookingCrewRow | null) {
+  const size = Number(booking?.size_sqm || 0);
+  const notes = String(booking?.notes || "").toLowerCase();
+  const frequency = String(booking?.frequency || "").toLowerCase();
+  const service = String(booking?.service || "").toLowerCase();
+
+  let hours = Math.max(2, size > 0 ? size / 30 : 2);
+  if (notes.includes("husdjur") || notes.includes("pet") || notes.includes("hund") || notes.includes("katt")) hours += 0.5;
+  if (notes.includes("första") || notes.includes("first") || notes.includes("engång") || notes.includes("one-time")) hours += 1;
+  if (frequency.includes("engång") || frequency.includes("one-time") || frequency.includes("once")) hours += 0.5;
+  if (service.includes("flytt") || service.includes("moving")) hours = Math.max(hours, size > 0 ? size / 18 : 4);
+  if (service.includes("fönster") || service.includes("window")) hours = Math.max(2, hours * 0.75);
+
+  const estimatedHours = roundHalf(hours);
+  const suggestedCleaners = Math.min(20, Math.max(1, Math.ceil(estimatedHours / 4)));
+  const hoursPerCleaner = roundHalf(estimatedHours / suggestedCleaners);
+  return { estimated_hours: estimatedHours, suggested_cleaners: suggestedCleaners, hours_per_cleaner: hoursPerCleaner };
 }
 
 async function verifyAdmin(request: Request) {
@@ -57,17 +80,17 @@ export async function GET(request: Request, { params }: { params: { id: string }
 
   const { data, error } = await admin.supabase
     .from("bookings")
-    .select("id, cleaners_needed")
+    .select("id, cleaners_needed, size_sqm, service, frequency, notes")
     .eq("id", params.id)
     .maybeSingle<BookingCrewRow>();
 
   if (error) {
     const missingColumn = error.message?.toLowerCase().includes("cleaners_needed") || error.code === "42703";
-    return NextResponse.json({ ok: true, cleaners_needed: 1, needsMigration: missingColumn, message: missingColumn ? missingColumnMessage() : error.message }, { status: missingColumn ? 200 : 500 });
+    return NextResponse.json({ ok: true, cleaners_needed: 1, needsMigration: missingColumn, message: missingColumn ? missingColumnMessage() : error.message, ...estimateCrew(null) }, { status: missingColumn ? 200 : 500 });
   }
 
   if (!data?.id) return NextResponse.json({ ok: false, message: "Booking not found." }, { status: 404 });
-  return NextResponse.json({ ok: true, cleaners_needed: data.cleaners_needed || 1, needsMigration: false });
+  return NextResponse.json({ ok: true, cleaners_needed: data.cleaners_needed || 1, needsMigration: false, ...estimateCrew(data) });
 }
 
 export async function PATCH(request: Request, { params }: { params: { id: string } }) {
@@ -82,7 +105,7 @@ export async function PATCH(request: Request, { params }: { params: { id: string
     .from("bookings")
     .update({ cleaners_needed: cleanersNeeded })
     .eq("id", params.id)
-    .select("id, cleaners_needed")
+    .select("id, cleaners_needed, size_sqm, service, frequency, notes")
     .maybeSingle<BookingCrewRow>();
 
   if (error) {
@@ -91,5 +114,5 @@ export async function PATCH(request: Request, { params }: { params: { id: string
   }
 
   if (!data?.id) return NextResponse.json({ ok: false, message: "Booking not found." }, { status: 404 });
-  return NextResponse.json({ ok: true, cleaners_needed: data.cleaners_needed || cleanersNeeded });
+  return NextResponse.json({ ok: true, cleaners_needed: data.cleaners_needed || cleanersNeeded, ...estimateCrew(data) });
 }
