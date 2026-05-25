@@ -31,8 +31,6 @@ type BookingDraft = {
 
 type ReverseGeocodeResponse = { ok: boolean; address?: string; area?: string; message?: string };
 
-const FORM_VERSION = "EN-NEW-ROUTE-1";
-
 const initialDraft: BookingDraft = {
   service: "Hemstädning",
   area: "Södertälje",
@@ -293,14 +291,15 @@ export default function EnglishBookingPage() {
           phone: draft.phone,
           notes: notesForApi,
           customerType: draft.service === "Kontorsstädning" ? "Företag" : "Privatperson",
-          rutRequested: draft.service !== "Kontorsstädning"
+          rutRequested: draft.service !== "Kontorsstädning",
+          language: "en"
         })
       });
       const result = await response.json();
       if (!response.ok || !result.ok) throw new Error(result.message || "Could not send the request.");
 
       setStatus("success");
-      setMessage("Thank you. Your request has been saved to your profile and sent to Iboren.");
+      setMessage("Thank you. Your booking request has been saved to your profile and sent to Iboren.");
     } catch (error) {
       setStatus("error");
       setMessage(error instanceof Error ? error.message : "Could not send the request right now.");
@@ -361,11 +360,11 @@ export default function EnglishBookingPage() {
           <div>
             <p className="mb-4 text-[11px] font-bold uppercase tracking-[.38em] text-gold">Request</p>
             <h2 className="display text-5xl font-normal uppercase leading-[.9] md:text-7xl">Create a clear booking request.</h2>
-            <p className="mt-6 max-w-xl text-lg leading-8 text-porcelain/70">This is the clean English booking form. Fill in service, location, size, rooms, date, contact details and special requests.</p>
+            <p className="mt-6 max-w-xl text-lg leading-8 text-porcelain/70">Fill in service, location, size, rooms, date, contact details and special requests. Your request is saved to your profile after submission.</p>
             <div className="mt-8 grid gap-3 text-sm text-porcelain/70">
               <p className="flex items-center gap-3"><ShieldCheck className="h-5 w-5 text-gold" /> Location is shared only after active consent.</p>
               <p className="flex items-center gap-3"><Mail className="h-5 w-5 text-gold" /> {user ? "Your request is saved to your profile." : "Log in to send and save your request to your profile."}</p>
-              <p className="flex items-center gap-3"><Home className="h-5 w-5 text-gold" /> Form version: {FORM_VERSION}</p>
+              <p className="flex items-center gap-3"><Home className="h-5 w-5 text-gold" /> Your request is reviewed before confirmation.</p>
             </div>
           </div>
 
@@ -374,7 +373,7 @@ export default function EnglishBookingPage() {
               <div className="mb-6 flex items-center justify-between"><div><p className="text-xs uppercase tracking-[.28em] text-gold">Step 1 / Request</p><h3 className="display mt-2 text-3xl font-normal uppercase">Request details</h3></div><span className="rounded-full border border-gold/30 px-3 py-1 text-[10px] font-bold uppercase tracking-[.22em] text-gold">Draft</span></div>
               <div className="grid gap-4">
                 <div><label className="mb-2 block text-sm font-bold text-porcelain/80">Service</label><div className="grid grid-cols-2 gap-2">{serviceOptions.map((service) => <button type="button" key={service.value} onClick={() => setField("service", service.value)} className={`rounded-2xl border px-3 py-3 text-sm font-bold transition ${draft.service === service.value ? "border-gold bg-gold text-ink" : "border-porcelain/10 bg-porcelain/6 text-porcelain/80"}`}>{service.label}</button>)}</div></div>
-                <div className="grid gap-4 sm:grid-cols-2"><Field label="Area / city" value={draft.area} onChange={(value) => setField("area", value)} placeholder="Stockholm, Södertälje..." /><Field label="Size sqm" value={draft.size} onChange={(value) => setField("size", value.replace(/[^0-9]/g, ""))} placeholder="75" /></div>
+                <div className="grid gap-4 sm:grid-cols-2"><Field label="Area / city" value={draft.area} onChange={(value) => setField("area", value)} placeholder="Stockholm, Södertälje..." /><Field label="Size (sqm)" value={draft.size} onChange={(value) => setField("size", value.replace(/[^0-9]/g, ""))} placeholder="75" /></div>
                 <div><label className="mb-2 block text-sm font-bold text-porcelain/80">Address</label><div className="flex gap-2"><input value={draft.address} onChange={(event) => setField("address", event.target.value)} className="min-w-0 flex-1 rounded-2xl border border-porcelain/10 bg-porcelain px-4 py-4 text-ink placeholder:text-ink/45 outline-none" placeholder="Street address" /><button type="button" aria-label="Use my location" onClick={useLocation} className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl border border-gold/30 text-gold">{locating ? <Loader2 className="h-5 w-5 animate-spin" /> : <LocateFixed className="h-5 w-5" />}</button></div></div>
                 <div className="rounded-[1.5rem] border border-gold/15 bg-night/30 p-4"><p className="mb-4 text-xs font-bold uppercase tracking-[.28em] text-gold">Property & details</p><div className="grid gap-4 sm:grid-cols-2"><Select label="Property type" value={draft.propertyType} options={propertyTypes} onChange={(value) => setField("propertyType", value)} /><Field label="Number of rooms" value={draft.rooms} onChange={(value) => setField("rooms", value.replace(/[^0-9]/g, ""))} placeholder="3" /><Field label="Number of bathrooms" value={draft.bathrooms} onChange={(value) => setField("bathrooms", value.replace(/[^0-9]/g, ""))} placeholder="1" /><Select label="Pets" value={draft.pets} options={yesNoOptions} onChange={(value) => setField("pets", value)} /><Field label="Floor" value={draft.floor} onChange={(value) => setField("floor", value)} placeholder="3" /><Select label="Elevator" value={draft.elevator} options={yesNoOptions} onChange={(value) => setField("elevator", value)} /><Select label="Parking" value={draft.parking} options={yesNoOptions} onChange={(value) => setField("parking", value)} /></div></div>
                 <div><label className="mb-2 block text-sm font-bold text-porcelain/80">Extra services</label><div className="grid grid-cols-2 gap-2 sm:grid-cols-3">{extraOptions.map((extra) => <button type="button" key={extra.value} onClick={() => toggleExtra(extra.value)} className={`rounded-2xl border px-3 py-3 text-sm font-bold transition ${draft.extras.includes(extra.value) ? "border-gold bg-gold text-ink" : "border-porcelain/10 bg-porcelain/6 text-porcelain/80"}`}>{extra.label}</button>)}</div></div>
