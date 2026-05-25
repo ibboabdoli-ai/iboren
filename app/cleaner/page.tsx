@@ -158,7 +158,7 @@ export default function CleanerPage() {
         </div>
 
         <div className="mt-6 grid gap-5">
-          {accessToken ? <CleanerJobsList token={accessToken} /> : null}
+          {accessToken ? <CleanerJobsList token={accessToken} lang="sv" /> : null}
 
           <details className="group rounded-[2rem] bg-porcelain p-5 shadow-soft md:p-6">
             <summary className="flex cursor-pointer list-none items-center justify-between gap-4">
@@ -172,7 +172,7 @@ export default function CleanerPage() {
               <ChevronDown className="h-5 w-5 text-burgundy transition-transform group-open:rotate-180" />
             </summary>
             <div className="mt-5 border-t border-burgundy/10 pt-5">
-              {accessToken ? <CleanerAvailabilityForm token={accessToken} /> : null}
+              {accessToken ? <CleanerAvailabilityForm token={accessToken} lang="sv" /> : null}
             </div>
           </details>
 
