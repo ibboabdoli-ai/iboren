@@ -165,6 +165,10 @@ function patchCleanerLanguage(lang: Lang) {
 export default function CleanerTemplate({ children }: { children: ReactNode }) {
   const [lang, setLang] = useState<Lang>("en");
 
+  function switchLanguage(nextLang: Lang) {
+    setLang(nextLang);
+  }
+
   useEffect(() => {
     try {
       const saved = window.localStorage.getItem("iboren-cleaner-lang");
@@ -183,13 +187,32 @@ export default function CleanerTemplate({ children }: { children: ReactNode }) {
 
   return (
     <>
-      <div data-cleaner-language-toggle="1" className="fixed left-4 top-4 z-[80] inline-flex rounded-full bg-porcelain p-1 shadow-luxe ring-1 ring-burgundy/10">
-        <button type="button" onClick={() => setLang("en")} className={`rounded-full px-4 py-2 text-xs font-black uppercase tracking-[.14em] ${lang === "en" ? "bg-burgundy text-porcelain" : "text-burgundy"}`}>EN</button>
-        <button type="button" onClick={() => setLang("sv")} className={`rounded-full px-4 py-2 text-xs font-black uppercase tracking-[.14em] ${lang === "sv" ? "bg-burgundy text-porcelain" : "text-burgundy"}`}>SV</button>
+      <div
+        data-cleaner-language-toggle="1"
+        className="fixed right-4 top-4 inline-flex rounded-full bg-porcelain p-1 shadow-luxe ring-1 ring-burgundy/10"
+        style={{ zIndex: 9999 }}
+        onClick={(event) => event.stopPropagation()}
+      >
+        <button
+          type="button"
+          onClick={(event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            switchLanguage("en");
+          }}
+          className={`rounded-full px-4 py-2 text-xs font-black uppercase tracking-[.14em] ${lang === "en" ? "bg-burgundy text-porcelain" : "text-burgundy"}`}
+        >EN</button>
+        <button
+          type="button"
+          onClick={(event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            switchLanguage("sv");
+          }}
+          className={`rounded-full px-4 py-2 text-xs font-black uppercase tracking-[.14em] ${lang === "sv" ? "bg-burgundy text-porcelain" : "text-burgundy"}`}
+        >SV</button>
       </div>
       {children}
     </>
   );
 }
-
-// Build probe for bilingual cleaner panel.
