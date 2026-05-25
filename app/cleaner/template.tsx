@@ -191,3 +191,5 @@ export default function CleanerTemplate({ children }: { children: ReactNode }) {
     </>
   );
 }
+
+// Build probe for bilingual cleaner panel.
