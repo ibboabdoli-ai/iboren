@@ -29,6 +29,21 @@ type ProfileForm = {
   default_address: string;
 };
 
+type RecurringMeta = {
+  current: number | null;
+  total: number | null;
+  originalStartDate: string | null;
+  frequency: string | null;
+};
+
+type BookingGroup = {
+  key: string;
+  bookings: Booking[];
+  representative: Booking;
+  recurring: RecurringMeta | null;
+  cleanNotes: string | null;
+};
+
 const emptyProfile: ProfileForm = {
   full_name: "",
   phone: "",
@@ -75,6 +90,97 @@ function statusClass(status: string | null) {
   return "bg-burgundy text-porcelain border-burgundy";
 }
 
+function parseRecurringMeta(booking: Booking): RecurringMeta | null {
+  const notes = booking.notes || "";
+  const visitMatch = notes.match(/Visit:\s*(\d+)\s*of\s*(\d+)/i);
+  const originalMatch = notes.match(/Original start date:\s*([^\n]+)/i);
+  const frequencyMatch = notes.match(/Frequency:\s*([^\n]+)/i);
+  if (!visitMatch && !originalMatch) return null;
+  return {
+    current: visitMatch ? Number(visitMatch[1]) : null,
+    total: visitMatch ? Number(visitMatch[2]) : null,
+    originalStartDate: originalMatch?.[1]?.trim() || null,
+    frequency: frequencyMatch?.[1]?.trim() || booking.frequency || null
+  };
+}
+
+function cleanBookingNotes(notes: string | null) {
+  if (!notes) return null;
+  return notes
+    .split(/\n---\s*Recurring visit\s*---/i)[0]
+    .split(/\n---\s*Kundtyp & RUT\s*---/i)[0]
+    .trim() || null;
+}
+
+function dateValue(value: string | null) {
+  return value || "9999-12-31";
+}
+
+function sortByDate(a: Booking, b: Booking) {
+  return dateValue(a.preferred_date).localeCompare(dateValue(b.preferred_date));
+}
+
+function recurringGroupKey(booking: Booking) {
+  const recurring = parseRecurringMeta(booking);
+  if (!recurring) return booking.id;
+  return [
+    "recurring",
+    recurring.originalStartDate || booking.created_at.slice(0, 10),
+    recurring.frequency || booking.frequency || "",
+    booking.service,
+    booking.area,
+    booking.address || "",
+    booking.size_sqm || ""
+  ].join("|");
+}
+
+function groupBookings(bookings: Booking[]): BookingGroup[] {
+  const map = new Map<string, BookingGroup>();
+
+  for (const booking of bookings) {
+    const recurring = parseRecurringMeta(booking);
+    const key = recurringGroupKey(booking);
+    const existing = map.get(key);
+    if (existing) {
+      existing.bookings.push(booking);
+      existing.bookings.sort(sortByDate);
+      const currentMeta = parseRecurringMeta(existing.representative);
+      const nextMeta = parseRecurringMeta(booking);
+      if ((nextMeta?.current || 0) < (currentMeta?.current || 9999)) existing.representative = booking;
+    } else {
+      map.set(key, {
+        key,
+        bookings: [booking],
+        representative: booking,
+        recurring,
+        cleanNotes: cleanBookingNotes(booking.notes)
+      });
+    }
+  }
+
+  return [...map.values()].sort((a, b) => dateValue(a.bookings[0]?.preferred_date || null).localeCompare(dateValue(b.bookings[0]?.preferred_date || null)));
+}
+
+function groupStats(bookings: Booking[]) {
+  const completed = bookings.filter((booking) => booking.status === "completed").length;
+  const cancelled = bookings.filter((booking) => booking.status === "cancelled").length;
+  const confirmed = bookings.filter((booking) => booking.status === "confirmed").length;
+  const open = bookings.length - completed - cancelled;
+  return { completed, cancelled, confirmed, open };
+}
+
+function nextOpenVisit(bookings: Booking[]) {
+  return bookings.find((booking) => booking.status !== "completed" && booking.status !== "cancelled") || bookings[bookings.length - 1];
+}
+
+function groupStatus(bookings: Booking[]) {
+  const stats = groupStats(bookings);
+  if (bookings.length > 0 && stats.completed === bookings.length) return "completed";
+  if (stats.confirmed > 0) return "confirmed";
+  if (stats.open > 0) return "new";
+  return "cancelled";
+}
+
 export default function ProfilePage() {
   const hasLoaded = useRef(false);
   const [loading, setLoading] = useState(true);
@@ -90,6 +196,7 @@ export default function ProfilePage() {
   const [showCancelled, setShowCancelled] = useState(false);
 
   const visibleBookings = useMemo(() => showCancelled ? bookings : bookings.filter((booking) => booking.status !== "cancelled"), [bookings, showCancelled]);
+  const bookingGroups = useMemo(() => groupBookings(visibleBookings), [visibleBookings]);
   const cancelledCount = useMemo(() => bookings.filter((booking) => booking.status === "cancelled").length, [bookings]);
   const activeCount = bookings.length - cancelledCount;
 
@@ -101,7 +208,7 @@ export default function ProfilePage() {
       .from("bookings")
       .select("id, service, area, address, size_sqm, frequency, preferred_date, time_window, customer_name, customer_email, customer_phone, notes, status, created_at")
       .eq("user_id", currentUser.id)
-      .order("created_at", { ascending: false });
+      .order("preferred_date", { ascending: true });
 
     if (error) {
       setMessage(`Kunde inte hämta bokningar: ${error.message}`);
@@ -267,8 +374,8 @@ export default function ProfilePage() {
                 <div>
                   <div className="mb-5 grid h-14 w-14 place-items-center rounded-full bg-burgundy text-porcelain"><CalendarCheck2 size={25} /></div>
                   <h2 className="display text-4xl font-bold text-burgundy">Mina bokningar</h2>
-                  <p className="mt-3 leading-8 text-ink/65">Här visas aktiva bokningsförfrågningar. Avbokade bokningar är dolda som standard.</p>
-                  <p className="mt-2 text-sm font-bold text-ink/45">Aktiva: {activeCount} · Avbokade: {cancelledCount}</p>
+                  <p className="mt-3 leading-8 text-ink/65">Här visas dina bokningar grupperade per återkommande serie. Öppna serien för att se varje besök.</p>
+                  <p className="mt-2 text-sm font-bold text-ink/45">Aktiva besök: {activeCount} · Avbokade: {cancelledCount}</p>
                 </div>
                 <div className="flex flex-col gap-3 sm:flex-row">
                   {cancelledCount > 0 && <button type="button" onClick={() => setShowCancelled((current) => !current)} className="rounded-full border border-burgundy/15 bg-cream px-5 py-3 text-sm font-bold text-burgundy">{showCancelled ? "Dölj avbokade" : "Visa avbokade"}</button>}
@@ -286,25 +393,58 @@ export default function ProfilePage() {
                 <div className="rounded-[2rem] border border-dashed border-burgundy/20 bg-cream p-6 text-ink/65"><p>Du har inga aktiva bokningar just nu.</p>{cancelledCount > 0 && <button type="button" onClick={() => setShowCancelled(true)} className="mt-4 font-bold text-burgundy">Visa avbokade bokningar →</button>}</div>
               ) : (
                 <div className="grid gap-4">
-                  {visibleBookings.map((booking) => {
-                    const isCancelled = booking.status === "cancelled";
+                  {bookingGroups.map((group) => {
+                    const representative = group.representative;
+                    const stats = groupStats(group.bookings);
+                    const nextVisit = nextOpenVisit(group.bookings) || representative;
+                    const currentStatus = groupStatus(group.bookings);
+                    const isRecurring = Boolean(group.recurring && group.bookings.length > 1);
+                    const isCancelled = currentStatus === "cancelled";
+
                     return (
-                      <article key={booking.id} className={`rounded-[2rem] border p-5 ${isCancelled ? "border-red-200 bg-red-50/60 opacity-75" : "border-burgundy/10 bg-cream"}`}>
+                      <article key={group.key} className={`rounded-[2rem] border p-5 ${isCancelled ? "border-red-200 bg-red-50/60 opacity-75" : "border-burgundy/10 bg-cream"}`}>
                         <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                           <div className="min-w-0">
-                            <p className={`inline-flex rounded-full border px-3 py-1 text-xs font-bold uppercase tracking-[.18em] ${statusClass(booking.status)}`}>{statusLabel(booking.status)}</p>
-                            <h3 className="display mt-3 break-words text-3xl font-bold text-burgundy">{booking.service}</h3>
-                            <p className="mt-2 break-words leading-7 text-ink/70">{booking.area}{booking.address ? ` · ${booking.address}` : ""}</p>
+                            <div className="flex flex-wrap gap-2">
+                              <p className={`inline-flex rounded-full border px-3 py-1 text-xs font-bold uppercase tracking-[.18em] ${statusClass(currentStatus)}`}>{statusLabel(currentStatus)}</p>
+                              {isRecurring && <p className="inline-flex rounded-full bg-gold px-3 py-1 text-xs font-black uppercase tracking-[.18em] text-ink">Serie · {group.bookings.length} besök</p>}
+                            </div>
+                            <h3 className="display mt-3 break-words text-3xl font-bold text-burgundy">{representative.service}</h3>
+                            <p className="mt-2 break-words leading-7 text-ink/70">{representative.area}{representative.address ? ` · ${representative.address}` : ""}</p>
                           </div>
-                          <span className="w-fit rounded-full bg-burgundy px-4 py-2 text-xs font-bold uppercase tracking-[.18em] text-porcelain">{booking.preferred_date || "Datum saknas"}</span>
+                          <span className="w-fit rounded-full bg-burgundy px-4 py-2 text-xs font-bold uppercase tracking-[.18em] text-porcelain">Nästa: {nextVisit?.preferred_date || representative.preferred_date || "Datum saknas"}</span>
                         </div>
+
+                        {isRecurring && <div className="mt-5 grid gap-3 rounded-[1.5rem] bg-porcelain p-4 text-sm font-bold text-ink/65 sm:grid-cols-3">
+                          <p>Besök totalt<br /><span className="text-xl text-burgundy">{group.bookings.length}</span></p>
+                          <p>Klara<br /><span className="text-xl text-burgundy">{stats.completed}</span></p>
+                          <p>Kommande/öppna<br /><span className="text-xl text-burgundy">{stats.open}</span></p>
+                        </div>}
+
                         <div className="mt-5 grid gap-3 text-sm text-ink/62 md:grid-cols-3">
-                          <p><strong>Storlek:</strong> {booking.size_sqm ? `${booking.size_sqm} kvm` : "—"}</p>
-                          <p><strong>Frekvens:</strong> {booking.frequency || "—"}</p>
-                          <p><strong>Tid:</strong> {booking.time_window || "—"}</p>
+                          <p><strong>Storlek:</strong> {representative.size_sqm ? `${representative.size_sqm} kvm` : "—"}</p>
+                          <p><strong>Frekvens:</strong> {representative.frequency || group.recurring?.frequency || "—"}</p>
+                          <p><strong>Tid:</strong> {representative.time_window || "—"}</p>
                         </div>
-                        {booking.notes && <pre className="mt-4 whitespace-pre-wrap break-words rounded-2xl bg-porcelain p-4 font-sans text-sm leading-7 text-ink/68">{booking.notes}</pre>}
-                        {!isCancelled && <button onClick={() => cancelBooking(booking.id)} disabled={cancelingId === booking.id} className="mt-5 inline-flex items-center gap-2 rounded-full border border-red-200 bg-white px-4 py-2 text-sm font-bold text-red-700 transition hover:bg-red-50 disabled:opacity-60">{cancelingId === booking.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <XCircle className="h-4 w-4" />} Avboka</button>}
+                        {group.cleanNotes && <pre className="mt-4 whitespace-pre-wrap break-words rounded-2xl bg-porcelain p-4 font-sans text-sm leading-7 text-ink/68">{group.cleanNotes}</pre>}
+
+                        {isRecurring ? <div className="mt-4 rounded-2xl bg-porcelain p-4">
+                          <p className="mb-3 text-xs font-black uppercase tracking-[.18em] text-ink/45">Besök i serien</p>
+                          <div className="grid gap-2">
+                            {group.bookings.map((booking, index) => {
+                              const meta = parseRecurringMeta(booking);
+                              const visitNumber = meta?.current || index + 1;
+                              const cannotCancel = booking.status === "cancelled" || booking.status === "completed";
+                              return <div key={booking.id} className="flex flex-col gap-2 rounded-xl bg-cream p-3 text-sm sm:flex-row sm:items-center sm:justify-between">
+                                <p className="font-bold text-ink">{booking.preferred_date || "Datum saknas"} <span className="text-ink/45">· besök {visitNumber}/{meta?.total || group.bookings.length}</span></p>
+                                <div className="flex flex-wrap items-center gap-2">
+                                  <span className={`rounded-full border px-3 py-1 text-xs font-bold uppercase tracking-[.12em] ${statusClass(booking.status)}`}>{statusLabel(booking.status)}</span>
+                                  {!cannotCancel && <button onClick={() => cancelBooking(booking.id)} disabled={cancelingId === booking.id} className="inline-flex items-center gap-2 rounded-full border border-red-200 bg-white px-3 py-1.5 text-xs font-bold text-red-700 disabled:opacity-60">{cancelingId === booking.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <XCircle className="h-3.5 w-3.5" />} Avboka</button>}
+                                </div>
+                              </div>;
+                            })}
+                          </div>
+                        </div> : !isCancelled && <button onClick={() => cancelBooking(representative.id)} disabled={cancelingId === representative.id} className="mt-5 inline-flex items-center gap-2 rounded-full border border-red-200 bg-white px-4 py-2 text-sm font-bold text-red-700 transition hover:bg-red-50 disabled:opacity-60">{cancelingId === representative.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <XCircle className="h-4 w-4" />} Avboka</button>}
                       </article>
                     );
                   })}
