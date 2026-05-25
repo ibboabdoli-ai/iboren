@@ -1,0 +1,106 @@
+.adminShell {
+  min-height: 100svh;
+  -webkit-tap-highlight-color: rgba(110, 44, 44, 0.14);
+}
+
+.adminShell :global(main) {
+  min-height: 100svh;
+}
+
+.adminShell :global(button),
+.adminShell :global(a),
+.adminShell :global(select),
+.adminShell :global(input),
+.adminShell :global(textarea) {
+  touch-action: manipulation;
+}
+
+.adminShell :global(input),
+.adminShell :global(select),
+.adminShell :global(textarea) {
+  font-size: 16px;
+}
+
+.adminShell :global(button:focus-visible),
+.adminShell :global(a:focus-visible),
+.adminShell :global(input:focus-visible),
+.adminShell :global(select:focus-visible),
+.adminShell :global(textarea:focus-visible) {
+  outline: 3px solid rgba(191, 147, 91, 0.85);
+  outline-offset: 3px;
+}
+
+@media (max-width: 640px) {
+  .adminShell :global(main) {
+    padding-top: max(1rem, env(safe-area-inset-top));
+    padding-bottom: max(1.25rem, env(safe-area-inset-bottom));
+  }
+
+  .adminShell :global(.luxe-container) {
+    width: 100%;
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+  }
+
+  .adminShell :global(.display) {
+    letter-spacing: -0.035em;
+  }
+
+  .adminShell :global(h1.display) {
+    font-size: clamp(2.35rem, 13vw, 3.7rem) !important;
+    line-height: 0.94 !important;
+  }
+
+  .adminShell :global(h2.display) {
+    font-size: clamp(1.65rem, 9vw, 2.25rem) !important;
+    line-height: 1 !important;
+  }
+
+  .adminShell :global(article) {
+    border-radius: 1.35rem !important;
+    padding: 1rem !important;
+  }
+
+  .adminShell :global(button),
+  .adminShell :global(a[class*="rounded"]),
+  .adminShell :global(select) {
+    min-height: 44px;
+  }
+
+  .adminShell :global(input),
+  .adminShell :global(select),
+  .adminShell :global(textarea) {
+    min-height: 48px;
+  }
+
+  .adminShell :global(button) {
+    justify-content: center;
+  }
+
+  .adminShell :global([class*="rounded-[2.5rem]"]),
+  .adminShell :global([class*="rounded-[2rem]"]) {
+    border-radius: 1.5rem !important;
+  }
+
+  .adminShell :global([class*="rounded-[1.5rem]"]) {
+    border-radius: 1.25rem !important;
+  }
+
+  .adminShell :global([class*="tracking-[.32em]"]),
+  .adminShell :global([class*="tracking-[.18em]"]),
+  .adminShell :global([class*="tracking-[.16em]"]) {
+    letter-spacing: 0.08em !important;
+  }
+}
+
+@media (max-width: 420px) {
+  .adminShell :global([class*="px-5"]),
+  .adminShell :global([class*="px-4"]) {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  .adminShell :global([class*="gap-4"]) {
+    gap: 0.75rem;
+  }
+}
