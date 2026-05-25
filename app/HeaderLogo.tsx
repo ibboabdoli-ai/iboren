@@ -26,6 +26,9 @@ const svToEn: Record<string, string> = {
 };
 
 const enToSv = Object.fromEntries(Object.entries(svToEn).map(([sv, en]) => [en, sv]));
+const safeTop = "env(safe-area-inset-top, 0px)";
+const safeRight = "env(safe-area-inset-right, 0px)";
+const styleId = "iboren-safe-nav-style";
 
 function normalize(pathname: string) {
   if (!pathname || pathname === "/") return "/";
@@ -57,6 +60,102 @@ function logoHtml(isEnglish: boolean) {
   `;
 }
 
+function ensureSafeNavStyles() {
+  if (document.getElementById(styleId)) return;
+
+  const style = document.createElement("style");
+  style.id = styleId;
+  style.textContent = `
+    header[data-iboren-sticky-nav="1"],
+    #iboren-global-nav {
+      top: ${safeTop} !important;
+      transform: translateZ(0);
+    }
+
+    nav[aria-label="Language"] {
+      top: calc(${safeTop} + 1.25rem) !important;
+      right: calc(${safeRight} + 5rem) !important;
+    }
+
+    @media (max-width: 767px) {
+      html {
+        scroll-padding-top: calc(5rem + ${safeTop});
+      }
+
+      header[data-iboren-sticky-nav="1"] nav,
+      #iboren-global-nav nav {
+        min-height: 4.5rem !important;
+        height: auto !important;
+        gap: .5rem !important;
+        padding-top: .55rem !important;
+        padding-bottom: .55rem !important;
+      }
+
+      header[data-iboren-sticky-nav="1"] .iboren-header-logo-link,
+      #iboren-global-nav .iboren-header-logo-link,
+      header nav a[href="#top"].group {
+        width: clamp(7.9rem, 36vw, 9.8rem) !important;
+        height: clamp(2.65rem, 12vw, 3.2rem) !important;
+        flex: 0 0 auto !important;
+      }
+
+      header[data-iboren-sticky-nav="1"] .iboren-header-logo,
+      #iboren-global-nav .iboren-header-logo {
+        width: 100% !important;
+        height: 100% !important;
+        object-fit: contain !important;
+      }
+
+      #iboren-global-nav .iboren-fallback-actions {
+        margin-left: auto !important;
+        flex: 0 0 auto !important;
+        gap: .25rem !important;
+        max-width: calc(100vw - 10rem) !important;
+      }
+
+      #iboren-global-nav .iboren-fallback-actions a {
+        padding: .58rem .68rem !important;
+        font-size: .72rem !important;
+        letter-spacing: .08em !important;
+        white-space: nowrap !important;
+      }
+
+      #iboren-global-nav .iboren-fallback-cta {
+        display: none !important;
+      }
+
+      nav[aria-label="Language"] {
+        top: calc(${safeTop} + 1.05rem) !important;
+        right: calc(${safeRight} + 4.75rem) !important;
+        max-width: calc(100vw - 12rem) !important;
+      }
+
+      nav[aria-label="Language"] a {
+        padding: .55rem .7rem !important;
+        font-size: .72rem !important;
+      }
+
+      #top {
+        padding-top: calc(6.2rem + ${safeTop}) !important;
+      }
+    }
+
+    @media (max-width: 380px) {
+      header[data-iboren-sticky-nav="1"] .iboren-header-logo-link,
+      #iboren-global-nav .iboren-header-logo-link,
+      header nav a[href="#top"].group {
+        width: 7.3rem !important;
+      }
+
+      nav[aria-label="Language"] {
+        right: calc(${safeRight} + 4.25rem) !important;
+      }
+    }
+  `;
+
+  document.head.appendChild(style);
+}
+
 function applyBlur(header: HTMLElement) {
   header.style.backdropFilter = "blur(18px)";
   header.style.setProperty("-webkit-backdrop-filter", "blur(18px)");
@@ -79,7 +178,7 @@ function stabilizeExistingHeader() {
 
   header.dataset.iborenStickyNav = "1";
   header.style.position = "sticky";
-  header.style.top = "0";
+  header.style.setProperty("top", safeTop, "important");
   header.style.zIndex = "90";
   header.style.width = "100%";
   applyBlur(header);
@@ -119,9 +218,10 @@ function createFallbackHeader() {
 
   const header = document.createElement("header");
   header.id = "iboren-global-nav";
+  header.dataset.iborenStickyNav = "1";
   header.className = "border-b border-gold/10 bg-night/95 text-porcelain shadow-xl";
   header.style.position = "sticky";
-  header.style.top = "0";
+  header.style.setProperty("top", safeTop, "important");
   header.style.zIndex = "90";
   applyBlur(header);
 
@@ -131,11 +231,11 @@ function createFallbackHeader() {
       <div class="hidden items-center gap-6 text-sm font-bold text-porcelain/72 md:flex">
         ${navItems.map(([label, href]) => `<a href="${href}" class="hover:text-gold">${label}</a>`).join("")}
       </div>
-      <div class="flex items-center gap-3 text-sm font-black uppercase tracking-[.12em]">
+      <div class="iboren-fallback-actions flex items-center gap-3 text-sm font-black uppercase tracking-[.12em]">
         <a href="${svHref}" class="rounded-full px-3 py-2 ${!isEnglish ? "bg-gold text-night" : "text-porcelain/72 hover:text-gold"}">SV</a>
         <a href="${enHref}" class="rounded-full px-3 py-2 ${isEnglish ? "bg-gold text-night" : "text-porcelain/72 hover:text-gold"}">EN</a>
         <a href="/login" class="hidden rounded-full border border-gold/30 px-4 py-2 text-porcelain/80 hover:text-gold sm:inline-flex">${isEnglish ? "Log in" : "Logga in"}</a>
-        <a href="${isEnglish ? "/en#booking" : "/#booking"}" class="rounded-full bg-gold px-4 py-2 text-night">${isEnglish ? "Send request" : "Skicka förfrågan"}</a>
+        <a href="${isEnglish ? "/en#booking" : "/#booking"}" class="iboren-fallback-cta rounded-full bg-gold px-4 py-2 text-night">${isEnglish ? "Send request" : "Skicka förfrågan"}</a>
       </div>
     </nav>
   `;
@@ -144,6 +244,7 @@ function createFallbackHeader() {
 }
 
 function applyGlobalNavigationFixes() {
+  ensureSafeNavStyles();
   createFallbackHeader();
   stabilizeExistingHeader();
   normalizeHeaderLanguageLinks();
