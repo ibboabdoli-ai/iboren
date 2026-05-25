@@ -18,9 +18,13 @@ function getAdminClient() {
   if (!url || !serviceKey) return null;
   return createClient(url, serviceKey, { auth: { persistSession: false, autoRefreshToken: false } });
 }
-function getToken(request: Request) {
-  const header = request.headers.get(HEADER_NAME.toLowerCase()) || "";
+function extractToken(header: string) {
   return header.toLowerCase().startsWith(`${TOKEN_WORD.toLowerCase()} `) ? header.slice(TOKEN_WORD.length + 1).trim() : "";
+}
+function getToken(request: Request) {
+  const customHeader = request.headers.get(HEADER_NAME.toLowerCase()) || "";
+  const standardHeader = request.headers.get("authorization") || "";
+  return extractToken(customHeader) || extractToken(standardHeader);
 }
 function cleanText(value: unknown, max = 200) { return String(value || "").replace(/[<>]/g, "").trim().slice(0, max); }
 function isStaffRole(value: unknown): value is StaffRole { return STAFF_ROLES.includes(String(value || "") as StaffRole); }
@@ -57,7 +61,7 @@ export async function GET(request: Request) {
   const assignments = (assignmentsData || []) as AssignmentRow[];
   const bookingIds = [...new Set(assignments.map((assignment) => assignment.booking_id))];
   const employeeIds = [...new Set(assignments.map((assignment) => assignment.employee_id))];
-  if (!assignments.length || !bookingIds.length) return NextResponse.json({ ok: true, role: staff.role, employee: staff.employee, jobs: [] });
+  if (!assignments.length || !bookingIds.length) return NextResponse.json({ ok: true, role: staff.role, employee: staff.employee, jobs: [], bookings: [] });
   const { data: bookingsData, error: bookingsError } = await staff.supabase.from("bookings").select("id, service, area, address, size_sqm, frequency, preferred_date, time_window, customer_name, customer_email, customer_phone, notes, status, created_at").in("id", bookingIds);
   if (bookingsError) return NextResponse.json({ ok: false, message: bookingsError.message }, { status: 500 });
   const { data: employeesData, error: employeesError } = await staff.supabase.from("employees").select("id, email, name, phone, role, active").in("id", employeeIds);
@@ -65,5 +69,6 @@ export async function GET(request: Request) {
   const bookings = new Map((bookingsData || []).map((booking: BookingRow) => [booking.id, booking]));
   const employees = new Map((employeesData || []).map((employee: EmployeeRow) => [employee.id, employee]));
   const jobs = assignments.map((assignment) => ({ assignment, booking: bookings.get(assignment.booking_id) || null, employee: employees.get(assignment.employee_id) || null })).filter((job) => Boolean(job.booking));
-  return NextResponse.json({ ok: true, role: staff.role, employee: staff.employee, jobs });
+  const supervisorBookings = jobs.map((job) => ({ ...(job.booking as BookingRow), status: job.assignment.status, cleaner_name: job.employee?.name || null, cleaner_email: job.employee?.email || null }));
+  return NextResponse.json({ ok: true, role: staff.role, employee: staff.employee, jobs, bookings: supervisorBookings });
 }
