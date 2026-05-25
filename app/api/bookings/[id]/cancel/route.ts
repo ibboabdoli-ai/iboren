@@ -4,6 +4,7 @@ import { createClient } from "@supabase/supabase-js";
 export const runtime = "nodejs";
 
 const EMAIL_WAIT_LIMIT_MS = 4500;
+const CANCELLATION_CUTOFF_HOURS = 48;
 
 type CancelledBooking = {
   id: string;
@@ -57,6 +58,24 @@ async function getUserFromRequest(request: Request) {
 
 function valueOrDash(value: string | number | null | undefined) {
   return value === null || value === undefined || value === "" ? "-" : String(value);
+}
+
+function scheduledStart(value: string | null) {
+  if (!value) return null;
+  const date = new Date(`${value}T08:00:00`);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function cancellationBlocked(booking: CancelledBooking) {
+  if (booking.status === "completed") return "Completed bookings cannot be cancelled.";
+  if (booking.status === "cancelled") return "Booking is already cancelled.";
+  const scheduled = scheduledStart(booking.preferred_date);
+  if (!scheduled) return null;
+  const hoursLeft = (scheduled.getTime() - Date.now()) / (60 * 60 * 1000);
+  if (hoursLeft <= CANCELLATION_CUTOFF_HOURS) {
+    return "Avbokning online är stängd mindre än 48 timmar före bokat datum. Kontakta Iboren på hej@iboren.se.";
+  }
+  return null;
 }
 
 function buildAdminCancelText(booking: CancelledBooking, userEmail: string | undefined) {
@@ -127,6 +146,22 @@ export async function PATCH(request: Request, { params }: { params: { id: string
   const auth = await getUserFromRequest(request);
   if (!auth.ok) {
     return NextResponse.json({ ok: false, message: auth.message }, { status: auth.status });
+  }
+
+  const { data: existing, error: readError } = await auth.supabase
+    .from("bookings")
+    .select("id, service, area, address, size_sqm, frequency, preferred_date, time_window, customer_name, customer_email, customer_phone, notes, status, created_at")
+    .eq("id", params.id)
+    .eq("user_id", auth.user.id)
+    .single();
+
+  if (readError) {
+    return NextResponse.json({ ok: false, message: readError.message }, { status: 500 });
+  }
+
+  const blockedReason = cancellationBlocked(existing as CancelledBooking);
+  if (blockedReason) {
+    return NextResponse.json({ ok: false, message: blockedReason }, { status: 409 });
   }
 
   const { data, error } = await auth.supabase
