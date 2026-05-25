@@ -88,3 +88,5 @@ export default function AdminTemplate({ children }: { children: ReactNode }) {
 
   return <>{children}</>;
 }
+
+// Build probe after Vercel rate limit.
