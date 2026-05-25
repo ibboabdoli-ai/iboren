@@ -46,6 +46,26 @@ function getLanguageState() {
   };
 }
 
+function getNavItems(isEnglish: boolean) {
+  return isEnglish
+    ? [
+        ["Services", "/en#services"],
+        ["Prices", "/en/prices"],
+        ["Request", "/en#booking"],
+        ["Work with us", "/en/jobs"],
+        ["About", "/en/about"],
+        ["Contact", "mailto:hej@iboren.se"]
+      ]
+    : [
+        ["Tjänster", "/#services"],
+        ["Priser", "/priser"],
+        ["Boka", "/#booking"],
+        ["Jobba hos oss", "/jobb"],
+        ["Om oss", "/om-iboren"],
+        ["Kontakt", "mailto:hej@iboren.se"]
+      ];
+}
+
 function logoHtml(isEnglish: boolean) {
   return `
     <span class="sr-only">${isEnglish ? "Iboren homepage" : "Iboren startsida"}</span>
@@ -75,6 +95,14 @@ function ensureSafeNavStyles() {
     nav[aria-label="Language"] {
       top: calc(${safeTop} + 1.25rem) !important;
       right: calc(${safeRight} + 5rem) !important;
+    }
+
+    #iboren-global-menu[hidden] {
+      display: none !important;
+    }
+
+    #iboren-global-nav .iboren-menu-button {
+      display: none;
     }
 
     @media (max-width: 767px) {
@@ -124,15 +152,79 @@ function ensureSafeNavStyles() {
         display: none !important;
       }
 
-      nav[aria-label="Language"] {
-        top: calc(${safeTop} + 1.05rem) !important;
-        right: calc(${safeRight} + 4.75rem) !important;
-        max-width: calc(100vw - 12rem) !important;
+      #iboren-global-nav .iboren-menu-button {
+        display: inline-grid !important;
+        width: 2.9rem !important;
+        height: 2.9rem !important;
+        min-width: 2.9rem !important;
+        place-items: center !important;
+        border-radius: 999px !important;
+        border: 1px solid rgba(212, 165, 116, .35) !important;
+        color: var(--gold) !important;
+        background: rgba(255, 253, 248, .06) !important;
       }
 
-      nav[aria-label="Language"] a {
-        padding: .55rem .7rem !important;
-        font-size: .72rem !important;
+      #iboren-global-nav .iboren-menu-line,
+      #iboren-global-nav .iboren-menu-line::before,
+      #iboren-global-nav .iboren-menu-line::after {
+        display: block;
+        width: 1.05rem;
+        height: 2px;
+        border-radius: 999px;
+        background: currentColor;
+        content: "";
+      }
+
+      #iboren-global-nav .iboren-menu-line {
+        position: relative;
+      }
+
+      #iboren-global-nav .iboren-menu-line::before {
+        position: absolute;
+        top: -.38rem;
+        left: 0;
+      }
+
+      #iboren-global-nav .iboren-menu-line::after {
+        position: absolute;
+        top: .38rem;
+        left: 0;
+      }
+
+      #iboren-global-menu {
+        border-top: 1px solid rgba(212, 165, 116, .12);
+        background: rgba(2, 5, 4, .98);
+        padding: .75rem 1rem max(1rem, env(safe-area-inset-bottom));
+      }
+
+      #iboren-global-menu .iboren-mobile-menu-inner {
+        width: min(100%, 25rem);
+        margin-inline: auto;
+        display: grid;
+        gap: .45rem;
+      }
+
+      #iboren-global-menu a {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        min-height: 3rem;
+        border-radius: 1rem;
+        padding: .85rem 1rem;
+        color: var(--porcelain);
+        font-weight: 800;
+        background: rgba(255, 253, 248, .045);
+      }
+
+      #iboren-global-menu .iboren-mobile-menu-cta {
+        margin-top: .35rem;
+        justify-content: center;
+        background: var(--gold);
+        color: var(--night);
+      }
+
+      nav[aria-label="Language"] {
+        display: none !important;
       }
 
       #top {
@@ -145,10 +237,6 @@ function ensureSafeNavStyles() {
       #iboren-global-nav .iboren-header-logo-link,
       header nav a[href="#top"].group {
         width: 7.3rem !important;
-      }
-
-      nav[aria-label="Language"] {
-        right: calc(${safeRight} + 4.25rem) !important;
       }
     }
   `;
@@ -198,23 +286,42 @@ function normalizeHeaderLanguageLinks() {
   });
 }
 
+function closeGlobalMenu() {
+  const menu = document.getElementById("iboren-global-menu");
+  const button = document.querySelector<HTMLButtonElement>("#iboren-global-nav .iboren-menu-button");
+  if (!menu || !button) return;
+  menu.hidden = true;
+  button.setAttribute("aria-expanded", "false");
+}
+
+function bindGlobalMenu() {
+  const header = document.getElementById("iboren-global-nav");
+  const button = document.querySelector<HTMLButtonElement>("#iboren-global-nav .iboren-menu-button");
+  const menu = document.getElementById("iboren-global-menu");
+  if (!header || !button || !menu || button.dataset.bound === "1") return;
+
+  button.dataset.bound = "1";
+  button.addEventListener("click", () => {
+    const willOpen = menu.hidden;
+    menu.hidden = !willOpen;
+    button.setAttribute("aria-expanded", String(willOpen));
+  });
+
+  menu.querySelectorAll("a").forEach((link) => {
+    link.addEventListener("click", closeGlobalMenu);
+  });
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") closeGlobalMenu();
+  });
+}
+
 function createFallbackHeader() {
   if (document.querySelector("header") || document.querySelector("#iboren-global-nav")) return;
 
   const { isEnglish, svHref, enHref } = getLanguageState();
-  const navItems = isEnglish
-    ? [
-        ["Request", "/en#booking"],
-        ["Prices", "/en/prices"],
-        ["Work with us", "/en/jobs"],
-        ["About us", "/en/about"]
-      ]
-    : [
-        ["Boka", "/#booking"],
-        ["Priser", "/priser"],
-        ["Jobba hos oss", "/jobb"],
-        ["Om Iboren", "/om-iboren"]
-      ];
+  const navItems = getNavItems(isEnglish);
+  const requestHref = isEnglish ? "/en#booking" : "/#booking";
 
   const header = document.createElement("header");
   header.id = "iboren-global-nav";
@@ -235,9 +342,17 @@ function createFallbackHeader() {
         <a href="${svHref}" class="rounded-full px-3 py-2 ${!isEnglish ? "bg-gold text-night" : "text-porcelain/72 hover:text-gold"}">SV</a>
         <a href="${enHref}" class="rounded-full px-3 py-2 ${isEnglish ? "bg-gold text-night" : "text-porcelain/72 hover:text-gold"}">EN</a>
         <a href="/login" class="hidden rounded-full border border-gold/30 px-4 py-2 text-porcelain/80 hover:text-gold sm:inline-flex">${isEnglish ? "Log in" : "Logga in"}</a>
-        <a href="${isEnglish ? "/en#booking" : "/#booking"}" class="iboren-fallback-cta rounded-full bg-gold px-4 py-2 text-night">${isEnglish ? "Send request" : "Skicka förfrågan"}</a>
+        <a href="${requestHref}" class="iboren-fallback-cta hidden rounded-full bg-gold px-4 py-2 text-night sm:inline-flex">${isEnglish ? "Send request" : "Skicka förfrågan"}</a>
+        <button type="button" class="iboren-menu-button" aria-label="${isEnglish ? "Open menu" : "Öppna meny"}" aria-controls="iboren-global-menu" aria-expanded="false"><span class="iboren-menu-line"></span></button>
       </div>
     </nav>
+    <div id="iboren-global-menu" hidden>
+      <div class="iboren-mobile-menu-inner">
+        ${navItems.map(([label, href]) => `<a href="${href}">${label}<span>→</span></a>`).join("")}
+        <a href="/login">${isEnglish ? "Log in" : "Logga in"}<span>→</span></a>
+        <a href="${requestHref}" class="iboren-mobile-menu-cta">${isEnglish ? "Send request" : "Skicka förfrågan"}</a>
+      </div>
+    </div>
   `;
 
   document.body.insertBefore(header, document.body.firstChild);
@@ -249,6 +364,7 @@ function applyGlobalNavigationFixes() {
   stabilizeExistingHeader();
   normalizeHeaderLanguageLinks();
   applyHeaderLogo();
+  bindGlobalMenu();
 }
 
 export default function HeaderLogo() {
