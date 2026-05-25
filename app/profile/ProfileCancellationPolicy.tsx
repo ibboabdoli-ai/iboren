@@ -34,6 +34,28 @@ function ensureStyle() {
       background: rgba(255, 253, 248, .9);
       box-shadow: inset 0 0 0 1px rgba(122, 32, 44, .12);
     }
+    .iboren-booking-toggle {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: .35rem;
+      border-radius: 999px;
+      padding: .65rem 1rem;
+      font-size: .75rem;
+      font-weight: 900;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      color: rgb(122, 32, 44);
+      background: rgb(255, 253, 248);
+      box-shadow: inset 0 0 0 1px rgba(122, 32, 44, .14);
+      white-space: nowrap;
+    }
+    .iboren-booking-details {
+      margin-top: 1rem;
+    }
+    .iboren-booking-details[hidden] {
+      display: none !important;
+    }
   `;
   document.head.appendChild(style);
 }
@@ -46,6 +68,47 @@ function lockCancelButton(button: HTMLButtonElement) {
     locked.textContent = "Kontakta Iboren";
     button.parentElement?.appendChild(locked);
   }
+}
+
+function isProfileBookingCard(card: HTMLElement) {
+  const text = card.innerText || "";
+  if (text.includes("Mina bokningar") || text.includes("Profiluppgifter") || text.includes("Verified account")) return false;
+  if (!text.includes("Storlek:") && !text.includes("SERIE ·")) return false;
+  return text.includes("Hemstädning") || text.includes("Flyttstädning") || text.includes("Kontorsstädning") || text.includes("Fönsterputs");
+}
+
+function patchBookingAccordion() {
+  document.querySelectorAll<HTMLElement>("article").forEach((card) => {
+    if (!isProfileBookingCard(card)) return;
+    if (card.dataset.iborenAccordionReady === "1") return;
+
+    const children = Array.from(card.children).filter((child): child is HTMLElement => child instanceof HTMLElement);
+    if (children.length < 2) return;
+
+    const header = children[0];
+    const details = document.createElement("div");
+    details.className = "iboren-booking-details";
+    details.hidden = true;
+    details.dataset.iborenBookingDetails = "1";
+
+    children.slice(1).forEach((child) => details.appendChild(child));
+    card.appendChild(details);
+
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "iboren-booking-toggle";
+    button.setAttribute("aria-expanded", "false");
+    button.textContent = "Visa detaljer ↓";
+    button.addEventListener("click", () => {
+      const isOpen = !details.hidden;
+      details.hidden = isOpen;
+      button.setAttribute("aria-expanded", String(!isOpen));
+      button.textContent = isOpen ? "Visa detaljer ↓" : "Dölj detaljer ↑";
+    });
+
+    header.appendChild(button);
+    card.dataset.iborenAccordionReady = "1";
+  });
 }
 
 function patchRecurringRows() {
@@ -80,12 +143,13 @@ function patchProfile() {
     }
   });
 
+  patchBookingAccordion();
   patchRecurringRows();
   patchSingleBookingCards();
 
   document.querySelectorAll<HTMLElement>("p").forEach((paragraph) => {
     if (paragraph.textContent?.includes("Öppna serien för att se varje besök")) {
-      paragraph.textContent = "Här visas dina bokningar grupperade per återkommande serie. Varje besök visas med eget datum och status.";
+      paragraph.textContent = "Här visas dina bokningar grupperade per återkommande serie. Tryck på Visa detaljer för att se besök och ändringar.";
     }
   });
 }
