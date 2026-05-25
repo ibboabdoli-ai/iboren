@@ -30,20 +30,31 @@ function patchAdminRecurringLabels() {
   });
 }
 
-function addSupervisorShortcut() {
-  if (document.querySelector('a[data-iboren-supervisor-shortcut="1"]')) return;
+function removeOldSupervisorShortcut() {
+  document.querySelector('a[data-iboren-supervisor-shortcut="1"]')?.remove();
+}
+
+function addSupervisorTopButton() {
+  if (document.querySelector('a[data-iboren-supervisor-top="1"]')) return;
+
+  const refreshButton = Array.from(document.querySelectorAll<HTMLButtonElement>("button"))
+    .find((button) => buttonText(button).includes("Uppdatera"));
+  const actions = refreshButton?.parentElement;
+  if (!actions) return;
+
   const link = document.createElement("a");
   link.href = "/supervisor";
-  link.dataset.iborenSupervisorShortcut = "1";
+  link.dataset.iborenSupervisorTop = "1";
   link.textContent = "Supervisor";
   link.setAttribute("aria-label", "Open supervisor daily operations");
-  link.className = "fixed bottom-4 right-4 z-[70] rounded-full bg-burgundy px-5 py-3 text-sm font-black text-porcelain shadow-luxe ring-1 ring-gold/30";
-  document.body.appendChild(link);
+  link.className = "inline-flex items-center justify-center gap-2 rounded-full border border-gold/35 bg-gold px-5 py-3 text-sm font-bold text-night";
+  actions.appendChild(link);
 }
 
 function patchAdminPage() {
   patchAdminRecurringLabels();
-  addSupervisorShortcut();
+  removeOldSupervisorShortcut();
+  addSupervisorTopButton();
 }
 
 function confirmBulkAction(event: MouseEvent) {
@@ -71,6 +82,7 @@ export default function AdminTemplate({ children }: { children: ReactNode }) {
       observer.disconnect();
       document.removeEventListener("click", confirmBulkAction, true);
       document.querySelector('a[data-iboren-supervisor-shortcut="1"]')?.remove();
+      document.querySelector('a[data-iboren-supervisor-top="1"]')?.remove();
     };
   }, []);
 
