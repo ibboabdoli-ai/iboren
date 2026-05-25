@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import type { ReactNode } from "react";
 import styles from "./admin.module.css";
 
@@ -18,6 +19,26 @@ export const metadata: Metadata = {
   }
 };
 
+const adminLinks = [
+  { href: "/admin", label: "Dashboard" },
+  { href: "/admin/time-reports", label: "Time reports" },
+  { href: "/admin/payroll-basis", label: "Payroll basis" },
+  { href: "/admin/payroll-paid", label: "Paid archive" }
+];
+
 export default function AdminLayout({ children }: { children: ReactNode }) {
-  return <div className={styles.adminShell}>{children}</div>;
+  return (
+    <div className={styles.adminShell}>
+      <nav className="sticky top-0 z-50 border-b border-burgundy/10 bg-cream/95 px-3 py-3 backdrop-blur md:px-6" aria-label="Admin quick navigation">
+        <div className="mx-auto flex max-w-7xl gap-2 overflow-x-auto">
+          {adminLinks.map((link) => (
+            <Link key={link.href} href={link.href} className="shrink-0 rounded-full bg-porcelain px-4 py-2 text-xs font-black uppercase tracking-[.12em] text-burgundy ring-1 ring-burgundy/10">
+              {link.label}
+            </Link>
+          ))}
+        </div>
+      </nav>
+      {children}
+    </div>
+  );
 }
