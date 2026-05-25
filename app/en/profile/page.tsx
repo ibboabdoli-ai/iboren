@@ -30,6 +30,28 @@ type ProfileForm = {
 };
 
 const emptyProfile: ProfileForm = { full_name: "", phone: "", default_area: "", default_address: "" };
+const CANCELLATION_CUTOFF_HOURS = 48;
+
+const displayMap: Record<string, string> = {
+  Hemstädning: "Home cleaning",
+  Flyttstädning: "Move-out cleaning",
+  Kontorsstädning: "Office cleaning",
+  Fönsterputs: "Window cleaning",
+  Engång: "One-time",
+  "Varje vecka": "Every week",
+  "Varannan vecka": "Every other week",
+  "Varje månad": "Every month",
+  Morgon: "Morning",
+  Förmiddag: "Late morning",
+  Eftermiddag: "Afternoon",
+  Kväll: "Evening",
+  Flexibel: "Flexible"
+};
+
+function display(value: string | null | undefined) {
+  if (!value) return "—";
+  return displayMap[value] || value;
+}
 
 function getSupabase() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -66,6 +88,28 @@ function statusClass(status: string | null) {
   return "bg-burgundy text-porcelain border-burgundy";
 }
 
+function cleanNotes(notes: string | null) {
+  if (!notes) return "";
+  return notes
+    .split(/\n---\s*Kundtyp & RUT\s*---/i)[0]
+    .split(/\n---\s*Recurring visit\s*---/i)[0]
+    .trim();
+}
+
+function scheduledStart(value: string | null) {
+  if (!value) return null;
+  const date = new Date(`${value}T08:00:00`);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function canCancelOnline(booking: Booking) {
+  if (booking.status === "cancelled" || booking.status === "completed") return false;
+  const scheduled = scheduledStart(booking.preferred_date);
+  if (!scheduled) return true;
+  const hoursLeft = (scheduled.getTime() - Date.now()) / (60 * 60 * 1000);
+  return hoursLeft > CANCELLATION_CUTOFF_HOURS;
+}
+
 export default function EnglishProfilePage() {
   const hasLoaded = useRef(false);
   const [loading, setLoading] = useState(true);
@@ -79,6 +123,7 @@ export default function EnglishProfilePage() {
   const [message, setMessage] = useState("");
   const [profileMessage, setProfileMessage] = useState("");
   const [showCancelled, setShowCancelled] = useState(false);
+  const [openBookingId, setOpenBookingId] = useState<string | null>(null);
 
   const visibleBookings = useMemo(() => showCancelled ? bookings : bookings.filter((booking) => booking.status !== "cancelled"), [bookings, showCancelled]);
   const cancelledCount = useMemo(() => bookings.filter((booking) => booking.status === "cancelled").length, [bookings]);
@@ -92,7 +137,7 @@ export default function EnglishProfilePage() {
       .from("bookings")
       .select("id, service, area, address, size_sqm, frequency, preferred_date, time_window, customer_name, customer_email, customer_phone, notes, status, created_at")
       .eq("user_id", currentUser.id)
-      .order("created_at", { ascending: false });
+      .order("preferred_date", { ascending: false });
 
     if (error) setMessage(`Could not load booking requests: ${error.message}`);
     else {
@@ -274,12 +319,49 @@ export default function EnglishProfilePage() {
               <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
                 <div><p className="text-xs font-black uppercase tracking-[.28em] text-burgundy/60">Booking requests</p><h2 className="display mt-2 text-4xl font-bold text-burgundy">My requests</h2></div>
                 <div className="grid w-full gap-3 sm:w-auto sm:grid-cols-2">
-                  <button onClick={() => setShowCancelled((value) => !value)} className="rounded-full border border-burgundy/15 px-4 py-2 text-sm font-bold text-burgundy">{showCancelled ? "Hide cancelled" : "Show cancelled"}</button>
+                  <button type="button" onClick={() => setShowCancelled((value) => !value)} className="rounded-full border border-burgundy/15 px-4 py-2 text-sm font-bold text-burgundy">{showCancelled ? "Hide cancelled" : "Show cancelled"}</button>
                   <Link href="/en#booking" className="rounded-full border border-gold/35 bg-gold px-4 py-2 text-center text-sm font-bold text-night">New booking request</Link>
                 </div>
               </div>
               {message && <p className="mb-4 rounded-2xl bg-burgundy/10 p-4 text-sm text-burgundy">{message}</p>}
-              {bookingsLoading ? <Loader2 className="h-7 w-7 animate-spin text-burgundy" /> : visibleBookings.length === 0 ? <p className="rounded-2xl bg-cream p-5 text-ink/65">No booking requests yet.</p> : <div className="grid gap-4">{visibleBookings.map((booking) => <article key={booking.id} className="rounded-[1.5rem] border border-burgundy/10 bg-cream p-5"><div className="flex flex-wrap items-start justify-between gap-3"><div><p className="text-xs font-black uppercase tracking-[.2em] text-burgundy/55">{booking.created_at ? new Date(booking.created_at).toLocaleDateString("en-SE") : ""}</p><h3 className="display mt-1 text-3xl font-bold text-burgundy">{booking.service}</h3><p className="mt-1 text-sm text-ink/65">{booking.area} · {booking.size_sqm ? `${booking.size_sqm} sqm` : "Size not set"}</p></div><span className={`rounded-full border px-3 py-1 text-xs font-black uppercase tracking-[.14em] ${statusClass(booking.status)}`}>{statusLabel(booking.status)}</span></div><div className="mt-4 grid gap-2 text-sm leading-6 text-ink/68 md:grid-cols-2"><p><strong>Address:</strong> {booking.address || "—"}</p><p><strong>Date:</strong> {booking.preferred_date || "—"}</p><p><strong>Time:</strong> {booking.time_window || "—"}</p><p><strong>Frequency:</strong> {booking.frequency || "—"}</p><p><strong>Phone:</strong> {booking.customer_phone || "—"}</p><p><strong>Email:</strong> {booking.customer_email}</p></div>{booking.notes && <pre className="mt-4 whitespace-pre-wrap rounded-2xl bg-white/60 p-4 text-sm leading-6 text-ink/62">{booking.notes}</pre>}{booking.status !== "cancelled" && <button onClick={() => cancelBooking(booking.id)} disabled={cancelingId === booking.id} className="mt-4 inline-flex items-center gap-2 rounded-full border border-red-200 bg-red-50 px-4 py-2 text-sm font-bold text-red-700">{cancelingId === booking.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <XCircle className="h-4 w-4" />} Cancel request</button>}</article>)}</div>}
+              {bookingsLoading ? <Loader2 className="h-7 w-7 animate-spin text-burgundy" /> : visibleBookings.length === 0 ? <p className="rounded-2xl bg-cream p-5 text-ink/65">No booking requests yet.</p> : (
+                <div className="grid gap-4">
+                  {visibleBookings.map((booking) => {
+                    const isOpen = openBookingId === booking.id;
+                    const notes = cleanNotes(booking.notes);
+                    const allowCancel = canCancelOnline(booking);
+                    const lockedCancel = booking.status !== "cancelled" && booking.status !== "completed" && !allowCancel;
+                    return (
+                      <article key={booking.id} className="rounded-[1.5rem] border border-burgundy/10 bg-cream p-5">
+                        <div className="flex flex-wrap items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <p className="text-xs font-black uppercase tracking-[.2em] text-burgundy/55">{booking.preferred_date || (booking.created_at ? new Date(booking.created_at).toLocaleDateString("en-SE") : "")}</p>
+                            <h3 className="display mt-1 break-words text-3xl font-bold text-burgundy">{display(booking.service)}</h3>
+                            <p className="mt-1 break-words text-sm text-ink/65">{booking.area} · {booking.size_sqm ? `${booking.size_sqm} square meters` : "Size not set"}</p>
+                          </div>
+                          <span className={`rounded-full border px-3 py-1 text-xs font-black uppercase tracking-[.14em] ${statusClass(booking.status)}`}>{statusLabel(booking.status)}</span>
+                        </div>
+                        <button type="button" onClick={() => setOpenBookingId(isOpen ? null : booking.id)} className="mt-4 inline-flex rounded-full border border-burgundy/15 bg-porcelain px-4 py-2 text-sm font-bold text-burgundy">{isOpen ? "Hide details ↑" : "Show details ↓"}</button>
+                        {isOpen && (
+                          <div className="mt-4">
+                            <div className="grid gap-2 text-sm leading-6 text-ink/68 md:grid-cols-2">
+                              <p><strong>Address:</strong> {booking.address || "—"}</p>
+                              <p><strong>Date:</strong> {booking.preferred_date || "—"}</p>
+                              <p><strong>Time:</strong> {display(booking.time_window)}</p>
+                              <p><strong>Frequency:</strong> {display(booking.frequency)}</p>
+                              <p><strong>Phone:</strong> {booking.customer_phone || "—"}</p>
+                              <p><strong>Email:</strong> {booking.customer_email}</p>
+                            </div>
+                            {notes && <pre className="mt-4 whitespace-pre-wrap rounded-2xl bg-white/60 p-4 text-sm leading-6 text-ink/62">{notes}</pre>}
+                            {allowCancel && <button type="button" onClick={() => cancelBooking(booking.id)} disabled={cancelingId === booking.id} className="mt-4 inline-flex items-center gap-2 rounded-full border border-red-200 bg-red-50 px-4 py-2 text-sm font-bold text-red-700">{cancelingId === booking.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <XCircle className="h-4 w-4" />} Cancel request</button>}
+                            {lockedCancel && <span className="mt-4 inline-flex rounded-full bg-white/70 px-4 py-2 text-sm font-bold text-ink/60 ring-1 ring-burgundy/10">Contact Iboren</span>}
+                          </div>
+                        )}
+                      </article>
+                    );
+                  })}
+                </div>
+              )}
             </section>
           </div>
         </div>
