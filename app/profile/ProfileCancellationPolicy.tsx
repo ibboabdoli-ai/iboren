@@ -40,6 +40,7 @@ function ensureStyle() {
       justify-content: center;
       gap: .35rem;
       border-radius: 999px;
+      margin-top: .75rem;
       padding: .65rem 1rem;
       font-size: .75rem;
       font-weight: 900;
@@ -50,12 +51,8 @@ function ensureStyle() {
       box-shadow: inset 0 0 0 1px rgba(122, 32, 44, .14);
       white-space: nowrap;
     }
-    .iboren-booking-details {
-      margin-top: 1rem;
-    }
-    .iboren-booking-details[hidden] {
-      display: none !important;
-    }
+    .iboren-booking-details { margin-top: 1rem; }
+    .iboren-booking-details:not(.iboren-open) { display: none !important; }
   `;
   document.head.appendChild(style);
 }
@@ -77,10 +74,29 @@ function isProfileBookingCard(card: HTMLElement) {
   return text.includes("Hemstädning") || text.includes("Flyttstädning") || text.includes("Kontorsstädning") || text.includes("Fönsterputs");
 }
 
+function closeAllBookingDetails(except?: HTMLElement) {
+  document.querySelectorAll<HTMLElement>(".iboren-booking-details").forEach((details) => {
+    if (except && details === except) return;
+    details.classList.remove("iboren-open");
+    details.hidden = true;
+    const card = details.closest("article");
+    const button = card?.querySelector<HTMLButtonElement>(".iboren-booking-toggle");
+    if (button) {
+      button.setAttribute("aria-expanded", "false");
+      button.textContent = "Visa detaljer ↓";
+    }
+  });
+}
+
 function patchBookingAccordion() {
   document.querySelectorAll<HTMLElement>("article").forEach((card) => {
     if (!isProfileBookingCard(card)) return;
-    if (card.dataset.iborenAccordionReady === "1") return;
+
+    const existingDetails = card.querySelector<HTMLElement>(".iboren-booking-details");
+    if (card.dataset.iborenAccordionReady === "1") {
+      if (existingDetails && !existingDetails.classList.contains("iboren-open")) existingDetails.hidden = true;
+      return;
+    }
 
     const children = Array.from(card.children).filter((child): child is HTMLElement => child instanceof HTMLElement);
     if (children.length < 2) return;
@@ -100,10 +116,12 @@ function patchBookingAccordion() {
     button.setAttribute("aria-expanded", "false");
     button.textContent = "Visa detaljer ↓";
     button.addEventListener("click", () => {
-      const isOpen = !details.hidden;
-      details.hidden = isOpen;
-      button.setAttribute("aria-expanded", String(!isOpen));
-      button.textContent = isOpen ? "Visa detaljer ↓" : "Dölj detaljer ↑";
+      const willOpen = !details.classList.contains("iboren-open");
+      closeAllBookingDetails(details);
+      details.classList.toggle("iboren-open", willOpen);
+      details.hidden = !willOpen;
+      button.setAttribute("aria-expanded", String(willOpen));
+      button.textContent = willOpen ? "Dölj detaljer ↑" : "Visa detaljer ↓";
     });
 
     header.appendChild(button);
@@ -148,8 +166,8 @@ function patchProfile() {
   patchSingleBookingCards();
 
   document.querySelectorAll<HTMLElement>("p").forEach((paragraph) => {
-    if (paragraph.textContent?.includes("Öppna serien för att se varje besök")) {
-      paragraph.textContent = "Här visas dina bokningar grupperade per återkommande serie. Tryck på Visa detaljer för att se besök och ändringar.";
+    if (paragraph.textContent?.includes("Öppna serien för att se varje besök") || paragraph.textContent?.includes("Varje besök visas med eget datum och status")) {
+      paragraph.textContent = "Här visas dina bokningar som kort. Tryck på Visa detaljer för att se besök och ändringar.";
     }
   });
 }
@@ -157,6 +175,7 @@ function patchProfile() {
 export default function ProfileCancellationPolicy() {
   useEffect(() => {
     patchProfile();
+    closeAllBookingDetails();
     const observer = new MutationObserver(patchProfile);
     observer.observe(document.body, { childList: true, subtree: true, characterData: true });
     return () => observer.disconnect();
