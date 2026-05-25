@@ -328,7 +328,7 @@ export default function AdminPage() {
           </div>
         </div>
 
-        <div className="mt-6 grid gap-3 md:grid-cols-2">
+        <div className="mt-6 grid gap-3 md:grid-cols-2 xl:grid-cols-6">
           <Link href="/admin/time-reports" className="rounded-[1.5rem] bg-porcelain p-5 text-burgundy shadow-soft ring-1 ring-burgundy/10 transition hover:-translate-y-0.5">
             <Clock3 className="mb-4 h-6 w-6" />
             <h2 className="display text-3xl font-bold">Time reports</h2>
@@ -337,7 +337,27 @@ export default function AdminPage() {
           <Link href="/admin/payroll-basis" className="rounded-[1.5rem] bg-porcelain p-5 text-burgundy shadow-soft ring-1 ring-burgundy/10 transition hover:-translate-y-0.5">
             <CreditCard className="mb-4 h-6 w-6" />
             <h2 className="display text-3xl font-bold">Payroll basis</h2>
-            <p className="mt-2 text-sm font-bold text-ink/55">Export CSV before using Mark as paid. Paid entries leave the open payroll basis.</p>
+            <p className="mt-2 text-sm font-bold text-ink/55">Export CSV before using Mark as paid.</p>
+          </Link>
+          <Link href="/supervisor" className="rounded-[1.5rem] bg-porcelain p-5 text-burgundy shadow-soft ring-1 ring-burgundy/10 transition hover:-translate-y-0.5">
+            <ShieldCheck className="mb-4 h-6 w-6" />
+            <h2 className="display text-3xl font-bold">Supervisor</h2>
+            <p className="mt-2 text-sm font-bold text-ink/55">Read-only overview of today, upcoming jobs and assigned cleaners.</p>
+          </Link>
+          <Link href="/cleaner" className="rounded-[1.5rem] bg-porcelain p-5 text-burgundy shadow-soft ring-1 ring-burgundy/10 transition hover:-translate-y-0.5">
+            <LayoutDashboard className="mb-4 h-6 w-6" />
+            <h2 className="display text-3xl font-bold">Cleaner SV</h2>
+            <p className="mt-2 text-sm font-bold text-ink/55">Open Swedish cleaner panel for offers, availability and time reports.</p>
+          </Link>
+          <Link href="/en/cleaner" className="rounded-[1.5rem] bg-porcelain p-5 text-burgundy shadow-soft ring-1 ring-burgundy/10 transition hover:-translate-y-0.5">
+            <LayoutDashboard className="mb-4 h-6 w-6" />
+            <h2 className="display text-3xl font-bold">Cleaner EN</h2>
+            <p className="mt-2 text-sm font-bold text-ink/55">Open English cleaner panel for staff checks and language testing.</p>
+          </Link>
+          <Link href="/profile" className="rounded-[1.5rem] bg-porcelain p-5 text-burgundy shadow-soft ring-1 ring-burgundy/10 transition hover:-translate-y-0.5">
+            <ArrowLeft className="mb-4 h-6 w-6" />
+            <h2 className="display text-3xl font-bold">Profile</h2>
+            <p className="mt-2 text-sm font-bold text-ink/55">Open customer profile view and booking overview.</p>
           </Link>
         </div>
 
