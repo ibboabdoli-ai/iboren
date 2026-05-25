@@ -38,6 +38,37 @@ function ensureStyle() {
   document.head.appendChild(style);
 }
 
+function lockCancelButton(button: HTMLButtonElement) {
+  button.classList.add("iboren-cancel-hidden");
+  if (!button.parentElement?.querySelector(".iboren-cancel-locked")) {
+    const locked = document.createElement("span");
+    locked.className = "iboren-cancel-locked";
+    locked.textContent = "Kontakta Iboren";
+    button.parentElement?.appendChild(locked);
+  }
+}
+
+function patchRecurringRows() {
+  document.querySelectorAll<HTMLElement>("div.rounded-xl").forEach((row) => {
+    const text = row.innerText || "";
+    const date = text.match(/\b20\d{2}-\d{2}-\d{2}\b/)?.[0];
+    if (!date || canCancelOnline(date)) return;
+    const button = Array.from(row.querySelectorAll<HTMLButtonElement>("button")).find((item) => item.textContent?.includes("Avboka"));
+    if (button) lockCancelButton(button);
+  });
+}
+
+function patchSingleBookingCards() {
+  document.querySelectorAll<HTMLElement>("article").forEach((card) => {
+    const text = card.innerText || "";
+    if (text.includes("SERIE ·")) return;
+    const date = text.match(/NÄSTA:\s*(20\d{2}-\d{2}-\d{2})/i)?.[1] || text.match(/Nästa:\s*(20\d{2}-\d{2}-\d{2})/i)?.[1] || text.match(/\b20\d{2}-\d{2}-\d{2}\b/)?.[0];
+    if (!date || canCancelOnline(date)) return;
+    const button = Array.from(card.querySelectorAll<HTMLButtonElement>("button")).find((item) => item.textContent?.includes("Avboka"));
+    if (button) lockCancelButton(button);
+  });
+}
+
 function patchProfile() {
   ensureStyle();
 
@@ -49,21 +80,8 @@ function patchProfile() {
     }
   });
 
-  document.querySelectorAll<HTMLElement>("div.rounded-xl").forEach((row) => {
-    const text = row.innerText || "";
-    const date = text.match(/\b20\d{2}-\d{2}-\d{2}\b/)?.[0];
-    if (!date) return;
-    const button = Array.from(row.querySelectorAll<HTMLButtonElement>("button")).find((item) => item.textContent?.includes("Avboka"));
-    if (!button) return;
-    if (canCancelOnline(date)) return;
-    button.classList.add("iboren-cancel-hidden");
-    if (!row.querySelector(".iboren-cancel-locked")) {
-      const locked = document.createElement("span");
-      locked.className = "iboren-cancel-locked";
-      locked.textContent = "Kontakta Iboren";
-      button.parentElement?.appendChild(locked);
-    }
-  });
+  patchRecurringRows();
+  patchSingleBookingCards();
 
   document.querySelectorAll<HTMLElement>("p").forEach((paragraph) => {
     if (paragraph.textContent?.includes("Öppna serien för att se varje besök")) {
