@@ -10,6 +10,7 @@ const svToEn: Record<string, string> = {
   "/om-iboren": "/en/about",
   "/privacy": "/en/privacy",
   "/terms": "/en/terms",
+  "/cleaner": "/en/cleaner",
   "/hemstadning": "/en/home-cleaning",
   "/flyttstadning": "/en/move-out-cleaning",
   "/kontorsstadning": "/en/office-cleaning",
