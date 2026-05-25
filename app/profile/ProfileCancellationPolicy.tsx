@@ -42,10 +42,10 @@ function ensureStyle() {
       border-radius: 999px;
       margin-top: .75rem;
       padding: .65rem 1rem;
-      font-size: .75rem;
+      font-size: .78rem;
       font-weight: 900;
-      letter-spacing: .12em;
-      text-transform: uppercase;
+      letter-spacing: .06em;
+      text-transform: none;
       color: rgb(122, 32, 44);
       background: rgb(255, 253, 248);
       box-shadow: inset 0 0 0 1px rgba(122, 32, 44, .14);
@@ -53,8 +53,15 @@ function ensureStyle() {
     }
     .iboren-booking-details { margin-top: 1rem; }
     .iboren-booking-details:not(.iboren-open) { display: none !important; }
+    .iboren-profile-label-normal { text-transform: none !important; letter-spacing: .04em !important; }
   `;
   document.head.appendChild(style);
+}
+
+function normalizeLabel(node: HTMLElement, text: string) {
+  node.textContent = text;
+  node.classList.add("iboren-profile-label-normal");
+  node.classList.remove("uppercase");
 }
 
 function lockCancelButton(button: HTMLButtonElement) {
@@ -150,18 +157,32 @@ function patchSingleBookingCards() {
   });
 }
 
-function patchProfile() {
-  ensureStyle();
-
+function patchCustomerLabels() {
   document.querySelectorAll<HTMLElement>("article").forEach((card) => {
     const text = card.innerText || "";
-    if (text.includes("SERIE ·") && text.includes("Klara") && text.includes("NY")) {
-      const status = Array.from(card.querySelectorAll<HTMLElement>("p, span")).find((node) => node.textContent?.trim() === "NY");
-      if (status) status.textContent = "PÅGÅENDE";
+    if (!isProfileBookingCard(card)) return;
+
+    Array.from(card.querySelectorAll<HTMLElement>("p, span")).forEach((node) => {
+      const value = node.textContent?.trim();
+      if (value === "NY") normalizeLabel(node, "Ny");
+      if (value === "KLAR") normalizeLabel(node, "Klar");
+      if (value === "PÅGÅENDE") normalizeLabel(node, "Pågående");
+      if (value === "SERIE · 8 BESÖK") normalizeLabel(node, "Serie · 8 besök");
+      if (value?.startsWith("SERIE ·") && value.includes("BESÖK")) normalizeLabel(node, value.replace("SERIE", "Serie").replace("BESÖK", "besök"));
+      if (value?.startsWith("NÄSTA:")) normalizeLabel(node, value.replace("NÄSTA:", "Nästa:"));
+    });
+
+    if (text.includes("Serie ·") && text.includes("Klar") && text.includes("Ny")) {
+      const status = Array.from(card.querySelectorAll<HTMLElement>("p, span")).find((node) => node.textContent?.trim() === "Ny");
+      if (status) normalizeLabel(status, "Pågående");
     }
   });
+}
 
+function patchProfile() {
+  ensureStyle();
   patchBookingAccordion();
+  patchCustomerLabels();
   patchRecurringRows();
   patchSingleBookingCards();
 
