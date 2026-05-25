@@ -51,12 +51,25 @@ async function verifyStaff(request: Request) {
   return { ok: true as const, supabase, user, email, role: roleRow.role as StaffRole, employee: createdEmployee };
 }
 
+async function getOverviewBookings(staff: { supabase: ReturnType<typeof getAdminClient> }) {
+  if (!staff.supabase) return { data: null, error: { message: "Missing Supabase admin environment variables." } };
+  return staff.supabase
+    .from("bookings")
+    .select("id, service, area, address, size_sqm, frequency, preferred_date, time_window, customer_name, customer_email, customer_phone, notes, status, created_at")
+    .order("preferred_date", { ascending: true });
+}
+
 export async function GET(request: Request) {
   const staff = await verifyStaff(request);
   if (!staff.ok) return NextResponse.json({ ok: false, message: staff.message }, { status: staff.status });
-  let assignmentQuery = staff.supabase.from("booking_assignments").select("id, booking_id, employee_id, status, note, created_at, updated_at").in("status", ["assigned", "accepted", "confirmed"]).order("created_at", { ascending: false });
-  if (staff.role === "cleaner") assignmentQuery = assignmentQuery.eq("employee_id", staff.employee.id);
-  const { data: assignmentsData, error: assignmentsError } = await assignmentQuery;
+
+  if (staff.role !== "cleaner") {
+    const { data, error } = await getOverviewBookings(staff);
+    if (error) return NextResponse.json({ ok: false, message: error.message }, { status: 500 });
+    return NextResponse.json({ ok: true, role: staff.role, employee: staff.employee, jobs: [], bookings: (data || []) as BookingRow[] });
+  }
+
+  const { data: assignmentsData, error: assignmentsError } = await staff.supabase.from("booking_assignments").select("id, booking_id, employee_id, status, note, created_at, updated_at").in("status", ["assigned", "accepted", "confirmed"]).eq("employee_id", staff.employee.id).order("created_at", { ascending: false });
   if (assignmentsError) return NextResponse.json({ ok: false, message: assignmentsError.message }, { status: 500 });
   const assignments = (assignmentsData || []) as AssignmentRow[];
   const bookingIds = [...new Set(assignments.map((assignment) => assignment.booking_id))];
@@ -69,6 +82,5 @@ export async function GET(request: Request) {
   const bookings = new Map((bookingsData || []).map((booking: BookingRow) => [booking.id, booking]));
   const employees = new Map((employeesData || []).map((employee: EmployeeRow) => [employee.id, employee]));
   const jobs = assignments.map((assignment) => ({ assignment, booking: bookings.get(assignment.booking_id) || null, employee: employees.get(assignment.employee_id) || null })).filter((job) => Boolean(job.booking));
-  const supervisorBookings = jobs.map((job) => ({ ...(job.booking as BookingRow), status: job.assignment.status, cleaner_name: job.employee?.name || null, cleaner_email: job.employee?.email || null }));
-  return NextResponse.json({ ok: true, role: staff.role, employee: staff.employee, jobs, bookings: supervisorBookings });
+  return NextResponse.json({ ok: true, role: staff.role, employee: staff.employee, jobs, bookings: [] });
 }
