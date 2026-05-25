@@ -38,8 +38,8 @@ function getSupabase() {
 function roleLabel(role: Role | undefined) {
   if (role === "admin") return "Admin";
   if (role === "supervisor") return "Supervisor";
-  if (role === "cleaner") return "Cleaner";
-  return "Customer";
+  if (role === "cleaner") return "Städare";
+  return "Kund";
 }
 
 function roleBadgeClass(role: Role | undefined) {
@@ -90,10 +90,10 @@ export default function CleanerPage() {
         headers[headerName] = `${tokenWord} ${session.access_token}`;
         const response = await fetch("/api/me/role", { headers });
         const result = await response.json().catch(() => null) as RoleResponse | null;
-        if (!response.ok || !result?.ok) throw new Error(result?.message || "Could not check role.");
+        if (!response.ok || !result?.ok) throw new Error(result?.message || "Kunde inte kontrollera roll.");
         if (!cancelled) setRoleInfo(result);
       } catch (error) {
-        if (!cancelled) setMessage(error instanceof Error ? error.message : "Could not check role.");
+        if (!cancelled) setMessage(error instanceof Error ? error.message : "Kunde inte kontrollera roll.");
       }
 
       if (!cancelled) setLoading(false);
@@ -111,10 +111,10 @@ export default function CleanerPage() {
         <section className="luxe-container max-w-2xl rounded-[2rem] bg-porcelain p-8 shadow-soft">
           <Link href="/" className="mb-8 inline-flex items-center gap-2 text-sm font-bold text-burgundy"><ArrowLeft size={17} /> Tillbaka</Link>
           <div className="mb-6 grid h-14 w-14 place-items-center rounded-full bg-burgundy text-porcelain"><Lock size={24} /></div>
-          <h1 className="display text-5xl font-bold text-burgundy">Cleaner panel</h1>
-          <p className="mt-4 leading-8 text-ink/70">You need to log in before we can check your staff access.</p>
+          <h1 className="display text-5xl font-bold text-burgundy">Städarpanel</h1>
+          <p className="mt-4 leading-8 text-ink/70">Du behöver logga in innan vi kan kontrollera din personalbehörighet.</p>
           {message && <p className="mt-4 rounded-2xl bg-red-100 p-4 text-sm font-bold text-red-800">{message}</p>}
-          <Link href="/login" className="btn-primary mt-7">Log in</Link>
+          <Link href="/login" className="btn-primary mt-7">Logga in</Link>
         </section>
       </main>
     );
@@ -126,13 +126,13 @@ export default function CleanerPage() {
         <section className="luxe-container max-w-2xl rounded-[2rem] bg-porcelain p-8 shadow-soft">
           <Link href="/profile" className="mb-8 inline-flex items-center gap-2 text-sm font-bold text-burgundy"><ArrowLeft size={17} /> Tillbaka till profil</Link>
           <div className="mb-6 grid h-14 w-14 place-items-center rounded-full bg-red-100 text-red-800"><Lock size={24} /></div>
-          <h1 className="display text-5xl font-bold text-burgundy">Access denied</h1>
-          <p className="mt-4 leading-8 text-ink/70">This page is only for cleaners, supervisors and admins.</p>
+          <h1 className="display text-5xl font-bold text-burgundy">Ingen åtkomst</h1>
+          <p className="mt-4 leading-8 text-ink/70">Den här sidan är bara för städare, supervisor och admin.</p>
           <div className="mt-6 rounded-2xl bg-cream p-4 text-sm leading-7 text-ink/70">
-            <p><strong>Email:</strong> {user.email}</p>
-            <p><strong>Current role:</strong> <span className={`ml-2 rounded-full px-3 py-1 text-xs font-black uppercase tracking-[.14em] ${roleBadgeClass(roleInfo?.role)}`}>{roleLabel(roleInfo?.role)}</span></p>
+            <p><strong>E-post:</strong> {user.email}</p>
+            <p><strong>Nuvarande roll:</strong> <span className={`ml-2 rounded-full px-3 py-1 text-xs font-black uppercase tracking-[.14em] ${roleBadgeClass(roleInfo?.role)}`}>{roleLabel(roleInfo?.role)}</span></p>
           </div>
-          <p className="mt-5 text-sm leading-7 text-ink/60">Ask an admin to add your email as cleaner or supervisor in Admin → User & staff roles.</p>
+          <p className="mt-5 text-sm leading-7 text-ink/60">Be en admin lägga till din e-post som städare eller supervisor i Admin → User & staff roles.</p>
         </section>
       </main>
     );
@@ -146,9 +146,9 @@ export default function CleanerPage() {
           <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
             <div>
               <div className="mb-5 grid h-14 w-14 place-items-center rounded-full bg-gold text-ink"><UserRound size={25} /></div>
-              <p className="text-xs font-bold uppercase tracking-[.32em] text-gold">Iboren staff</p>
-              <h1 className="display mt-3 text-5xl font-bold leading-[.9] md:text-7xl">Cleaner panel</h1>
-              <p className="mt-5 max-w-2xl leading-8 text-porcelain/70">View assigned jobs, add them to your calendar and update your availability.</p>
+              <p className="text-xs font-bold uppercase tracking-[.32em] text-gold">Iboren personal</p>
+              <h1 className="display mt-3 text-5xl font-bold leading-[.9] md:text-7xl">Städarpanel</h1>
+              <p className="mt-5 max-w-2xl leading-8 text-porcelain/70">Se tilldelade jobb, lägg till dem i kalendern och uppdatera din tillgänglighet.</p>
             </div>
             <div className="rounded-[1.5rem] border border-gold/15 bg-night/20 p-4 text-sm font-bold text-porcelain/80">
               <p>{roleInfo?.email || user.email}</p>
@@ -165,8 +165,8 @@ export default function CleanerPage() {
               <div className="flex items-center gap-4">
                 <span className="grid h-11 w-11 place-items-center rounded-full bg-cream text-burgundy"><CalendarDays size={18} /></span>
                 <div>
-                  <h2 className="display text-3xl font-bold text-burgundy">Availability</h2>
-                  <p className="mt-1 text-sm text-ink/55">Open only when you need to change working days or hours.</p>
+                  <h2 className="display text-3xl font-bold text-burgundy">Tillgänglighet</h2>
+                  <p className="mt-1 text-sm text-ink/55">Öppna bara när du behöver ändra arbetsdagar eller tider.</p>
                 </div>
               </div>
               <ChevronDown className="h-5 w-5 text-burgundy transition-transform group-open:rotate-180" />
@@ -178,8 +178,8 @@ export default function CleanerPage() {
 
           <article className="rounded-[2rem] bg-porcelain p-6 shadow-soft">
             <Lock className="mb-5 text-burgundy" />
-            <h2 className="display text-3xl font-bold text-burgundy">Access control</h2>
-            <p className="mt-3 leading-7 text-ink/65">Only cleaner, supervisor and admin roles can open this panel.</p>
+            <h2 className="display text-3xl font-bold text-burgundy">Åtkomstkontroll</h2>
+            <p className="mt-3 leading-7 text-ink/65">Endast rollerna städare, supervisor och admin kan öppna den här panelen.</p>
           </article>
         </div>
       </section>
