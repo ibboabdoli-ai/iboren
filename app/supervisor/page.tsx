@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { createClient, User } from "@supabase/supabase-js";
-import { ArrowLeft, CalendarDays, Loader2, RefreshCw, ShieldCheck } from "lucide-react";
+import { ArrowLeft, CalendarDays, Loader2, RefreshCw, ShieldCheck, UserRound } from "lucide-react";
 
 type Job = {
   id: string;
@@ -16,6 +16,9 @@ type Job = {
   customer_name: string;
   customer_phone: string | null;
   status: string | null;
+  assignment_status?: string | null;
+  cleaner_name?: string | null;
+  cleaner_email?: string | null;
 };
 
 const serviceLabels: Record<string, string> = {
@@ -63,10 +66,14 @@ function displaySize(size: number | null) {
   return size ? `${size} square meters` : "Size not set";
 }
 
+function operationalStatus(job: Job) {
+  return job.assignment_status || job.status || "new";
+}
+
 function statusLabel(status: string | null) {
   if (status === "cancelled") return "Cancelled";
-  if (status === "accepted") return "Available";
-  if (status === "assigned") return "Offer";
+  if (status === "accepted") return "Cleaner available";
+  if (status === "assigned") return "Offer sent";
   if (status === "confirmed") return "Confirmed";
   if (status === "completed") return "Completed";
   return "New";
@@ -75,9 +82,14 @@ function statusLabel(status: string | null) {
 function statusClass(status: string | null) {
   if (status === "cancelled") return "bg-red-100 text-red-800 ring-1 ring-red-200";
   if (status === "accepted") return "bg-green-100 text-green-800 ring-1 ring-green-200";
+  if (status === "assigned") return "bg-gold text-ink ring-1 ring-gold/20";
   if (status === "confirmed") return "bg-burgundy text-porcelain ring-1 ring-burgundy/20";
   if (status === "completed") return "bg-ink text-porcelain ring-1 ring-ink/20";
-  return "bg-gold text-ink ring-1 ring-gold/20";
+  return "bg-porcelain text-burgundy ring-1 ring-burgundy/15";
+}
+
+function cleanerLabel(job: Job) {
+  return job.cleaner_name || job.cleaner_email || "Not assigned";
 }
 
 export default function SupervisorPage() {
@@ -90,11 +102,12 @@ export default function SupervisorPage() {
   const today = isoDate(0);
   const next7 = isoDate(7);
 
-  const visibleJobs = useMemo(() => jobs.filter((job) => job.status !== "cancelled"), [jobs]);
+  const visibleJobs = useMemo(() => jobs.filter((job) => operationalStatus(job) !== "cancelled"), [jobs]);
   const todaysJobs = useMemo(() => visibleJobs.filter((job) => job.preferred_date === today), [visibleJobs, today]);
-  const next7Jobs = useMemo(() => visibleJobs.filter((job) => job.status !== "completed" && inRange(job.preferred_date, today, next7)), [visibleJobs, today, next7]);
-  const openJobs = useMemo(() => visibleJobs.filter((job) => job.status !== "completed"), [visibleJobs]);
-  const completedToday = useMemo(() => todaysJobs.filter((job) => job.status === "completed").length, [todaysJobs]);
+  const next7Jobs = useMemo(() => visibleJobs.filter((job) => operationalStatus(job) !== "completed" && inRange(job.preferred_date, today, next7)), [visibleJobs, today, next7]);
+  const openJobs = useMemo(() => visibleJobs.filter((job) => operationalStatus(job) !== "completed"), [visibleJobs]);
+  const completedToday = useMemo(() => todaysJobs.filter((job) => operationalStatus(job) === "completed").length, [todaysJobs]);
+  const unassignedJobs = useMemo(() => openJobs.filter((job) => !job.cleaner_name && !job.cleaner_email).length, [openJobs]);
 
   async function getToken() {
     const supabase = getSupabase();
@@ -167,7 +180,7 @@ export default function SupervisorPage() {
               <div className="mb-5 grid h-14 w-14 place-items-center rounded-full bg-gold text-ink"><ShieldCheck size={25} /></div>
               <p className="text-xs font-bold uppercase tracking-[.32em] text-gold">Iboren Supervisor</p>
               <h1 className="display mt-3 text-5xl font-bold leading-[.9] md:text-7xl">Daily operations</h1>
-              <p className="mt-5 max-w-2xl leading-8 text-porcelain/70">Read-only operational overview for assigned jobs.</p>
+              <p className="mt-5 max-w-2xl leading-8 text-porcelain/70">Read-only operational overview for upcoming jobs, cleaner assignment and completion status.</p>
               <p className="mt-4 inline-flex rounded-full border border-gold/25 bg-night/20 px-4 py-2 text-xs font-black uppercase tracking-[.18em] text-gold">Read-only mode</p>
             </div>
             <button onClick={loadJobs} className="inline-flex items-center justify-center gap-2 rounded-full bg-porcelain px-5 py-3 text-sm font-bold text-burgundy">
@@ -179,15 +192,16 @@ export default function SupervisorPage() {
 
         {message && <p className="mt-5 rounded-2xl bg-burgundy/10 p-4 text-sm font-bold text-burgundy">{message}</p>}
 
-        <div className="mt-6 grid gap-4 md:grid-cols-4">
+        <div className="mt-6 grid gap-4 md:grid-cols-5">
           <Stat title="Today" value={todaysJobs.length} />
           <Stat title="Completed today" value={completedToday} />
           <Stat title="Next 7 days" value={next7Jobs.length} />
           <Stat title="Open jobs" value={openJobs.length} />
+          <Stat title="Unassigned" value={unassignedJobs} />
         </div>
 
-        <JobList title="Today’s jobs" hint="Assigned visits scheduled for today." jobs={todaysJobs} loading={jobsLoading} />
-        <JobList title="Next 7 days" hint="Upcoming assigned visits, excluding completed and cancelled jobs." jobs={next7Jobs} loading={jobsLoading} />
+        <JobList title="Today’s jobs" hint="All active visits scheduled for today." jobs={todaysJobs} loading={jobsLoading} />
+        <JobList title="Next 7 days" hint="Upcoming active visits, excluding completed and cancelled jobs." jobs={next7Jobs} loading={jobsLoading} />
       </section>
     </main>
   );
@@ -213,6 +227,7 @@ function JobList({ title, hint, jobs, loading }: { title: string; hint: string; 
 }
 
 function JobCard({ job }: { job: Job }) {
+  const status = operationalStatus(job);
   return (
     <article className="rounded-[1.5rem] border border-burgundy/10 bg-cream p-5">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -221,12 +236,13 @@ function JobCard({ job }: { job: Job }) {
           <h3 className="display mt-2 break-words text-3xl font-bold text-burgundy">{displayService(job.service)}</h3>
           <p className="mt-2 break-words text-sm font-bold text-ink/65">{job.area}{job.address ? ` · ${job.address}` : ""}</p>
         </div>
-        <span className={`w-fit rounded-full px-3 py-1 text-xs font-black uppercase tracking-[.14em] ${statusClass(job.status)}`}>{statusLabel(job.status)}</span>
+        <span className={`w-fit rounded-full px-3 py-1 text-xs font-black uppercase tracking-[.14em] ${statusClass(status)}`}>{statusLabel(status)}</span>
       </div>
-      <div className="mt-4 grid gap-2 rounded-2xl bg-porcelain/70 p-4 text-sm text-ink/65 md:grid-cols-3">
+      <div className="mt-4 grid gap-2 rounded-2xl bg-porcelain/70 p-4 text-sm text-ink/65 md:grid-cols-4">
         <p><strong>Customer:</strong> {job.customer_name}</p>
         <p><strong>Phone:</strong> {job.customer_phone || "—"}</p>
         <p><strong>Size:</strong> {displaySize(job.size_sqm)}</p>
+        <p className="flex items-center gap-2"><UserRound className="h-4 w-4 text-burgundy" /><span><strong>Cleaner:</strong> {cleanerLabel(job)}</span></p>
       </div>
     </article>
   );

@@ -12,6 +12,8 @@ type EmployeeRow = { id: string; email: string; name: string; phone: string | nu
 type AssignmentRow = { id: string; booking_id: string; employee_id: string; status: string; note: string | null; created_at: string; updated_at: string };
 type BookingRow = { id: string; service: string; area: string; address: string | null; size_sqm: number | null; frequency: string | null; preferred_date: string | null; time_window: string | null; customer_name: string; customer_email: string; customer_phone: string | null; notes: string | null; status: string | null; created_at: string };
 
+type SupervisorBookingRow = BookingRow & { cleaner_name?: string | null; cleaner_email?: string | null; assignment_status?: string | null };
+
 function getAdminClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -51,12 +53,65 @@ async function verifyStaff(request: Request) {
   return { ok: true as const, supabase, user, email, role: roleRow.role as StaffRole, employee: createdEmployee };
 }
 
-async function getOverviewBookings(staff: { supabase: ReturnType<typeof getAdminClient> }) {
-  if (!staff.supabase) return { data: null, error: { message: "Missing Supabase admin environment variables." } };
-  return staff.supabase
+function assignmentPriority(status: string | null | undefined) {
+  if (status === "confirmed") return 5;
+  if (status === "completed") return 4;
+  if (status === "accepted") return 3;
+  if (status === "assigned") return 2;
+  return 1;
+}
+
+async function getOverviewBookings(staff: { supabase: NonNullable<ReturnType<typeof getAdminClient>> }) {
+  const { data, error } = await staff.supabase
     .from("bookings")
     .select("id, service, area, address, size_sqm, frequency, preferred_date, time_window, customer_name, customer_email, customer_phone, notes, status, created_at")
     .order("preferred_date", { ascending: true });
+
+  if (error) return { data: null, error };
+
+  const bookings = (data || []) as BookingRow[];
+  const bookingIds = bookings.map((booking) => booking.id);
+  if (!bookingIds.length) return { data: [] as SupervisorBookingRow[], error: null };
+
+  const { data: assignmentsData, error: assignmentsError } = await staff.supabase
+    .from("booking_assignments")
+    .select("id, booking_id, employee_id, status, note, created_at, updated_at")
+    .in("booking_id", bookingIds)
+    .in("status", ["assigned", "accepted", "confirmed", "completed"]);
+
+  if (assignmentsError) return { data: null, error: assignmentsError };
+
+  const assignments = (assignmentsData || []) as AssignmentRow[];
+  const employeeIds = [...new Set(assignments.map((assignment) => assignment.employee_id))];
+  const employees = new Map<string, EmployeeRow>();
+
+  if (employeeIds.length) {
+    const { data: employeesData, error: employeesError } = await staff.supabase
+      .from("employees")
+      .select("id, email, name, phone, role, active")
+      .in("id", employeeIds);
+    if (employeesError) return { data: null, error: employeesError };
+    (employeesData || []).forEach((employee: EmployeeRow) => employees.set(employee.id, employee));
+  }
+
+  const assignmentByBooking = new Map<string, AssignmentRow>();
+  assignments.forEach((assignment) => {
+    const current = assignmentByBooking.get(assignment.booking_id);
+    if (!current || assignmentPriority(assignment.status) > assignmentPriority(current.status)) assignmentByBooking.set(assignment.booking_id, assignment);
+  });
+
+  const enriched = bookings.map((booking) => {
+    const assignment = assignmentByBooking.get(booking.id);
+    const employee = assignment ? employees.get(assignment.employee_id) : null;
+    return {
+      ...booking,
+      assignment_status: assignment?.status || null,
+      cleaner_name: employee?.name || null,
+      cleaner_email: employee?.email || null
+    };
+  });
+
+  return { data: enriched, error: null };
 }
 
 export async function GET(request: Request) {
@@ -66,7 +121,7 @@ export async function GET(request: Request) {
   if (staff.role !== "cleaner") {
     const { data, error } = await getOverviewBookings(staff);
     if (error) return NextResponse.json({ ok: false, message: error.message }, { status: 500 });
-    return NextResponse.json({ ok: true, role: staff.role, employee: staff.employee, jobs: [], bookings: (data || []) as BookingRow[] });
+    return NextResponse.json({ ok: true, role: staff.role, employee: staff.employee, jobs: [], bookings: data || [] });
   }
 
   const { data: assignmentsData, error: assignmentsError } = await staff.supabase.from("booking_assignments").select("id, booking_id, employee_id, status, note, created_at, updated_at").in("status", ["assigned", "accepted", "confirmed"]).eq("employee_id", staff.employee.id).order("created_at", { ascending: false });
