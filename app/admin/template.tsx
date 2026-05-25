@@ -30,6 +30,31 @@ function patchAdminRecurringLabels() {
   });
 }
 
+function addSupervisorLink() {
+  if (document.querySelector('a[href="/supervisor"]')) return;
+  const payrollLink = document.querySelector<HTMLAnchorElement>('a[href="/admin/payroll-basis"]');
+  const grid = payrollLink?.parentElement;
+  if (!grid) return;
+
+  grid.classList.remove("md:grid-cols-2");
+  grid.classList.add("md:grid-cols-3");
+
+  const link = document.createElement("a");
+  link.href = "/supervisor";
+  link.className = "rounded-[1.5rem] bg-porcelain p-5 text-burgundy shadow-soft ring-1 ring-burgundy/10 transition hover:-translate-y-0.5";
+  link.innerHTML = `
+    <div class="mb-4 grid h-6 w-6 place-items-center rounded-full bg-burgundy/10 text-burgundy">S</div>
+    <h2 class="display text-3xl font-bold">Supervisor</h2>
+    <p class="mt-2 text-sm font-bold text-ink/55">Daily operations overview for today and the next 7 days.</p>
+  `;
+  grid.appendChild(link);
+}
+
+function patchAdminPage() {
+  patchAdminRecurringLabels();
+  addSupervisorLink();
+}
+
 function confirmBulkAction(event: MouseEvent) {
   const button = event.target instanceof Element ? event.target.closest<HTMLButtonElement>("button") : null;
   if (!button || button.disabled) return;
@@ -47,9 +72,9 @@ function confirmBulkAction(event: MouseEvent) {
 
 export default function AdminTemplate({ children }: { children: ReactNode }) {
   useEffect(() => {
-    patchAdminRecurringLabels();
+    patchAdminPage();
     document.addEventListener("click", confirmBulkAction, true);
-    const observer = new MutationObserver(patchAdminRecurringLabels);
+    const observer = new MutationObserver(patchAdminPage);
     observer.observe(document.body, { childList: true, subtree: true, characterData: true });
     return () => {
       observer.disconnect();
