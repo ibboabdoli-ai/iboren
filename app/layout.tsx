@@ -3,6 +3,7 @@ import Script from "next/script";
 import StructuredData from "./StructuredData";
 import GoogleAddressEnhancer from "./GoogleAddressEnhancer";
 import BookingFormValidationEnhancer from "./BookingFormValidationEnhancer";
+import MobileMenuPolish from "./MobileMenuPolish";
 import PwaManifestSwitcher from "./PwaManifestSwitcher";
 import "./globals.css";
 
@@ -71,6 +72,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <GoogleAddressEnhancer />
         <BookingFormValidationEnhancer />
         <PwaManifestSwitcher />
+        <MobileMenuPolish />
         {children}
         <Script id="tawk-to-chat" src={chatSource} strategy="afterInteractive" />
       </body>
