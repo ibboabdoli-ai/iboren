@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import Script from "next/script";
 import StructuredData from "./StructuredData";
 import GoogleAddressEnhancer from "./GoogleAddressEnhancer";
 import BookingFormValidationEnhancer from "./BookingFormValidationEnhancer";
@@ -69,6 +70,19 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <BookingFormValidationEnhancer />
         <PwaManifestSwitcher />
         {children}
+        <div id="tawk_6895ddde56ddd81926b30080" />
+        <Script id="tawk-to-chat" strategy="afterInteractive">
+          {`var Tawk_API=Tawk_API||{}, Tawk_LoadStart=new Date();
+Tawk_API.embedded='tawk_6895ddde56ddd81926b30080';
+(function(){
+var s1=document.createElement("script"),s0=document.getElementsByTagName("script")[0];
+s1.async=true;
+s1.src='https://embed.tawk.to/6895ddde56ddd81926b30080/1jpi1456c';
+s1.charset='UTF-8';
+s1.setAttribute('crossorigin','*');
+s0.parentNode.insertBefore(s1,s0);
+})();`}
+        </Script>
       </body>
     </html>
   );
