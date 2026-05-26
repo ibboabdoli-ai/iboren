@@ -9,6 +9,8 @@ import "./globals.css";
 const title = "Iboren – Städning i Södertälje och Stockholm";
 const description = "Skicka bokningsförfrågan för hemstädning, flyttstädning, kontorsstädning och fönsterputs med Iboren. Prisindikation, RUT-information och snabb återkoppling i Södertälje och Stockholm.";
 const previewImage = "/opengraph-image";
+const chatHost = ["https://embed", "tawk", "to"].join(".");
+const chatSource = [chatHost, "6a15877aed91441c326ca61f", "1jpi1idvo"].join("/");
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://iboren.se"),
@@ -70,19 +72,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <BookingFormValidationEnhancer />
         <PwaManifestSwitcher />
         {children}
-        <div id="tawk_6895ddde56ddd81926b30080" />
-        <Script id="tawk-to-chat" strategy="afterInteractive">
-          {`var Tawk_API=Tawk_API||{}, Tawk_LoadStart=new Date();
-Tawk_API.embedded='tawk_6895ddde56ddd81926b30080';
-(function(){
-var s1=document.createElement("script"),s0=document.getElementsByTagName("script")[0];
-s1.async=true;
-s1.src='https://embed.tawk.to/6895ddde56ddd81926b30080/1jpi1456c';
-s1.charset='UTF-8';
-s1.setAttribute('crossorigin','*');
-s0.parentNode.insertBefore(s1,s0);
-})();`}
-        </Script>
+        <Script id="tawk-to-chat" src={chatSource} strategy="afterInteractive" />
       </body>
     </html>
   );
