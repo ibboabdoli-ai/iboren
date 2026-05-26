@@ -243,27 +243,45 @@ async function getAuthContext(request: Request): Promise<AuthContext | null> {
   return { user: data.user, token };
 }
 
-function buildRutText(payload: NormalizedBookingPayload, language: Language) {
+function buildAdminRutText(payload: NormalizedBookingPayload, language: Language) {
   if (language === "en") {
-    if (payload.customerType !== "Privatperson") return "Customer type: Company. RUT does not apply.";
+    if (payload.customerType !== "Privatperson") return "RUT: Not applicable for company bookings.";
     if (payload.service === "Kontorsstädning") return "RUT: No. Office cleaning is handled as a business price or quote.";
     return payload.rutRequested ? "RUT: Yes. The customer has requested RUT deduction according to Skatteverket rules. If RUT is not approved, the remaining amount may be invoiced." : "RUT: No. The customer has not requested RUT deduction.";
   }
-  if (payload.customerType !== "Privatperson") return "Kundtyp: Företag. RUT gäller inte.";
+  if (payload.customerType !== "Privatperson") return "RUT: Gäller inte för företagsbokningar.";
   if (payload.service === "Kontorsstädning") return "RUT: Nej. Kontorsstädning hanteras som företagspris/offert.";
   return payload.rutRequested ? "RUT: Ja. Kunden har valt RUT och intygar att villkoren hos Skatteverket uppfylls. Om RUT inte godkänns kan resterande belopp faktureras." : "RUT: Nej. Kunden har inte valt RUT-avdrag.";
 }
 
-function buildAdminText(payload: NormalizedBookingPayload, user: User, bookingId: string, language: Language, recurring?: { total: number; dates: string[] }) {
-  return ["New Iboren booking request", "", `Booking ID: ${bookingId}`, recurring && recurring.total > 1 ? `Recurring visits created: ${recurring.total}` : "Recurring visits created: 1", recurring && recurring.total > 1 ? `Visit dates: ${recurring.dates.join(", ")}` : "", `Authenticated user: ${user.email || user.id}`, `Customer language: ${language}`, "", `Customer type: ${english(payload.customerType)}`, buildRutText(payload, "en"), "", `Service: ${english(payload.service)}`, `Area: ${payload.area}`, `Address: ${payload.address || "Not provided"}`, `Size: ${payload.size} sqm`, `Frequency: ${english(payload.frequency)}`, `Date: ${payload.date}`, `Time window: ${english(payload.timeWindow)}`, "", `Name: ${payload.name}`, `Email: ${payload.email}`, `Phone: ${payload.phone || "Not provided"}`, "", `Notes: ${payload.notes || "-"}`].filter(Boolean).join("\n");
+function buildCustomerRutText(payload: NormalizedBookingPayload, language: Language) {
+  if (language === "en") {
+    if (payload.customerType !== "Privatperson") return "RUT: Not applicable for company bookings.";
+    if (payload.service === "Kontorsstädning") return "RUT: No. Office cleaning is handled as a business price or quote.";
+    return payload.rutRequested ? "RUT: Yes. You have requested RUT deduction according to Skatteverket rules. If RUT is not approved, the remaining amount may be invoiced." : "RUT: No. You have not requested RUT deduction.";
+  }
+  if (payload.customerType !== "Privatperson") return "RUT: Gäller inte för företagsbokningar.";
+  if (payload.service === "Kontorsstädning") return "RUT: Nej. Kontorsstädning hanteras som företagspris/offert.";
+  return payload.rutRequested ? "RUT: Ja. Du har valt RUT och intygar att villkoren hos Skatteverket uppfylls. Om RUT inte godkänns kan resterande belopp faktureras." : "RUT: Nej. Du har inte valt RUT-avdrag.";
 }
 
+function buildAdminTextEn(payload: NormalizedBookingPayload, user: User, bookingId: string, language: Language, recurring?: { total: number; dates: string[] }) {
+  return ["New Iboren booking request", "", `Booking ID: ${bookingId}`, recurring && recurring.total > 1 ? `Recurring visits created: ${recurring.total}` : "Recurring visits created: 1", recurring && recurring.total > 1 ? `Visit dates: ${recurring.dates.join(", ")}` : "", `Authenticated user: ${user.email || user.id}`, `Customer language: ${language}`, "", `Customer type: ${english(payload.customerType)}`, buildAdminRutText(payload, "en"), "", `Service: ${english(payload.service)}`, `Area: ${payload.area}`, `Address: ${payload.address || "Not provided"}`, `Size: ${payload.size} sqm`, `Frequency: ${english(payload.frequency)}`, `Date: ${payload.date}`, `Time window: ${english(payload.timeWindow)}`, "", `Name: ${payload.name}`, `Email: ${payload.email}`, `Phone: ${payload.phone || "Not provided"}`, "", `Notes: ${payload.notes || "-"}`].filter(Boolean).join("\n");
+}
+
+function buildAdminTextSv(payload: NormalizedBookingPayload, user: User, bookingId: string, language: Language, recurring?: { total: number; dates: string[] }) {
+  return ["Ny bokningsförfrågan till Iboren", "", `Boknings-ID: ${bookingId}`, recurring && recurring.total > 1 ? `Återkommande besök skapade: ${recurring.total}` : "Återkommande besök skapade: 1", recurring && recurring.total > 1 ? `Besöksdatum: ${recurring.dates.join(", ")}` : "", `Inloggad användare: ${user.email || user.id}`, `Kundspråk: ${language}`, "", `Kundtyp: ${payload.customerType}`, buildAdminRutText(payload, "sv"), "", `Tjänst: ${payload.service}`, `Område: ${payload.area}`, `Adress: ${payload.address || "Ej angivet"}`, `Storlek: ${payload.size} kvm`, `Frekvens: ${payload.frequency}`, `Datum: ${payload.date}`, `Tid: ${payload.timeWindow}`, "", `Namn: ${payload.name}`, `E-post: ${payload.email}`, `Telefon: ${payload.phone || "Ej angivet"}`, "", `Anteckningar: ${payload.notes || "-"}`].filter(Boolean).join("\n");
+}
+
+function buildAdminText(payload: NormalizedBookingPayload, user: User, bookingId: string, language: Language, recurring?: { total: number; dates: string[] }) { return language === "sv" ? buildAdminTextSv(payload, user, bookingId, language, recurring) : buildAdminTextEn(payload, user, bookingId, language, recurring); }
+function buildAdminSubject(payload: NormalizedBookingPayload, language: Language) { return language === "sv" ? `Ny Iboren-bokning: ${payload.service} · ${payload.area}` : `New Iboren booking: ${english(payload.service)} · ${payload.area}`; }
+
 function buildCustomerTextSv(payload: NormalizedBookingPayload, bookingId: string, recurring?: { total: number; dates: string[] }) {
-  return [`Hej ${payload.name},`, "", "Tack för din bokningsförfrågan till Iboren. Vi har tagit emot den och återkommer så snart som möjligt.", recurring && recurring.total > 1 ? `Vi har skapat ${recurring.total} kommande besök utifrån din valda frekvens.` : "", recurring && recurring.total > 1 ? `Datum: ${recurring.dates.join(", ")}` : "", "", "Din sammanfattning:", `Boknings-ID: ${bookingId}`, `Tjänst: ${payload.service}`, `Område: ${payload.area}`, `Adress: ${payload.address}`, `Storlek: ${payload.size} kvm`, `Frekvens: ${payload.frequency}`, `Startdatum: ${payload.date}`, `Tid: ${payload.timeWindow}`, `Kundtyp: ${payload.customerType}`, buildRutText(payload, "sv"), "", "Om något inte stämmer kan du svara på det här mejlet eller kontakta oss på hej@iboren.se.", "", "Vänliga hälsningar,", "Iboren"].filter(Boolean).join("\n");
+  return [`Hej ${payload.name},`, "", "Tack för din bokningsförfrågan till Iboren. Vi har tagit emot den och återkommer så snart som möjligt.", recurring && recurring.total > 1 ? `Vi har skapat ${recurring.total} kommande besök utifrån din valda frekvens.` : "", recurring && recurring.total > 1 ? `Datum: ${recurring.dates.join(", ")}` : "", "", "Din sammanfattning:", `Boknings-ID: ${bookingId}`, `Tjänst: ${payload.service}`, `Område: ${payload.area}`, `Adress: ${payload.address}`, `Storlek: ${payload.size} kvm`, `Frekvens: ${payload.frequency}`, `Startdatum: ${payload.date}`, `Tid: ${payload.timeWindow}`, `Kundtyp: ${payload.customerType}`, buildCustomerRutText(payload, "sv"), "", "Om något inte stämmer kan du svara på det här mejlet eller kontakta oss på hej@iboren.se.", "", "Vänliga hälsningar,", "Iboren"].filter(Boolean).join("\n");
 }
 
 function buildCustomerTextEn(payload: NormalizedBookingPayload, bookingId: string, recurring?: { total: number; dates: string[] }) {
-  return [`Hi ${payload.name},`, "", "Thank you for your booking request to Iboren. We have received it and will get back to you as soon as possible.", recurring && recurring.total > 1 ? `We have created ${recurring.total} upcoming visits based on your selected frequency.` : "", recurring && recurring.total > 1 ? `Dates: ${recurring.dates.join(", ")}` : "", "", "Your summary:", `Booking ID: ${bookingId}`, `Service: ${english(payload.service)}`, `Area: ${payload.area}`, `Address: ${payload.address}`, `Size: ${payload.size} sqm`, `Frequency: ${english(payload.frequency)}`, `Start date: ${payload.date}`, `Time: ${english(payload.timeWindow)}`, `Customer type: ${english(payload.customerType)}`, buildRutText(payload, "en"), "", "If anything is incorrect, you can reply to this email or contact us at hej@iboren.se.", "", "Best regards,", "Iboren"].filter(Boolean).join("\n");
+  return [`Hi ${payload.name},`, "", "Thank you for your booking request to Iboren. We have received it and will get back to you as soon as possible.", recurring && recurring.total > 1 ? `We have created ${recurring.total} upcoming visits based on your selected frequency.` : "", recurring && recurring.total > 1 ? `Dates: ${recurring.dates.join(", ")}` : "", "", "Your summary:", `Booking ID: ${bookingId}`, `Service: ${english(payload.service)}`, `Area: ${payload.area}`, `Address: ${payload.address}`, `Size: ${payload.size} sqm`, `Frequency: ${english(payload.frequency)}`, `Start date: ${payload.date}`, `Time: ${english(payload.timeWindow)}`, `Customer type: ${english(payload.customerType)}`, buildCustomerRutText(payload, "en"), "", "If anything is incorrect, you can reply to this email or contact us at hej@iboren.se.", "", "Best regards,", "Iboren"].filter(Boolean).join("\n");
 }
 
 function buildCustomerText(payload: NormalizedBookingPayload, bookingId: string, language: Language, recurring?: { total: number; dates: string[] }) { return language === "en" ? buildCustomerTextEn(payload, bookingId, recurring) : buildCustomerTextSv(payload, bookingId, recurring); }
@@ -331,11 +349,12 @@ export async function POST(request: Request) {
     const toEmail = process.env.BOOKING_TO_EMAIL || "hej@iboren.se";
     const fromEmail = process.env.BOOKING_FROM_EMAIL || "Iboren <onboarding@resend.dev>";
     const adminText = buildAdminText(payload, auth.user, bookingId, language, recurring);
+    const adminSubject = buildAdminSubject(payload, language);
     const customerText = buildCustomerText(payload, bookingId, language, recurring);
     const customerSubject = buildCustomerSubject(payload, language);
 
     if (resendApiKey) {
-      const adminEmail = sendEmail({ apiKey: resendApiKey, from: fromEmail, to: toEmail, replyTo: payload.email, subject: `New Iboren booking: ${english(payload.service)} · ${payload.area}`, text: adminText });
+      const adminEmail = sendEmail({ apiKey: resendApiKey, from: fromEmail, to: toEmail, replyTo: payload.email, subject: adminSubject, text: adminText });
       const customerEmail = sendEmail({ apiKey: resendApiKey, from: fromEmail, to: payload.email, replyTo: toEmail, subject: customerSubject, text: customerText });
       const emailResult = await Promise.race([Promise.allSettled([adminEmail, customerEmail]), wait(EMAIL_WAIT_LIMIT_MS)]);
       if (emailResult === "timeout") console.warn("IBOREN_BOOKING_EMAIL_WAIT_TIMEOUT", { bookingId });
