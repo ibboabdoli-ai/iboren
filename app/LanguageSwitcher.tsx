@@ -31,7 +31,28 @@ const svToEn: Record<string, string> = {
   "/kontorsstadning-stockholm": "/en/office-cleaning-stockholm"
 };
 
-const enToSv = Object.fromEntries(Object.entries(svToEn).map(([sv, en]) => [en, sv]));
+const enToSv: Record<string, string> = {
+  "/en": "/",
+  "/en/prices": "/priser",
+  "/en/jobs": "/jobb",
+  "/en/about": "/om-iboren",
+  "/en/privacy": "/privacy",
+  "/en/terms": "/terms",
+  "/en/profile": "/profile",
+  "/en/cleaner": "/cleaner",
+  "/en/home-cleaning": "/tjanster/hemstadning",
+  "/en/move-out-cleaning": "/tjanster/flyttstadning",
+  "/en/office-cleaning": "/tjanster/kontorsstadning",
+  "/en/window-cleaning": "/tjanster/fonsterputs",
+  "/en/home-cleaning-sodertalje": "/hemstadning-sodertalje",
+  "/en/move-out-cleaning-sodertalje": "/flyttstadning-sodertalje",
+  "/en/window-cleaning-sodertalje": "/fonsterputs-sodertalje",
+  "/en/office-cleaning-sodertalje": "/kontorsstadning-sodertalje",
+  "/en/home-cleaning-stockholm": "/hemstadning-stockholm",
+  "/en/move-out-cleaning-stockholm": "/flyttstadning-stockholm",
+  "/en/window-cleaning-stockholm": "/fonsterputs-stockholm",
+  "/en/office-cleaning-stockholm": "/kontorsstadning-stockholm"
+};
 const mobileHomeStyleId = "iboren-home-language-switcher-style";
 
 function normalize(pathname: string) {
