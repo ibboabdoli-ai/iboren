@@ -44,9 +44,28 @@ function ensureMobileHomeLanguageStyle() {
     @media (max-width: 767px) {
       nav[aria-label="Language"].iboren-home-language-switcher {
         display: flex !important;
+        position: fixed !important;
         top: calc(env(safe-area-inset-top, 0px) + 1.35rem) !important;
         right: calc(env(safe-area-inset-right, 0px) + 4.75rem) !important;
         z-index: 140 !important;
+        transform: translateZ(0) !important;
+        will-change: transform !important;
+      }
+
+      body:has(nav[aria-label="Language"].iboren-home-language-switcher) header {
+        position: fixed !important;
+        top: env(safe-area-inset-top, 0px) !important;
+        left: 0 !important;
+        right: 0 !important;
+        z-index: 130 !important;
+      }
+
+      body:has(nav[aria-label="Language"].iboren-home-language-switcher) main {
+        padding-top: calc(5rem + env(safe-area-inset-top, 0px)) !important;
+      }
+
+      body:has(nav[aria-label="Language"].iboren-home-language-switcher) #top {
+        min-height: calc(100vh - 5rem) !important;
       }
     }
   `;
