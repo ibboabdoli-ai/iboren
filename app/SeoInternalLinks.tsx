@@ -278,29 +278,29 @@ export default function SeoInternalLinks() {
   return (
     <>
       <BookingSubmitController />
-      <section aria-label={isEnglish ? "Popular cleaning pages" : "Populära städsidor"} className="border-t border-gold/10 bg-night py-10 text-porcelain">
-      <div className="luxe-container grid gap-8 md:grid-cols-[1fr_1.2fr] md:items-start">
+      <section aria-label={isEnglish ? "Popular cleaning pages" : "Populära städsidor"} className="border-t border-gold/10 bg-night py-6 text-porcelain md:py-10">
+      <div className="luxe-container grid gap-5 md:grid-cols-[1fr_1.2fr] md:items-start md:gap-8">
         <div>
-          <p className="text-[10px] font-bold uppercase tracking-[.32em] text-gold/70">{isEnglish ? "Local cleaning services" : "Lokala städtjänster"}</p>
-          <h2 className="display mt-3 text-3xl font-normal uppercase text-porcelain md:text-4xl">{isEnglish ? "Find the right cleaning service faster." : "Hitta rätt städning snabbare."}</h2>
-          <p className="mt-4 max-w-xl text-sm leading-7 text-porcelain/55">{isEnglish ? "Iboren helps customers create clear cleaning requests in Södertälje and Stockholm." : "Iboren hjälper kunder skapa tydliga bokningsförfrågningar för städning i Södertälje och Stockholm."}</p>
+          <p className="text-[9px] font-bold uppercase tracking-[.24em] text-gold/70 md:text-[10px] md:tracking-[.32em]">{isEnglish ? "Local cleaning services" : "Lokala städtjänster"}</p>
+          <h2 className="display mt-2 text-2xl font-normal uppercase leading-tight text-porcelain md:mt-3 md:text-4xl">{isEnglish ? "Find the right cleaning service faster." : "Hitta rätt städning snabbare."}</h2>
+          <p className="mt-3 max-w-xl text-xs leading-6 text-porcelain/50 md:mt-4 md:text-sm md:leading-7">{isEnglish ? "Iboren helps customers create clear cleaning requests in Södertälje and Stockholm." : "Iboren hjälper kunder skapa tydliga bokningsförfrågningar för städning i Södertälje och Stockholm."}</p>
         </div>
-        <div className="grid gap-5 sm:grid-cols-2">
+        <div className="grid gap-4 sm:grid-cols-2 md:gap-5">
           <div>
-            <p className="mb-3 text-xs font-black uppercase tracking-[.22em] text-gold">{isEnglish ? "Important pages" : "Viktiga sidor"}</p>
-            <div className="flex flex-wrap gap-2">
+            <p className="mb-2 text-[10px] font-black uppercase tracking-[.18em] text-gold md:mb-3 md:text-xs md:tracking-[.22em]">{isEnglish ? "Important pages" : "Viktiga sidor"}</p>
+            <div className="flex flex-wrap gap-1.5 md:gap-2">
               {sectionLinks.map((link) => (
-                <Link key={link.href + link.label} href={link.href} className="rounded-full border border-gold/20 px-4 py-2 text-sm font-semibold text-porcelain/70 hover:border-gold hover:text-gold">
+                <Link key={link.href + link.label} href={link.href} className="rounded-full border border-gold/15 px-3 py-1.5 text-xs font-semibold text-porcelain/65 hover:border-gold hover:text-gold md:px-4 md:py-2 md:text-sm">
                   {link.label}
                 </Link>
               ))}
             </div>
           </div>
           <div>
-            <p className="mb-3 text-xs font-black uppercase tracking-[.22em] text-gold">{isEnglish ? "Popular searches" : "Populära sökningar"}</p>
-            <div className="flex flex-wrap gap-2">
+            <p className="mb-2 text-[10px] font-black uppercase tracking-[.18em] text-gold md:mb-3 md:text-xs md:tracking-[.22em]">{isEnglish ? "Popular searches" : "Populära sökningar"}</p>
+            <div className="flex flex-wrap gap-1.5 md:gap-2">
               {searchLinks.map((link) => (
-                <Link key={link.label} href={link.href} className="rounded-full border border-porcelain/10 px-4 py-2 text-sm font-semibold text-porcelain/55 hover:border-gold hover:text-gold">
+                <Link key={link.label} href={link.href} className="rounded-full border border-porcelain/10 px-3 py-1.5 text-xs font-semibold text-porcelain/50 hover:border-gold hover:text-gold md:px-4 md:py-2 md:text-sm">
                   {link.label}
                 </Link>
               ))}
