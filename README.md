@@ -64,3 +64,7 @@ Use a verified sender domain in Resend before production.
 - Update privacy/terms with legal details when company/provider model is final.
 - Add real company information only when available.
 - Add analytics/cookie banner only if analytics is activated.
+
+## Deployment note
+
+- Lightweight deployment trigger note for production verification.
