@@ -18,7 +18,7 @@ export default function ServicePage({ service }: { service: ServicePageData }) {
           <div>
             <Link href="/tjanster" className="mb-10 inline-flex text-sm font-bold text-burgundy">← Alla tjänster</Link>
             <p className="eyebrow">Tjänst</p>
-            <h1 className="display mt-4 text-6xl font-bold leading-[.88] text-burgundy md:text-8xl">{service.title}</h1>
+            <h1 className="display mt-4 max-w-full break-words text-[clamp(3rem,15vw,4.25rem)] font-bold leading-[.88] text-burgundy [overflow-wrap:anywhere] md:text-8xl">{service.title}</h1>
             <p className="mt-7 max-w-2xl text-lg leading-8 text-ink/75 md:text-xl">{service.intro}</p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <Link href="/priser" className="btn-primary">Beräkna pris <ArrowRight size={18} /></Link>
