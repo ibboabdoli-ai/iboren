@@ -35,6 +35,8 @@ function normalize(pathname: string) {
 
 export default function LanguageSwitcher() {
   const pathname = normalize(usePathname() || "/");
+  if (pathname === "/profile" || pathname === "/en/profile") return null;
+
   const isEnglish = pathname === "/en" || pathname.startsWith("/en/");
   const svHref = isEnglish ? enToSv[pathname] || "/" : pathname;
   const enHref = isEnglish ? pathname : svToEn[pathname] || "/en";
