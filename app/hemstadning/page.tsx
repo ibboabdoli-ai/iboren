@@ -5,29 +5,29 @@ import FaqStructuredData from "../FaqStructuredData";
 
 export const metadata: Metadata = {
   title: "Hemstädning i Södertälje och Stockholm – Iboren",
-  description: "Skicka en tydlig bokningsförfrågan för hemstädning i Södertälje och Stockholm. Iboren samlar adress, yta, rum, datum och önskemål.",
+  description: "Skicka en tydlig bokningsförfrågan för hemstädning i Södertälje och Stockholm. Ange bostadsyta, rum, badrum, frekvens, datum och extra önskemål.",
   keywords: ["hemstädning", "hemstädning Södertälje", "hemstädning Stockholm", "städhjälp hemma", "Iboren hemstädning"]
 };
 
 const items = [
-  "Bokningsförfrågan på några minuter",
-  "Yta, adress, datum och önskemål samlas tydligt",
-  "Passar både engångsstädning och återkommande hemstädning",
-  "Förberett för offert och RUT-information"
+  "För engångsstädning eller återkommande hemstädning",
+  "Ange bostadsyta, antal rum, badrum, frekvens och önskat datum",
+  "Lägg till extra behov som ugn, skåp, balkong eller fönsterputs",
+  "Prisbild, RUT och omfattning bekräftas innan uppdrag"
 ];
 
 const included = [
-  "Kök, badrum och vardagsytor enligt överenskommen omfattning",
-  "Dammsugning, avtorkning och allmän rengöring efter behov",
-  "Möjlighet att ange extra tjänster som ugn, skåp, balkong och fönsterputs",
-  "Tydligt underlag för offert innan bokningen bekräftas"
+  "Kök, badrum, vardagsytor och sovrum enligt överenskommen omfattning",
+  "Dammsugning, dammtorkning, avtorkning av ytor och våttorkning av golv efter behov",
+  "Extra tjänster som ugn, kyl/frys, skåp, lådor, balkong och fönsterputs kan anges i förfrågan",
+  "Frekvens, prisbild, RUT-information och särskilda önskemål bekräftas innan uppdraget planeras"
 ];
 
 const faq = [
-  { q: "Kan jag boka hemstädning direkt online?", a: "Du kan skicka en bokningsförfrågan online. Bokningen bekräftas först när tid, omfattning och villkor har stämts av." },
-  { q: "Kan jag välja återkommande hemstädning?", a: "Ja, i formuläret kan du välja engång, varje vecka, varannan vecka eller varje månad." },
-  { q: "Vilka uppgifter behövs för hemstädning?", a: "Du fyller i adress, område, storlek, antal rum, antal badrum, datum, tidsfönster och särskilda önskemål." },
-  { q: "Är priset bindande direkt?", a: "Nej. Slutligt pris och eventuell RUT-information behöver bekräftas innan uppdrag utförs." }
+  { q: "Kan jag boka hemstädning direkt online?", a: "Du kan skicka en bokningsförfrågan online. Bokningen bekräftas först när tid, omfattning, prisbild och villkor har stämts av." },
+  { q: "Kan jag välja återkommande hemstädning?", a: "Ja. I formuläret kan du välja engångsstädning, varje vecka, varannan vecka eller varje månad." },
+  { q: "Vad brukar ingå i hemstädning?", a: "Hemstädning omfattar normalt kök, badrum, vardagsytor, sovrum, dammsugning, dammtorkning, avtorkning och våttorkning enligt överenskommen omfattning." },
+  { q: "Kan jag lägga till extra tjänster?", a: "Ja. Du kan ange extra behov som ugn, kyl/frys, skåp, lådor, balkong eller fönsterputs i förfrågan." }
 ];
 
 export default function HemstadningPage() {
@@ -41,7 +41,7 @@ export default function HemstadningPage() {
             <Link href="/" className="mb-10 inline-flex text-sm font-bold text-burgundy">← Tillbaka</Link>
             <p className="eyebrow">Iboren Services</p>
             <h1 className="display mt-4 text-6xl font-bold leading-[.88] text-burgundy md:text-8xl">Hemstädning</h1>
-            <p className="mt-7 max-w-2xl text-lg leading-8 text-ink/70 md:text-xl">Skapa en tydlig förfrågan för hemstädning i Södertälje och Stockholm. Iboren hjälper dig steg för steg med storlek, område, frekvens, datum och särskilda behov.</p>
+            <p className="mt-7 max-w-2xl text-lg leading-8 text-ink/70 md:text-xl">Skicka en tydlig förfrågan för hemstädning i Södertälje och Stockholm. Ange bostadsyta, antal rum, badrum, frekvens, datum och extra behov så att omfattning och prisbild kan bekräftas innan uppdraget planeras.</p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <Link href="/#booking" className="btn-primary">Starta bokning <ArrowRight size={18} /></Link>
               <Link href="/stadning-sodertalje" className="btn-secondary">Städning i Södertälje</Link>
@@ -52,7 +52,7 @@ export default function HemstadningPage() {
               <div className="grid h-16 w-16 place-items-center rounded-full bg-burgundy text-porcelain"><Home size={30} /></div>
               <span className="rounded-full border border-gold/50 bg-gold/20 px-4 py-2 text-xs font-bold uppercase tracking-[.24em] text-burgundy">RUT-ready</span>
             </div>
-            <h2 className="display text-4xl font-bold text-ink">För hem som ska kännas klara.</h2>
+            <h2 className="display text-4xl font-bold text-ink">För hem som ska kännas rena och omhändertagna.</h2>
             <div className="mt-7 grid gap-4">
               {items.map((item) => <p key={item} className="flex gap-3 text-ink/70"><CheckCircle2 className="mt-1 h-5 w-5 shrink-0 text-burgundy" /> {item}</p>)}
             </div>
@@ -60,14 +60,14 @@ export default function HemstadningPage() {
         </div>
       </section>
 
-      <section className="bg-porcelain py-16"><div className="luxe-container grid gap-5 md:grid-cols-3"><Info icon={<Sparkles />} title="Smart flow" text="Formuläret håller kundens svar strukturerade från första kontakt." /><Info icon={<ShieldCheck />} title="Tryggt underlag" text="Ingen bindande bokning innan pris, tid och omfattning bekräftas." /><Info icon={<Home />} title="Flexibelt" text="Passar både enstaka hemstädning och återkommande service." /></div></section>
+      <section className="bg-porcelain py-16"><div className="luxe-container grid gap-5 md:grid-cols-3"><Info icon={<Sparkles />} title="Tydlig omfattning" text="Bostadsyta, rum, badrum, frekvens och extra behov samlas in från första förfrågan." /><Info icon={<ShieldCheck />} title="Tryggt underlag" text="Ingen bindande bokning innan pris, tid, RUT och omfattning bekräftas." /><Info icon={<Home />} title="Flexibelt" text="Passar både enstaka hemstädning, återkommande städning och tillval." /></div></section>
 
       <section className="bg-cream py-16">
         <div className="luxe-container grid gap-10 md:grid-cols-[.9fr_1.1fr] md:items-start">
           <div>
             <p className="eyebrow">Vad ingår?</p>
-            <h2 className="display mt-3 text-4xl font-bold text-burgundy md:text-6xl">Hemstädning med tydligare offertunderlag.</h2>
-            <p className="mt-5 leading-8 text-ink/65">Iboren samlar de praktiska detaljerna innan bokningen bekräftas, så att omfattning, frekvens och önskemål blir enklare att förstå.</p>
+            <h2 className="display mt-3 text-4xl font-bold text-burgundy md:text-6xl">Hemstädning med tydlig omfattning innan offert.</h2>
+            <p className="mt-5 leading-8 text-ink/65">Hemstädning kan vara återkommande eller enstaka. Iboren samlar information om bostaden, frekvens, tillval och särskilda önskemål innan bokningen bekräftas.</p>
           </div>
           <div className="grid gap-4">
             {included.map((item) => <p key={item} className="flex gap-3 rounded-2xl bg-porcelain p-5 text-ink/70 shadow-sm"><CheckCircle2 className="mt-1 h-5 w-5 shrink-0 text-burgundy" /> {item}</p>)}
@@ -82,7 +82,7 @@ export default function HemstadningPage() {
           <div className="mt-10 grid gap-4">
             {faq.map((item) => <article key={item.q} className="rounded-[1.5rem] bg-cream p-6 shadow-sm"><h3 className="font-bold text-burgundy">{item.q}</h3><p className="mt-2 leading-7 text-ink/65">{item.a}</p></article>)}
           </div>
-          <div className="mt-10 rounded-[2rem] bg-burgundy p-7 text-porcelain"><h2 className="display text-4xl font-bold">Redo att boka hemstädning?</h2><p className="mt-3 text-porcelain/70">Fyll i adress, storlek, rum och önskat datum så återkommer Iboren.</p><Link href="/#booking" className="mt-6 inline-flex rounded-full bg-gold px-5 py-3 text-sm font-black uppercase tracking-[.12em] text-ink">Starta bokning</Link></div>
+          <div className="mt-10 rounded-[2rem] bg-burgundy p-7 text-porcelain"><h2 className="display text-4xl font-bold">Redo att boka hemstädning?</h2><p className="mt-3 text-porcelain/70">Fyll i adress, storlek, rum, badrum, frekvens och önskat datum så återkommer Iboren.</p><Link href="/#booking" className="mt-6 inline-flex rounded-full bg-gold px-5 py-3 text-sm font-black uppercase tracking-[.12em] text-ink">Starta bokning</Link></div>
         </div>
       </section>
     </main>
