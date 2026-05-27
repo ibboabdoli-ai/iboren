@@ -3,6 +3,28 @@
 import { useEffect } from "react";
 
 const css = `
+.home-mobile-language-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 2.75rem;
+  min-width: 2.75rem;
+  border-radius: 999px;
+  border: 1px solid rgba(212, 165, 116, .35);
+  background: rgba(255, 253, 248, .06);
+  color: #D4A574;
+  font-size: .78rem;
+  font-weight: 900;
+  letter-spacing: .16em;
+  text-decoration: none;
+}
+
+@media (min-width: 768px) {
+  .home-mobile-language-link {
+    display: none !important;
+  }
+}
+
 @media (max-width: 767px) {
   #booking {
     padding-top: 3.5rem !important;
@@ -83,13 +105,31 @@ const css = `
 }
 `;
 
+function addHomepageLanguageLink() {
+  if (window.location.pathname !== "/") return;
+
+  const nav = document.querySelector<HTMLElement>("header nav");
+  const menuButton = nav?.querySelector<HTMLButtonElement>("button");
+  if (!nav || !menuButton || nav.querySelector(".home-mobile-language-link")) return;
+
+  const link = document.createElement("a");
+  link.className = "home-mobile-language-link";
+  link.href = "/en";
+  link.textContent = "EN";
+  link.setAttribute("aria-label", "Switch to English");
+  nav.insertBefore(link, menuButton);
+}
+
 export default function BookingMobilePolish() {
   useEffect(() => {
-    if (document.getElementById("iboren-booking-mobile-polish")) return;
-    const style = document.createElement("style");
-    style.id = "iboren-booking-mobile-polish";
-    style.textContent = css;
-    document.head.appendChild(style);
+    if (!document.getElementById("iboren-booking-mobile-polish")) {
+      const style = document.createElement("style");
+      style.id = "iboren-booking-mobile-polish";
+      style.textContent = css;
+      document.head.appendChild(style);
+    }
+
+    addHomepageLanguageLink();
   }, []);
 
   return null;
