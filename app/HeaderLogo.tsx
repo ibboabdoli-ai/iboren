@@ -26,6 +26,13 @@ const svToEn: Record<string, string> = {
   "/kontorsstadning-stockholm": "/en/office-cleaning-stockholm"
 };
 
+const tjansterToEn: Record<string, string> = {
+  hemstadning: "/en/home-cleaning",
+  flyttstadning: "/en/move-out-cleaning",
+  kontorsstadning: "/en/office-cleaning",
+  fonsterputs: "/en/window-cleaning"
+};
+
 const enToSv = Object.fromEntries(Object.entries(svToEn).map(([sv, en]) => [en, sv]));
 const safeTop = "env(safe-area-inset-top, 0px)";
 const safeRight = "env(safe-area-inset-right, 0px)";
@@ -36,6 +43,14 @@ function normalize(pathname: string) {
   return pathname.endsWith("/") ? pathname.slice(0, -1) : pathname;
 }
 
+function getEnglishHref(pathname: string) {
+  if (pathname.startsWith("/tjanster/")) {
+    const slug = pathname.split("/").filter(Boolean).at(-1) || "";
+    return tjansterToEn[slug] || "/en";
+  }
+  return svToEn[pathname] || "/en";
+}
+
 function getLanguageState() {
   const pathname = normalize(window.location.pathname || "/");
   const isEnglish = pathname === "/en" || pathname.startsWith("/en/") || pathname.startsWith("/en-");
@@ -43,7 +58,7 @@ function getLanguageState() {
     pathname,
     isEnglish,
     svHref: isEnglish ? enToSv[pathname] || "/" : pathname,
-    enHref: isEnglish ? pathname : svToEn[pathname] || "/en"
+    enHref: isEnglish ? pathname : getEnglishHref(pathname)
   };
 }
 
@@ -87,6 +102,10 @@ function ensureSafeNavStyles() {
   const style = document.createElement("style");
   style.id = styleId;
   style.textContent = `
+    body:has(#iboren-global-nav) nav[aria-label="Language"] {
+      display: none !important;
+    }
+
     header[data-iboren-sticky-nav="1"],
     #iboren-global-nav {
       top: ${safeTop} !important;
