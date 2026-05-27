@@ -17,6 +17,16 @@ const localLinks = [
   { href: "/fonsterputs", label: "Fönsterputs" }
 ];
 
+const englishLocalLinks = [
+  { href: "/en/about", label: "About Iboren" },
+  { href: "/en/home-cleaning-sodertalje", label: "Cleaning in Södertälje" },
+  { href: "/en/home-cleaning-stockholm", label: "Cleaning in Stockholm" },
+  { href: "/en/home-cleaning", label: "Home cleaning" },
+  { href: "/en/move-out-cleaning", label: "Move-out cleaning" },
+  { href: "/en/office-cleaning", label: "Office cleaning" },
+  { href: "/en/window-cleaning", label: "Window cleaning" }
+];
+
 const keywordLinks = [
   { href: "/stadning-sodertalje", label: "Hemstädning Södertälje" },
   { href: "/stadning-sodertalje", label: "Flyttstädning Södertälje" },
@@ -24,6 +34,15 @@ const keywordLinks = [
   { href: "/stadning-sodertalje", label: "Fönsterputs Södertälje" },
   { href: "/stadning-stockholm", label: "Kontorsstädning Stockholm" },
   { href: "/stadning-stockholm", label: "Städfirma Stockholm" }
+];
+
+const englishKeywordLinks = [
+  { href: "/en/home-cleaning-sodertalje", label: "Home cleaning Södertälje" },
+  { href: "/en/move-out-cleaning-sodertalje", label: "Move-out cleaning Södertälje" },
+  { href: "/en/home-cleaning-sodertalje", label: "Cleaning company Södertälje" },
+  { href: "/en/window-cleaning-sodertalje", label: "Window cleaning Södertälje" },
+  { href: "/en/office-cleaning-stockholm", label: "Office cleaning Stockholm" },
+  { href: "/en/home-cleaning-stockholm", label: "Cleaning company Stockholm" }
 ];
 
 type StoredSession = {
@@ -243,6 +262,9 @@ function applyClientEnhancements() {
 
 export default function SeoInternalLinks() {
   const pathname = usePathname();
+  const isEnglish = pathname === "/en" || Boolean(pathname?.startsWith("/en/"));
+  const sectionLinks = isEnglish ? englishLocalLinks : localLinks;
+  const searchLinks = isEnglish ? englishKeywordLinks : keywordLinks;
 
   useEffect(() => {
     applyClientEnhancements();
@@ -256,18 +278,18 @@ export default function SeoInternalLinks() {
   return (
     <>
       <BookingSubmitController />
-      <section aria-label="Populära städsidor" className="border-t border-gold/10 bg-night py-10 text-porcelain">
+      <section aria-label={isEnglish ? "Popular cleaning pages" : "Populära städsidor"} className="border-t border-gold/10 bg-night py-10 text-porcelain">
       <div className="luxe-container grid gap-8 md:grid-cols-[1fr_1.2fr] md:items-start">
         <div>
-          <p className="text-[10px] font-bold uppercase tracking-[.32em] text-gold/70">Lokala städtjänster</p>
-          <h2 className="display mt-3 text-3xl font-normal uppercase text-porcelain md:text-4xl">Hitta rätt städning snabbare.</h2>
-          <p className="mt-4 max-w-xl text-sm leading-7 text-porcelain/55">Iboren hjälper kunder skapa tydliga bokningsförfrågningar för städning i Södertälje och Stockholm.</p>
+          <p className="text-[10px] font-bold uppercase tracking-[.32em] text-gold/70">{isEnglish ? "Local cleaning services" : "Lokala städtjänster"}</p>
+          <h2 className="display mt-3 text-3xl font-normal uppercase text-porcelain md:text-4xl">{isEnglish ? "Find the right cleaning service faster." : "Hitta rätt städning snabbare."}</h2>
+          <p className="mt-4 max-w-xl text-sm leading-7 text-porcelain/55">{isEnglish ? "Iboren helps customers create clear cleaning requests in Södertälje and Stockholm." : "Iboren hjälper kunder skapa tydliga bokningsförfrågningar för städning i Södertälje och Stockholm."}</p>
         </div>
         <div className="grid gap-5 sm:grid-cols-2">
           <div>
-            <p className="mb-3 text-xs font-black uppercase tracking-[.22em] text-gold">Viktiga sidor</p>
+            <p className="mb-3 text-xs font-black uppercase tracking-[.22em] text-gold">{isEnglish ? "Important pages" : "Viktiga sidor"}</p>
             <div className="flex flex-wrap gap-2">
-              {localLinks.map((link) => (
+              {sectionLinks.map((link) => (
                 <Link key={link.href + link.label} href={link.href} className="rounded-full border border-gold/20 px-4 py-2 text-sm font-semibold text-porcelain/70 hover:border-gold hover:text-gold">
                   {link.label}
                 </Link>
@@ -275,9 +297,9 @@ export default function SeoInternalLinks() {
             </div>
           </div>
           <div>
-            <p className="mb-3 text-xs font-black uppercase tracking-[.22em] text-gold">Populära sökningar</p>
+            <p className="mb-3 text-xs font-black uppercase tracking-[.22em] text-gold">{isEnglish ? "Popular searches" : "Populära sökningar"}</p>
             <div className="flex flex-wrap gap-2">
-              {keywordLinks.map((link) => (
+              {searchLinks.map((link) => (
                 <Link key={link.label} href={link.href} className="rounded-full border border-porcelain/10 px-4 py-2 text-sm font-semibold text-porcelain/55 hover:border-gold hover:text-gold">
                   {link.label}
                 </Link>
