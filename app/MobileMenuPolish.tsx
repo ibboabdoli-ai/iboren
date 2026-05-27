@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import ProfileLanguageSwitch from "./ProfileLanguageSwitch";
 
 function isEnglishPath() {
   return window.location.pathname === "/en" || window.location.pathname.startsWith("/en/");
@@ -45,7 +46,6 @@ function polishMenu() {
   if (!oldItems.length) return;
 
   const cta = oldItems.find((item) => item.className.includes("bg-gold"));
-  const byHref = (part: string) => oldItems.find((item) => item.getAttribute("href") === part || item.getAttribute("href")?.includes(part));
   const profile = oldItems.find((item) => item.getAttribute("href") === "/profile" || item.getAttribute("href") === "/login");
 
   list.innerHTML = "";
@@ -95,5 +95,5 @@ export default function MobileMenuPolish() {
     return () => observer.disconnect();
   }, []);
 
-  return null;
+  return <ProfileLanguageSwitch />;
 }
