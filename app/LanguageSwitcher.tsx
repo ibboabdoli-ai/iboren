@@ -52,11 +52,33 @@ const enToSv: Record<string, string> = {
   "/en/window-cleaning-stockholm": "/fonsterputs-stockholm",
   "/en/office-cleaning-stockholm": "/kontorsstadning-stockholm"
 };
+
+const tjansterToEn: Record<string, string> = {
+  hemstadning: "/en/home-cleaning",
+  flyttstadning: "/en/move-out-cleaning",
+  kontorsstadning: "/en/office-cleaning",
+  fonsterputs: "/en/window-cleaning"
+};
+
 const mobileHomeStyleId = "iboren-home-language-switcher-style";
 
 function normalize(pathname: string) {
   if (!pathname || pathname === "/") return "/";
   return pathname.endsWith("/") ? pathname.slice(0, -1) : pathname;
+}
+
+function getEnglishHref(pathname: string, preservedHash: string) {
+  if (pathname === "/") return `/en${preservedHash}`;
+  if (pathname.startsWith("/tjanster/")) {
+    const slug = pathname.split("/").filter(Boolean).at(-1) || "";
+    return tjansterToEn[slug] || "/en";
+  }
+  return svToEn[pathname] || "/en";
+}
+
+function getSwedishHref(pathname: string, preservedHash: string) {
+  if (pathname === "/en") return `/${preservedHash}`;
+  return enToSv[pathname] || "/";
 }
 
 function ensureMobileHomeLanguageStyle() {
@@ -120,8 +142,8 @@ export default function LanguageSwitcher() {
   if (pathname === "/profile" || pathname === "/en/profile") return null;
 
   const isEnglish = pathname === "/en" || pathname.startsWith("/en/");
-  const svHref = isEnglish ? (pathname === "/en" ? `/${preservedHash}` : enToSv[pathname] || "/") : pathname;
-  const enHref = isEnglish ? pathname : (pathname === "/" ? `/en${preservedHash}` : svToEn[pathname] || "/en");
+  const svHref = isEnglish ? getSwedishHref(pathname, preservedHash) : pathname;
+  const enHref = isEnglish ? pathname : getEnglishHref(pathname, preservedHash);
 
   return (
     <nav aria-label="Language" className={`${isHomePath ? "iboren-home-language-switcher" : ""} fixed right-20 top-5 z-[140] flex overflow-hidden rounded-full border border-gold/30 bg-night/90 text-[11px] font-black uppercase tracking-[.14em] text-porcelain shadow-xl backdrop-blur md:right-8 md:top-5`}>
