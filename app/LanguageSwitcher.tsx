@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 
@@ -126,8 +125,8 @@ export default function LanguageSwitcher() {
 
   return (
     <nav aria-label="Language" className={`${isHomePath ? "iboren-home-language-switcher" : ""} fixed right-20 top-5 z-[140] flex overflow-hidden rounded-full border border-gold/30 bg-night/90 text-[11px] font-black uppercase tracking-[.14em] text-porcelain shadow-xl backdrop-blur md:right-8 md:top-5`}>
-      <Link href={svHref} className={`px-3 py-2 transition ${!isEnglish ? "bg-gold text-night" : "text-porcelain/72 hover:text-gold"}`}>SV</Link>
-      <Link href={enHref} className={`px-3 py-2 transition ${isEnglish ? "bg-gold text-night" : "text-porcelain/72 hover:text-gold"}`}>EN</Link>
+      <a href={svHref} className={`px-3 py-2 transition ${!isEnglish ? "bg-gold text-night" : "text-porcelain/72 hover:text-gold"}`}>SV</a>
+      <a href={enHref} className={`px-3 py-2 transition ${isEnglish ? "bg-gold text-night" : "text-porcelain/72 hover:text-gold"}`}>EN</a>
     </nav>
   );
 }
