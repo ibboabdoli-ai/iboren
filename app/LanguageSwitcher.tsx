@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 
 const svToEn: Record<string, string> = {
@@ -99,17 +99,30 @@ function ensureMobileHomeLanguageStyle() {
 
 export default function LanguageSwitcher() {
   const pathname = normalize(usePathname() || "/");
+  const [hash, setHash] = useState("");
   const isHomePath = pathname === "/" || pathname === "/en";
+  const preservedHash = hash === "#services" || hash === "#booking" ? hash : "";
 
   useEffect(() => {
     if (isHomePath) ensureMobileHomeLanguageStyle();
   }, [isHomePath]);
 
+  useEffect(() => {
+    const updateHash = () => setHash(window.location.hash || "");
+    updateHash();
+    window.addEventListener("hashchange", updateHash);
+    window.addEventListener("popstate", updateHash);
+    return () => {
+      window.removeEventListener("hashchange", updateHash);
+      window.removeEventListener("popstate", updateHash);
+    };
+  }, []);
+
   if (pathname === "/profile" || pathname === "/en/profile") return null;
 
   const isEnglish = pathname === "/en" || pathname.startsWith("/en/");
-  const svHref = isEnglish ? enToSv[pathname] || "/" : pathname;
-  const enHref = isEnglish ? pathname : svToEn[pathname] || "/en";
+  const svHref = isEnglish ? (pathname === "/en" ? `/${preservedHash}` : enToSv[pathname] || "/") : pathname;
+  const enHref = isEnglish ? pathname : (pathname === "/" ? `/en${preservedHash}` : svToEn[pathname] || "/en");
 
   return (
     <nav aria-label="Language" className={`${isHomePath ? "iboren-home-language-switcher" : ""} fixed right-20 top-5 z-[140] flex overflow-hidden rounded-full border border-gold/30 bg-night/90 text-[11px] font-black uppercase tracking-[.14em] text-porcelain shadow-xl backdrop-blur md:right-8 md:top-5`}>
