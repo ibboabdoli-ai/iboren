@@ -1,27 +1,59 @@
 "use client";
 
-import { useEffect } from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
 
 const css = `
-.home-mobile-language-link {
+.iboren-global-language-switch {
+  position: fixed;
+  top: 1.05rem;
+  right: 4.75rem;
+  z-index: 70;
+  display: inline-flex;
+  align-items: center;
+  overflow: hidden;
+  border: 1px solid rgba(212, 165, 116, .35);
+  border-radius: 999px;
+  background: rgba(2, 5, 4, .72);
+  backdrop-filter: blur(14px);
+  box-shadow: 0 14px 40px rgba(0, 0, 0, .18);
+}
+
+.iboren-global-language-switch a {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  height: 2.75rem;
-  min-width: 2.75rem;
-  border-radius: 999px;
-  border: 1px solid rgba(212, 165, 116, .35);
-  background: rgba(255, 253, 248, .06);
+  min-width: 2.35rem;
+  height: 2.45rem;
+  padding: 0 .7rem;
   color: #D4A574;
-  font-size: .78rem;
+  font-size: .72rem;
   font-weight: 900;
-  letter-spacing: .16em;
+  letter-spacing: .12em;
   text-decoration: none;
 }
 
+.iboren-global-language-switch a.is-active {
+  background: #D4A574;
+  color: #020504;
+}
+
 @media (min-width: 768px) {
-  .home-mobile-language-link {
+  .iboren-global-language-switch {
     display: none !important;
+  }
+}
+
+@media (max-width: 374px) {
+  .iboren-global-language-switch {
+    right: 4.35rem;
+  }
+
+  .iboren-global-language-switch a {
+    min-width: 2.1rem;
+    padding: 0 .55rem;
+    font-size: .68rem;
   }
 }
 
@@ -105,22 +137,32 @@ const css = `
 }
 `;
 
-function addHomepageLanguageLink() {
-  if (window.location.pathname !== "/") return;
+const svToEn: Record<string, string> = {
+  "/": "/en",
+  "/priser": "/en/prices",
+  "/jobb": "/en/jobs",
+  "/om-iboren": "/en/about",
+  "/hemstadning": "/en/home-cleaning",
+  "/flyttstadning": "/en/move-out-cleaning",
+  "/kontorsstadning": "/en/office-cleaning",
+  "/fonsterputs": "/en/window-cleaning",
+  "/privacy": "/en/privacy",
+  "/terms": "/en/terms"
+};
 
-  const nav = document.querySelector<HTMLElement>("header nav");
-  const menuButton = nav?.querySelector<HTMLButtonElement>("button");
-  if (!nav || !menuButton || nav.querySelector(".home-mobile-language-link")) return;
+const enToSv: Record<string, string> = Object.fromEntries(Object.entries(svToEn).map(([sv, en]) => [en, sv]));
 
-  const link = document.createElement("a");
-  link.className = "home-mobile-language-link";
-  link.href = "/en";
-  link.textContent = "EN";
-  link.setAttribute("aria-label", "Switch to English");
-  nav.insertBefore(link, menuButton);
+function withHash(path: string, hash: string) {
+  return hash && (path === "/" || path === "/en") ? `${path}${hash}` : path;
 }
 
 export default function BookingMobilePolish() {
+  const pathname = usePathname() || "/";
+  const [hash, setHash] = useState("");
+  const isEnglish = pathname === "/en" || pathname.startsWith("/en/");
+  const swedishHref = withHash(isEnglish ? enToSv[pathname] || "/" : pathname || "/", hash);
+  const englishHref = withHash(isEnglish ? pathname || "/en" : svToEn[pathname] || "/en", hash);
+
   useEffect(() => {
     if (!document.getElementById("iboren-booking-mobile-polish")) {
       const style = document.createElement("style");
@@ -129,8 +171,16 @@ export default function BookingMobilePolish() {
       document.head.appendChild(style);
     }
 
-    addHomepageLanguageLink();
+    const updateHash = () => setHash(window.location.hash || "");
+    updateHash();
+    window.addEventListener("hashchange", updateHash);
+    return () => window.removeEventListener("hashchange", updateHash);
   }, []);
 
-  return null;
+  return (
+    <nav className="iboren-global-language-switch" aria-label="Language selector">
+      <Link href={swedishHref} className={!isEnglish ? "is-active" : undefined}>SV</Link>
+      <Link href={englishHref} className={isEnglish ? "is-active" : undefined}>EN</Link>
+    </nav>
+  );
 }
