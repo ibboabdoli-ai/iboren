@@ -5,7 +5,7 @@ import { FormEvent, useState } from "react";
 import { BriefcaseBusiness, CheckCircle2, Loader2, Send, Upload } from "lucide-react";
 
 const experienceOptions = ["Ingen erfarenhet", "Mindre än 1 år", "1–3 år", "Mer än 3 år"];
-const availabilityOptions = ["Vardagar dagtid", "Kvällar", "Helger", "Flexibelt", "Deltid", "Heltid"];
+const availabilityOptions = ["Vardagar dagtid", "Kvällar", "Helger", "Flexibelt", "Deltid", "Heltid", "Dag och natt"];
 const yesNoOptions = ["Ja", "Nej"];
 
 type Status = "idle" | "loading" | "success" | "error";
