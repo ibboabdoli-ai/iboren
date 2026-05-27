@@ -1,59 +1,59 @@
 "use client";
 
-import Link from "next/link";
+import { useEffect } from "react";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
 
 const css = `
-.iboren-global-language-switch {
-  position: fixed;
-  top: 1.05rem;
-  right: 4.75rem;
-  z-index: 70;
+.iboren-header-actions {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+}
+
+.iboren-inline-language-switch {
   display: inline-flex;
   align-items: center;
   overflow: hidden;
   border: 1px solid rgba(212, 165, 116, .35);
   border-radius: 999px;
-  background: rgba(2, 5, 4, .72);
-  backdrop-filter: blur(14px);
-  box-shadow: 0 14px 40px rgba(0, 0, 0, .18);
+  background: rgba(255, 253, 248, .06);
 }
 
-.iboren-global-language-switch a {
+.iboren-inline-language-switch a {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 2.35rem;
+  min-width: 2.05rem;
   height: 2.45rem;
-  padding: 0 .7rem;
+  padding: 0 .55rem;
   color: #D4A574;
-  font-size: .72rem;
+  font-size: .68rem;
   font-weight: 900;
-  letter-spacing: .12em;
+  letter-spacing: .1em;
   text-decoration: none;
 }
 
-.iboren-global-language-switch a.is-active {
+.iboren-inline-language-switch a.is-active {
   background: #D4A574;
   color: #020504;
 }
 
 @media (min-width: 768px) {
-  .iboren-global-language-switch {
+  .iboren-header-actions {
     display: none !important;
   }
 }
 
 @media (max-width: 374px) {
-  .iboren-global-language-switch {
-    right: 4.35rem;
+  .iboren-header-actions {
+    gap: .4rem;
   }
 
-  .iboren-global-language-switch a {
-    min-width: 2.1rem;
-    padding: 0 .55rem;
-    font-size: .68rem;
+  .iboren-inline-language-switch a {
+    min-width: 1.9rem;
+    height: 2.35rem;
+    padding: 0 .45rem;
+    font-size: .64rem;
   }
 }
 
@@ -152,16 +152,49 @@ const svToEn: Record<string, string> = {
 
 const enToSv: Record<string, string> = Object.fromEntries(Object.entries(svToEn).map(([sv, en]) => [en, sv]));
 
-function withHash(path: string, hash: string) {
-  return hash && (path === "/" || path === "/en") ? `${path}${hash}` : path;
+function targetPaths(pathname: string) {
+  const isEnglish = pathname === "/en" || pathname.startsWith("/en/");
+  const svPath = isEnglish ? enToSv[pathname] || "/" : pathname || "/";
+  const enPath = isEnglish ? pathname || "/en" : svToEn[pathname] || "/en";
+  return { isEnglish, svPath, enPath };
+}
+
+function addInlineLanguageSwitch(pathname: string) {
+  document.querySelector(".iboren-global-language-switch")?.remove();
+  document.querySelector(".home-mobile-language-link")?.remove();
+
+  const nav = document.querySelector<HTMLElement>("header nav");
+  const menuButton = nav?.querySelector<HTMLButtonElement>("button");
+  if (!nav || !menuButton) return;
+
+  let actions = nav.querySelector<HTMLDivElement>(".iboren-header-actions");
+  if (!actions) {
+    actions = document.createElement("div");
+    actions.className = "iboren-header-actions";
+    nav.insertBefore(actions, menuButton);
+    actions.appendChild(menuButton);
+  }
+
+  let switcher = actions.querySelector<HTMLDivElement>(".iboren-inline-language-switch");
+  if (!switcher) {
+    switcher = document.createElement("div");
+    switcher.className = "iboren-inline-language-switch";
+    actions.insertBefore(switcher, menuButton);
+  }
+
+  const { isEnglish, svPath, enPath } = targetPaths(pathname);
+  const currentHash = window.location.hash || "";
+  const svHref = currentHash && svPath === "/" ? `${svPath}${currentHash}` : svPath;
+  const enHref = currentHash && enPath === "/en" ? `${enPath}${currentHash}` : enPath;
+
+  switcher.innerHTML = `
+    <a href="${svHref}" class="${!isEnglish ? "is-active" : ""}" aria-label="Svenska">SV</a>
+    <a href="${enHref}" class="${isEnglish ? "is-active" : ""}" aria-label="English">EN</a>
+  `;
 }
 
 export default function BookingMobilePolish() {
   const pathname = usePathname() || "/";
-  const [hash, setHash] = useState("");
-  const isEnglish = pathname === "/en" || pathname.startsWith("/en/");
-  const swedishHref = withHash(isEnglish ? enToSv[pathname] || "/" : pathname || "/", hash);
-  const englishHref = withHash(isEnglish ? pathname || "/en" : svToEn[pathname] || "/en", hash);
 
   useEffect(() => {
     if (!document.getElementById("iboren-booking-mobile-polish")) {
@@ -171,16 +204,8 @@ export default function BookingMobilePolish() {
       document.head.appendChild(style);
     }
 
-    const updateHash = () => setHash(window.location.hash || "");
-    updateHash();
-    window.addEventListener("hashchange", updateHash);
-    return () => window.removeEventListener("hashchange", updateHash);
-  }, []);
+    addInlineLanguageSwitch(pathname);
+  }, [pathname]);
 
-  return (
-    <nav className="iboren-global-language-switch" aria-label="Language selector">
-      <Link href={swedishHref} className={!isEnglish ? "is-active" : undefined}>SV</Link>
-      <Link href={englishHref} className={isEnglish ? "is-active" : undefined}>EN</Link>
-    </nav>
-  );
+  return null;
 }
