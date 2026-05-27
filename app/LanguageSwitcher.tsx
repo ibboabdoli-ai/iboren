@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect } from "react";
 import { usePathname } from "next/navigation";
 
 const svToEn: Record<string, string> = {
@@ -27,14 +28,39 @@ const svToEn: Record<string, string> = {
 };
 
 const enToSv = Object.fromEntries(Object.entries(svToEn).map(([sv, en]) => [en, sv]));
+const mobileHomeStyleId = "iboren-home-language-switcher-style";
 
 function normalize(pathname: string) {
   if (!pathname || pathname === "/") return "/";
   return pathname.endsWith("/") ? pathname.slice(0, -1) : pathname;
 }
 
+function ensureMobileHomeLanguageStyle() {
+  if (document.getElementById(mobileHomeStyleId)) return;
+
+  const style = document.createElement("style");
+  style.id = mobileHomeStyleId;
+  style.textContent = `
+    @media (max-width: 767px) {
+      nav[aria-label="Language"].iboren-home-language-switcher {
+        display: flex !important;
+        top: calc(env(safe-area-inset-top, 0px) + 1.35rem) !important;
+        right: calc(env(safe-area-inset-right, 0px) + 4.75rem) !important;
+        z-index: 140 !important;
+      }
+    }
+  `;
+  document.head.appendChild(style);
+}
+
 export default function LanguageSwitcher() {
   const pathname = normalize(usePathname() || "/");
+  const isHomePath = pathname === "/" || pathname === "/en";
+
+  useEffect(() => {
+    if (isHomePath) ensureMobileHomeLanguageStyle();
+  }, [isHomePath]);
+
   if (pathname === "/profile" || pathname === "/en/profile") return null;
 
   const isEnglish = pathname === "/en" || pathname.startsWith("/en/");
@@ -42,7 +68,7 @@ export default function LanguageSwitcher() {
   const enHref = isEnglish ? pathname : svToEn[pathname] || "/en";
 
   return (
-    <nav aria-label="Language" className="fixed right-20 top-5 z-[80] flex overflow-hidden rounded-full border border-gold/30 bg-night/90 text-[11px] font-black uppercase tracking-[.14em] text-porcelain shadow-xl backdrop-blur md:right-8 md:top-5">
+    <nav aria-label="Language" className={`${isHomePath ? "iboren-home-language-switcher" : ""} fixed right-20 top-5 z-[140] flex overflow-hidden rounded-full border border-gold/30 bg-night/90 text-[11px] font-black uppercase tracking-[.14em] text-porcelain shadow-xl backdrop-blur md:right-8 md:top-5`}>
       <Link href={svHref} className={`px-3 py-2 transition ${!isEnglish ? "bg-gold text-night" : "text-porcelain/72 hover:text-gold"}`}>SV</Link>
       <Link href={enHref} className={`px-3 py-2 transition ${isEnglish ? "bg-gold text-night" : "text-porcelain/72 hover:text-gold"}`}>EN</Link>
     </nav>
