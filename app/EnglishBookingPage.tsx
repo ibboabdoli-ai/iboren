@@ -2,7 +2,7 @@
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { Copy, Home, LocateFixed, Loader2, Mail, Menu, Send, ShieldCheck, UserRound, X } from "lucide-react";
+import { Building2, Copy, Home, LocateFixed, Loader2, Mail, Menu, Send, ShieldCheck, Truck, UserRound, X } from "lucide-react";
 import { createClient, type User } from "@supabase/supabase-js";
 
 type Option = { value: string; label: string };
@@ -96,6 +96,12 @@ const extraOptions: Option[] = [
   { value: "Balkong", label: "Balcony" },
   { value: "Grovstädning", label: "Deep cleaning" },
   { value: "Skåp/lådor", label: "Cabinets/drawers" }
+];
+
+const services = [
+  { icon: Home, title: "Home cleaning", href: "/en/home-cleaning", price: "from 255 SEK/hour after RUT", body: "For recurring or one-time cleaning at home." },
+  { icon: Truck, title: "Move-out cleaning", href: "/en/move-out-cleaning", price: "custom quote", body: "For moving, handover and a clear checklist." },
+  { icon: Building2, title: "Office cleaning", href: "/en/office-cleaning", price: "custom quote", body: "For companies, premises and recurring service." }
 ];
 
 const displayMap = new Map<string, string>([
@@ -318,8 +324,9 @@ export default function EnglishBookingPage() {
             </span>
           </a>
           <div className="hidden items-center gap-6 text-sm font-semibold text-porcelain/68 md:flex">
-            <a href="#booking" className="hover:text-gold">Request</a>
+            <a href="#services" className="hover:text-gold">Services</a>
             <Link href="/en/prices" className="hover:text-gold">Prices</Link>
+            <a href="#booking" className="hover:text-gold">Request</a>
             <Link href="/en/jobs" className="hover:text-gold">Work with us</Link>
             <Link href="/en/about" className="hover:text-gold">About us</Link>
             <Link href="/" className="hover:text-gold">SV</Link>
@@ -332,6 +339,7 @@ export default function EnglishBookingPage() {
         {menuOpen && (
           <div className="border-t border-gold/10 bg-night/95 px-4 pb-6 md:hidden">
             <div className="mx-auto grid max-w-sm gap-2 pt-2 text-porcelain">
+              <a href="#services" onClick={() => setMenuOpen(false)} className="rounded-2xl px-4 py-3 font-semibold">Services</a>
               <a href="#booking" onClick={() => setMenuOpen(false)} className="rounded-2xl px-4 py-3 font-semibold">Request</a>
               <Link href="/en/prices" onClick={() => setMenuOpen(false)} className="rounded-2xl px-4 py-3 font-semibold">Prices</Link>
               <Link href="/en/jobs" onClick={() => setMenuOpen(false)} className="rounded-2xl px-4 py-3 font-semibold">Work with us</Link>
@@ -352,6 +360,29 @@ export default function EnglishBookingPage() {
           <p className="mx-auto mt-7 max-w-3xl text-lg leading-8 text-porcelain/86 md:text-2xl">Get help with home cleaning, move-out cleaning, office cleaning and window cleaning. Send a clear booking request online.</p>
           {user && <p className="mt-5 inline-flex rounded-full border border-gold/25 bg-night/50 px-4 py-2 text-sm font-bold text-gold">Logged in as {user.email}</p>}
           <div className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row"><Link href="/en/prices" className="btn-primary">Calculate price</Link><a href="#booking" className="btn-secondary">Send request</a></div>
+        </div>
+      </section>
+
+      <section id="services" className="bg-night py-24 md:py-32">
+        <div className="luxe-container">
+          <p className="text-[11px] font-bold uppercase tracking-[.38em] text-gold">I / Services</p>
+          <h2 className="display mt-4 max-w-4xl text-5xl font-normal uppercase leading-[.9] text-porcelain md:text-7xl">Cleaning services for homes and businesses.</h2>
+          <div className="mt-12 grid gap-5 md:grid-cols-3">
+            {services.map((service, index) => {
+              const Icon = service.icon;
+              return (
+                <Link href={service.href} key={service.title} className="group relative overflow-hidden rounded-[2rem] border border-gold/15 bg-porcelain/[.035] p-7 shadow-[0_28px_90px_rgba(0,0,0,.22)] transition hover:-translate-y-1 hover:border-gold/40">
+                  <div className="mb-20 flex items-start justify-between">
+                    <div className="grid h-14 w-14 place-items-center rounded-full border border-gold/30 bg-gold/10 text-gold"><Icon size={25} /></div>
+                    <span className="rounded-full border border-gold/20 px-3 py-1 text-[10px] font-bold uppercase tracking-[.2em] text-gold/80">{service.price}</span>
+                  </div>
+                  <p className="mb-3 text-[11px] font-bold uppercase tracking-[.28em] text-porcelain/42">0{index + 1}</p>
+                  <h3 className="display text-4xl font-normal uppercase text-porcelain">{service.title}</h3>
+                  <p className="mt-4 leading-7 text-porcelain/62">{service.body}</p>
+                </Link>
+              );
+            })}
+          </div>
         </div>
       </section>
 
