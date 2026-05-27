@@ -11,9 +11,9 @@ export default function ProfileLanguageSwitch() {
   const isEnglish = pathname === "/en/profile";
 
   return (
-    <nav className="absolute right-4 top-4 z-[70] inline-flex overflow-hidden rounded-full border border-burgundy/15 bg-porcelain shadow-soft" aria-label="Profile language selector">
-      <Link href="/profile" className={`px-4 py-2 text-xs font-black tracking-[.12em] ${!isEnglish ? "bg-burgundy text-porcelain" : "text-burgundy"}`}>SV</Link>
-      <Link href="/en/profile" className={`px-4 py-2 text-xs font-black tracking-[.12em] ${isEnglish ? "bg-burgundy text-porcelain" : "text-burgundy"}`}>EN</Link>
+    <nav className="fixed right-[5.05rem] top-[6.35rem] z-[9999] inline-flex overflow-hidden rounded-full border border-gold/35 bg-night shadow-soft md:right-28 md:top-6" aria-label="Profile language selector">
+      <Link href="/profile" className={`px-4 py-3 text-xs font-black tracking-[.14em] ${!isEnglish ? "bg-gold text-night" : "text-gold"}`}>SV</Link>
+      <Link href="/en/profile" className={`px-4 py-3 text-xs font-black tracking-[.14em] ${isEnglish ? "bg-gold text-night" : "text-gold"}`}>EN</Link>
     </nav>
   );
 }
