@@ -6,7 +6,7 @@ import { ArrowRight, Calculator, CheckCircle2 } from "lucide-react";
 
 type Service = "Home cleaning" | "Move-out cleaning" | "Deep cleaning" | "Office cleaning" | "Window cleaning";
 type Frequency = "One-time" | "Every week" | "Every other week" | "Every fourth week";
-type AddOn = "Window cleaning" | "Oven cleaning" | "Fridge/freezer" | "Balcony" | "Extra dirty";
+type AddOn = "Window cleaning" | "Oven" | "Fridge/freezer" | "Balcony" | "Deep cleaning" | "Cabinets/drawers";
 type CustomerType = "Private customer" | "Company";
 type Condition = "Normal" | "Dirty" | "Very dirty";
 type YesNo = "Yes" | "No";
@@ -55,7 +55,7 @@ type EstimateInput = {
 
 const services: Service[] = ["Home cleaning", "Move-out cleaning", "Deep cleaning", "Office cleaning", "Window cleaning"];
 const frequencies: Frequency[] = ["One-time", "Every week", "Every other week", "Every fourth week"];
-const addOns: AddOn[] = ["Window cleaning", "Oven cleaning", "Fridge/freezer", "Balcony", "Extra dirty"];
+const addOns: AddOn[] = ["Window cleaning", "Oven", "Fridge/freezer", "Balcony", "Deep cleaning", "Cabinets/drawers"];
 const customerTypes: CustomerType[] = ["Private customer", "Company"];
 const conditions: Condition[] = ["Normal", "Dirty", "Very dirty"];
 const yesNoOptions: YesNo[] = ["Yes", "No"];
@@ -85,10 +85,11 @@ function serviceAllowsRut(service: Service) {
 
 function addOnBeforeRutPrice(addOn: AddOn) {
   if (addOn === "Window cleaning") return 700;
-  if (addOn === "Oven cleaning") return 350;
+  if (addOn === "Oven") return 350;
   if (addOn === "Fridge/freezer") return 350;
   if (addOn === "Balcony") return 450;
-  if (addOn === "Extra dirty") return 650;
+  if (addOn === "Deep cleaning") return 650;
+  if (addOn === "Cabinets/drawers") return 450;
   return 0;
 }
 
