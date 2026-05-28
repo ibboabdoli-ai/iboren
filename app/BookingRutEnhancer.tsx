@@ -87,8 +87,27 @@ function normalize(value: unknown) {
   return cleanText(value).toLowerCase();
 }
 
+function parsePositiveInt(value: unknown, fallback = 0) {
+  const parsed = Number(cleanText(value).replace(/[^0-9]/g, ""));
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+}
+
 function escapeRegex(value: string) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function maxResidentialBathroomsForSqm(sqm: number) {
+  if (sqm <= 0) return 10;
+  if (sqm <= 60) return 2;
+  if (sqm <= 100) return 3;
+  if (sqm <= 160) return 4;
+  if (sqm <= 220) return 5;
+  return Math.min(10, Math.ceil(sqm / 45));
+}
+
+function maxOfficeToiletsForSqm(sqm: number) {
+  if (sqm <= 0) return 20;
+  return Math.min(20, Math.max(1, Math.ceil(sqm / 25) + 1));
 }
 
 function readControlValue(control: Element) {
@@ -102,9 +121,10 @@ function readControlValue(control: Element) {
 }
 
 function readLabelText(label: HTMLLabelElement) {
+  const text = cleanText(label.textContent);
+  if (text.includes("RUT") && (text.includes("Skatteverkets") || text.includes("conditions") || text.includes("Gäller endast"))) return "RUT";
   const firstSpan = label.querySelector("span");
-  const text = cleanText(firstSpan?.textContent || label.textContent);
-  return text
+  return cleanText(firstSpan?.textContent || text)
     .replace("Show price with RUT deduction", "RUT")
     .replace("Visa pris med RUT-avdrag", "RUT")
     .trim();
@@ -127,6 +147,69 @@ function extractEstimatedTime(text: string) {
 function extractRiskLabel(text: string) {
   const labels = ["Bra prisunderlag", "Behöver kontrolleras", "Manuell offert behövs", "Good estimate basis", "Needs review", "Manual quote needed"];
   return labels.find((label) => text.includes(label)) || "";
+}
+
+function findControlByLabels(root: HTMLElement, labels: string[]) {
+  const wanted = labels.map(normalize);
+  const labelsInRoot = Array.from(root.querySelectorAll("label"));
+  for (const label of labelsInRoot) {
+    const labelText = normalize(label.querySelector("span")?.textContent || label.textContent);
+    if (!wanted.some((wantedText) => labelText.includes(wantedText))) continue;
+    const control = label.querySelector("input, select, textarea") as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement | null;
+    if (control) return control;
+  }
+  return null;
+}
+
+function validateBathroomLogic(calculator: HTMLElement, renderWarning: boolean) {
+  const language: Language = calculator.id === "price-calculator" ? "en" : "sv";
+  const sqmControl = findControlByLabels(calculator, ["Storlek kvm", "Size sqm"]);
+  const bathroomControl = findControlByLabels(calculator, ["Antal badrum", "Bathrooms"]);
+  const toiletControl = findControlByLabels(calculator, ["Antal toaletter", "Number of toilets"]);
+  const warningId = "iboren-calculator-bathroom-warning";
+  calculator.querySelector(`#${warningId}`)?.remove();
+
+  const sqm = parsePositiveInt(sqmControl?.value, 0);
+  const bathroomCount = parsePositiveInt(bathroomControl?.value, 0);
+  const toiletCount = parsePositiveInt(toiletControl?.value, 0);
+  let message = "";
+
+  if (bathroomControl && sqm > 0 && bathroomCount > maxResidentialBathroomsForSqm(sqm)) {
+    const max = maxResidentialBathroomsForSqm(sqm);
+    message = language === "en"
+      ? `Bathrooms seems too high for ${sqm} sqm. Maximum ${max} bathrooms is accepted here. Adjust before continuing.`
+      : `Antal badrum verkar för högt för ${sqm} kvm. Max ${max} badrum accepteras här. Justera innan du fortsätter.`;
+  }
+
+  if (!message && toiletControl && sqm > 0 && toiletCount > maxOfficeToiletsForSqm(sqm)) {
+    const max = maxOfficeToiletsForSqm(sqm);
+    message = language === "en"
+      ? `Number of toilets seems too high for ${sqm} sqm. Maximum ${max} toilets is accepted here. Adjust before continuing.`
+      : `Antal toaletter verkar för högt för ${sqm} kvm. Max ${max} toaletter accepteras här. Justera innan du fortsätter.`;
+  }
+
+  const links = Array.from(calculator.querySelectorAll<HTMLAnchorElement>("a[href='/#booking'], a[href='#booking'], a[href='/en#booking']"));
+  links.forEach((link) => {
+    link.dataset.iborenCalculatorInvalid = message ? "1" : "0";
+    link.setAttribute("aria-disabled", message ? "true" : "false");
+    link.classList.toggle("opacity-55", Boolean(message));
+    link.classList.toggle("cursor-not-allowed", Boolean(message));
+  });
+
+  if (message && renderWarning) {
+    const warning = document.createElement("p");
+    warning.id = warningId;
+    warning.className = "rounded-2xl border border-red-300/40 bg-red-100 px-4 py-3 text-sm font-bold leading-6 text-red-900";
+    warning.textContent = message;
+    const target = (bathroomControl || toiletControl)?.closest("label") || calculator.querySelector(".grid");
+    target?.insertAdjacentElement("afterend", warning);
+  }
+
+  return !message;
+}
+
+function validateAllCalculators(renderWarning = true) {
+  document.querySelectorAll<HTMLElement>("#pris-kalkylator, #price-calculator").forEach((calculator) => validateBathroomLogic(calculator, renderWarning));
 }
 
 function captureCalculatorEstimate(calculator: HTMLElement): CalculatorEstimate {
@@ -191,24 +274,19 @@ function getInput(estimate: CalculatorEstimate, keys: string[]) {
   return "";
 }
 
+function clampBathroomForBooking(value: string, sqmValue: string) {
+  const count = parsePositiveInt(value, 0);
+  const sqm = parsePositiveInt(sqmValue, 0);
+  if (!count) return value;
+  return String(Math.min(count, 10, maxResidentialBathroomsForSqm(sqm)));
+}
+
 function setNativeValue(element: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement, value: string) {
   const prototype = Object.getPrototypeOf(element);
   const setter = Object.getOwnPropertyDescriptor(prototype, "value")?.set;
   setter?.call(element, value);
   element.dispatchEvent(new Event("input", { bubbles: true }));
   element.dispatchEvent(new Event("change", { bubbles: true }));
-}
-
-function findControlByLabels(form: HTMLElement, labels: string[]) {
-  const wanted = labels.map(normalize);
-  const labelsInForm = Array.from(form.querySelectorAll("label"));
-  for (const label of labelsInForm) {
-    const labelText = normalize(label.querySelector("span")?.textContent || label.textContent);
-    if (!wanted.some((wantedText) => labelText.includes(wantedText))) continue;
-    const control = label.querySelector("input, select, textarea") as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement | null;
-    if (control) return control;
-  }
-  return null;
 }
 
 function setTextField(form: HTMLElement, labels: string[], value: string) {
@@ -272,6 +350,8 @@ function autoFillBookingForm(form: HTMLElement, estimate: CalculatorEstimate) {
   form.dataset.iborenEstimateAutofilled = "1";
 
   const service = getInput(estimate, ["Tjänst", "Service"]);
+  const sqmValue = getInput(estimate, ["Storlek kvm", "Size sqm"]);
+  const bathroomValue = clampBathroomForBooking(getInput(estimate, ["Antal badrum", "Bathrooms"]), sqmValue);
   const serviceMap: Record<string, string[]> = {
     "Hemstädning": ["Hemstädning", "Home cleaning"],
     "Home cleaning": ["Hemstädning", "Home cleaning"],
@@ -284,27 +364,34 @@ function autoFillBookingForm(form: HTMLElement, estimate: CalculatorEstimate) {
     "Storstädning": ["Hemstädning", "Home cleaning"],
     "Deep cleaning": ["Hemstädning", "Home cleaning"]
   };
+
   if (serviceMap[service]) clickButtonByText(form, serviceMap[service]);
 
-  setTextField(form, ["Storlek kvm", "Size sqm"], getInput(estimate, ["Storlek kvm", "Size sqm"]));
-  setTextField(form, ["Antal rum", "Rooms"], getInput(estimate, ["Antal rum", "Rooms"]));
-  setTextField(form, ["Antal badrum", "Bathrooms"], getInput(estimate, ["Antal badrum", "Bathrooms"]));
-  setTextField(form, ["Våning", "Floor"], getInput(estimate, ["Våning", "Floor"]));
+  function applyFields() {
+    setTextField(form, ["Storlek kvm", "Size sqm"], sqmValue);
+    setTextField(form, ["Antal rum", "Rooms"], getInput(estimate, ["Antal rum", "Rooms"]));
+    setTextField(form, ["Antal badrum", "Bathrooms"], bathroomValue);
+    setTextField(form, ["Våning", "Floor"], getInput(estimate, ["Våning", "Floor"]));
 
-  setSelectField(form, ["Frekvens", "Frequency"], getInput(estimate, ["Frekvens", "Frequency"]));
-  setSelectField(form, ["Husdjur", "Pets"], getInput(estimate, ["Husdjur", "Pets"]));
-  setSelectField(form, ["Hiss", "Elevator"], getInput(estimate, ["Hiss", "Elevator"]));
-  setSelectField(form, ["Parkering", "Parking"], getInput(estimate, ["Parkering", "Parking"]));
+    setSelectField(form, ["Frekvens", "Frequency"], getInput(estimate, ["Frekvens", "Frequency"]));
+    setSelectField(form, ["Husdjur", "Pets"], getInput(estimate, ["Husdjur", "Pets"]));
+    setSelectField(form, ["Hiss", "Elevator"], getInput(estimate, ["Hiss", "Elevator"]));
+    setSelectField(form, ["Parkering", "Parking"], getInput(estimate, ["Parkering", "Parking"]));
 
-  if (normalize(service).includes("kontor") || normalize(service).includes("office")) setSelectField(form, ["Typ av objekt", "Property type"], "Kontor");
+    if (normalize(service).includes("kontor") || normalize(service).includes("office")) setSelectField(form, ["Typ av objekt", "Property type"], "Kontor");
 
-  const selected = estimate.selectedButtons.map(normalize);
-  const has = (labels: string[]) => labels.some((label) => selected.includes(normalize(label)));
-  if (has(["Fönsterputs", "Window cleaning"]) && !normalize(service).includes("fönster") && !normalize(service).includes("window")) clickExtraIfNeeded(form, ["Fönsterputs", "Window cleaning"]);
-  if (has(["Ugnsrengöring", "Oven cleaning", "Oven"])) clickExtraIfNeeded(form, ["Ugn", "Oven"]);
-  if (has(["Kyl/frys", "Fridge/freezer"])) clickExtraIfNeeded(form, ["Kyl/frys", "Fridge/freezer"]);
-  if (has(["Balkong", "Balcony"])) clickExtraIfNeeded(form, ["Balkong", "Balcony"]);
-  if (has(["Extra smutsigt", "Deep cleaning", "Storstädning"]) || normalize(service).includes("storstäd") || normalize(service).includes("deep cleaning")) clickExtraIfNeeded(form, ["Grovstädning", "Deep cleaning"]);
+    const selected = estimate.selectedButtons.map(normalize);
+    const has = (labels: string[]) => labels.some((label) => selected.includes(normalize(label)));
+    if (has(["Fönsterputs", "Window cleaning"]) && !normalize(service).includes("fönster") && !normalize(service).includes("window")) clickExtraIfNeeded(form, ["Fönsterputs", "Window cleaning"]);
+    if (has(["Ugnsrengöring", "Oven cleaning", "Oven"])) clickExtraIfNeeded(form, ["Ugn", "Oven"]);
+    if (has(["Kyl/frys", "Fridge/freezer"])) clickExtraIfNeeded(form, ["Kyl/frys", "Fridge/freezer"]);
+    if (has(["Balkong", "Balcony"])) clickExtraIfNeeded(form, ["Balkong", "Balcony"]);
+    if (has(["Extra smutsigt", "Deep cleaning", "Storstädning"]) || normalize(service).includes("storstäd") || normalize(service).includes("deep cleaning")) clickExtraIfNeeded(form, ["Grovstädning", "Deep cleaning"]);
+  }
+
+  applyFields();
+  window.setTimeout(applyFields, 80);
+  window.setTimeout(applyFields, 300);
 }
 
 function BookingRutPanel({ language }: { language: Language }) {
@@ -399,16 +486,36 @@ export default function BookingRutEnhancer() {
   useEffect(() => {
     function handleCalculatorClick(event: MouseEvent) {
       const target = event.target as Element | null;
-      const link = target?.closest("a[href='/#booking'], a[href='#booking'], a[href='/en#booking']");
+      const link = target?.closest("a[href='/#booking'], a[href='#booking'], a[href='/en#booking']") as HTMLAnchorElement | null;
       const calculator = link?.closest("#pris-kalkylator, #price-calculator") as HTMLElement | null;
       if (!calculator) return;
+      if (!validateBathroomLogic(calculator, true) || link?.dataset.iborenCalculatorInvalid === "1") {
+        event.preventDefault();
+        event.stopPropagation();
+        calculator.querySelector("#iboren-calculator-bathroom-warning")?.scrollIntoView({ behavior: "smooth", block: "center" });
+        return;
+      }
       try {
         window.sessionStorage.setItem(STORAGE_KEY, JSON.stringify(captureCalculatorEstimate(calculator)));
       } catch {}
     }
 
+    function handleCalculatorChange(event: Event) {
+      const target = event.target as Element | null;
+      if (target?.closest("#pris-kalkylator, #price-calculator")) validateAllCalculators(true);
+    }
+
     document.addEventListener("click", handleCalculatorClick, true);
-    return () => document.removeEventListener("click", handleCalculatorClick, true);
+    document.addEventListener("input", handleCalculatorChange, true);
+    document.addEventListener("change", handleCalculatorChange, true);
+    validateAllCalculators(false);
+    const timer = window.setTimeout(() => validateAllCalculators(false), 500);
+    return () => {
+      window.clearTimeout(timer);
+      document.removeEventListener("click", handleCalculatorClick, true);
+      document.removeEventListener("input", handleCalculatorChange, true);
+      document.removeEventListener("change", handleCalculatorChange, true);
+    };
   }, []);
 
   useEffect(() => {
