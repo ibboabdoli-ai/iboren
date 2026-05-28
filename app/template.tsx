@@ -3,6 +3,7 @@ import CinematicFrameLock from "./CinematicFrameLock";
 import EnglishLinkNormalizer from "./EnglishLinkNormalizer";
 import EnglishProfileLinkNormalizer from "./EnglishProfileLinkNormalizer";
 import HeaderLogo from "./HeaderLogo";
+import HomeMobileLanguageButton from "./HomeMobileLanguageButton";
 import InternalLinkNormalizer from "./InternalLinkNormalizer";
 import PerformanceHints from "./PerformanceHints";
 import SeoInternalLinks from "./SeoInternalLinks";
@@ -16,6 +17,7 @@ export default function Template({ children }: { children: React.ReactNode }) {
       <EnglishProfileLinkNormalizer />
       <SwedishBookingCopyFix />
       <HeaderLogo />
+      <HomeMobileLanguageButton />
       <CinematicFrameLock />
       <BookingRutEnhancer />
       <PerformanceHints />
