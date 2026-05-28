@@ -6,7 +6,7 @@ import { ArrowRight, Calculator, CheckCircle2 } from "lucide-react";
 
 type Service = "Hemstädning" | "Flyttstädning" | "Storstädning" | "Kontorsstädning" | "Fönsterputs";
 type Frequency = "Engång" | "Varje vecka" | "Varannan vecka" | "Var fjärde vecka";
-type AddOn = "Fönsterputs" | "Ugnsrengöring" | "Kyl/frys" | "Balkong" | "Extra smutsigt";
+type AddOn = "Fönsterputs" | "Ugn" | "Kyl/frys" | "Balkong" | "Grovstädning" | "Skåp/lådor";
 type CustomerType = "Privatperson" | "Företag";
 type Condition = "Normal" | "Smutsigt" | "Mycket smutsigt";
 type YesNo = "Ja" | "Nej";
@@ -55,7 +55,7 @@ type EstimateInput = {
 
 const services: Service[] = ["Hemstädning", "Flyttstädning", "Storstädning", "Kontorsstädning", "Fönsterputs"];
 const frequencies: Frequency[] = ["Engång", "Varje vecka", "Varannan vecka", "Var fjärde vecka"];
-const addOns: AddOn[] = ["Fönsterputs", "Ugnsrengöring", "Kyl/frys", "Balkong", "Extra smutsigt"];
+const addOns: AddOn[] = ["Fönsterputs", "Ugn", "Kyl/frys", "Balkong", "Grovstädning", "Skåp/lådor"];
 const customerTypes: CustomerType[] = ["Privatperson", "Företag"];
 const conditions: Condition[] = ["Normal", "Smutsigt", "Mycket smutsigt"];
 const yesNoOptions: YesNo[] = ["Ja", "Nej"];
@@ -85,10 +85,11 @@ function serviceAllowsRut(service: Service) {
 
 function addOnBeforeRutPrice(addOn: AddOn) {
   if (addOn === "Fönsterputs") return 700;
-  if (addOn === "Ugnsrengöring") return 350;
+  if (addOn === "Ugn") return 350;
   if (addOn === "Kyl/frys") return 350;
   if (addOn === "Balkong") return 450;
-  if (addOn === "Extra smutsigt") return 650;
+  if (addOn === "Grovstädning") return 650;
+  if (addOn === "Skåp/lådor") return 450;
   return 0;
 }
 
