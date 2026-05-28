@@ -5,7 +5,8 @@ import { ArrowRight, CheckCircle2, Mail, MapPin, ShieldCheck, Sparkles } from "l
 export const metadata: Metadata = {
   title: "Om Iboren – Lokal städfirma i Södertälje och Stockholm",
   description: "Läs mer om Iboren, en lokal städfirma som hjälper privatpersoner och företag med hemstädning, flyttstädning, kontorsstädning och fönsterputs i Södertälje och Stockholm.",
-  keywords: ["Iboren", "om Iboren", "städfirma Södertälje", "städfirma Stockholm", "hemstädning Södertälje", "flyttstädning Stockholm"]
+  keywords: ["Iboren", "om Iboren", "städfirma Södertälje", "städfirma Stockholm", "hemstädning Södertälje", "flyttstädning Stockholm"],
+  alternates: { canonical: "https://iboren.se/om-oss", languages: { sv: "https://iboren.se/om-oss", en: "https://iboren.se/en/about" } }
 };
 
 const points = [
@@ -18,8 +19,8 @@ const points = [
 const schema = {
   "@context": "https://schema.org",
   "@type": "AboutPage",
-  "@id": "https://iboren.se/om-iboren#about",
-  url: "https://iboren.se/om-iboren",
+  "@id": "https://iboren.se/om-oss#about",
+  url: "https://iboren.se/om-oss",
   name: "Om Iboren",
   description: "Iboren är en lokal städfirma för privatpersoner och företag i Södertälje och Stockholm.",
   mainEntity: { "@id": "https://iboren.se/#organization" }
