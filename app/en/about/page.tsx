@@ -5,7 +5,7 @@ import { ArrowRight, CheckCircle2, Mail, MapPin, ShieldCheck, Sparkles } from "l
 export const metadata: Metadata = {
   title: "About Iboren – Local cleaning company in Södertälje and Stockholm",
   description: "Learn more about Iboren, a local cleaning company helping homes and businesses with home cleaning, move-out cleaning, office cleaning and window cleaning in Södertälje and Stockholm.",
-  alternates: { canonical: "https://iboren.se/en/about", languages: { sv: "https://iboren.se/om-iboren", en: "https://iboren.se/en/about" } }
+  alternates: { canonical: "https://iboren.se/en/about", languages: { sv: "https://iboren.se/om-oss", en: "https://iboren.se/en/about" } }
 };
 
 const points = [
