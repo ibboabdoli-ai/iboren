@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import BookingSubmitController from "./BookingSubmitController";
 
 const hiddenPrefixes = ["/admin", "/profile", "/login"];
@@ -261,8 +261,15 @@ function applyClientEnhancements() {
 }
 
 export default function SeoInternalLinks() {
-  const pathname = usePathname();
-  const isEnglish = pathname === "/en" || Boolean(pathname?.startsWith("/en/"));
+  const routePathname = usePathname();
+  const [clientPathname, setClientPathname] = useState("");
+
+  useEffect(() => {
+    setClientPathname(window.location.pathname || "");
+  }, []);
+
+  const pathname = clientPathname || routePathname || "";
+  const isEnglish = pathname === "/en" || pathname.startsWith("/en/");
   const sectionLinks = isEnglish ? englishLocalLinks : localLinks;
   const searchLinks = isEnglish ? englishKeywordLinks : keywordLinks;
 
