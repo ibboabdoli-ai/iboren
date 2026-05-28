@@ -1,3 +1,4 @@
+import BookingCalculatorAutofillFix from "./BookingCalculatorAutofillFix";
 import BookingRutEnhancer from "./BookingRutEnhancer";
 import CinematicFrameLock from "./CinematicFrameLock";
 import EnglishHomeServicesEnhancer from "./EnglishHomeServicesEnhancer";
@@ -22,6 +23,7 @@ export default function Template({ children }: { children: React.ReactNode }) {
       <EnglishHomeServicesEnhancer />
       <CinematicFrameLock />
       <BookingRutEnhancer />
+      <BookingCalculatorAutofillFix />
       <PerformanceHints />
       {children}
       <SeoInternalLinks />
