@@ -8,6 +8,7 @@ import HeaderLogo from "./HeaderLogo";
 import HomeMobileLanguageButton from "./HomeMobileLanguageButton";
 import InternalLinkNormalizer from "./InternalLinkNormalizer";
 import PerformanceHints from "./PerformanceHints";
+import PriceCalculatorEmptyDefaults from "./PriceCalculatorEmptyDefaults";
 import SeoInternalLinks from "./SeoInternalLinks";
 import SwedishBookingCopyFix from "./SwedishBookingCopyFix";
 
@@ -24,6 +25,7 @@ export default function Template({ children }: { children: React.ReactNode }) {
       <CinematicFrameLock />
       <BookingRutEnhancer />
       <BookingCalculatorAutofillFix />
+      <PriceCalculatorEmptyDefaults />
       <PerformanceHints />
       {children}
       <SeoInternalLinks />
