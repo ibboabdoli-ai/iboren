@@ -83,6 +83,10 @@ function cleanText(value: unknown) {
   return String(value ?? "").replace(/\s+/g, " ").trim();
 }
 
+function normalize(value: unknown) {
+  return cleanText(value).toLowerCase();
+}
+
 function escapeRegex(value: string) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
@@ -177,6 +181,130 @@ function readStoredEstimate(): CalculatorEstimate | null {
   } catch {
     return null;
   }
+}
+
+function getInput(estimate: CalculatorEstimate, keys: string[]) {
+  for (const key of keys) {
+    const value = estimate.inputs[key];
+    if (cleanText(value)) return cleanText(value);
+  }
+  return "";
+}
+
+function setNativeValue(element: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement, value: string) {
+  const prototype = Object.getPrototypeOf(element);
+  const setter = Object.getOwnPropertyDescriptor(prototype, "value")?.set;
+  setter?.call(element, value);
+  element.dispatchEvent(new Event("input", { bubbles: true }));
+  element.dispatchEvent(new Event("change", { bubbles: true }));
+}
+
+function findControlByLabels(form: HTMLElement, labels: string[]) {
+  const wanted = labels.map(normalize);
+  const labelsInForm = Array.from(form.querySelectorAll("label"));
+  for (const label of labelsInForm) {
+    const labelText = normalize(label.querySelector("span")?.textContent || label.textContent);
+    if (!wanted.some((wantedText) => labelText.includes(wantedText))) continue;
+    const control = label.querySelector("input, select, textarea") as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement | null;
+    if (control) return control;
+  }
+  return null;
+}
+
+function setTextField(form: HTMLElement, labels: string[], value: string) {
+  if (!cleanText(value)) return;
+  const control = findControlByLabels(form, labels);
+  if (control instanceof HTMLInputElement || control instanceof HTMLTextAreaElement) setNativeValue(control, value);
+}
+
+function setSelectField(form: HTMLElement, labels: string[], rawValue: string) {
+  if (!cleanText(rawValue)) return;
+  const control = findControlByLabels(form, labels);
+  if (!(control instanceof HTMLSelectElement)) return;
+  const value = mapSelectValue(rawValue);
+  const option = Array.from(control.options).find((item) => item.value === value || normalize(item.textContent) === normalize(rawValue) || normalize(item.textContent) === normalize(value));
+  if (option) setNativeValue(control, option.value);
+}
+
+function mapSelectValue(value: string) {
+  const normalized = normalize(value);
+  const map: Record<string, string> = {
+    "yes": "Ja",
+    "ja": "Ja",
+    "no": "Nej",
+    "nej": "Nej",
+    "not sure": "Vet ej",
+    "vet ej": "Vet ej",
+    "one-time": "Engång",
+    "engång": "Engång",
+    "every week": "Varje vecka",
+    "varje vecka": "Varje vecka",
+    "every other week": "Varannan vecka",
+    "varannan vecka": "Varannan vecka",
+    "every fourth week": "Varje månad",
+    "var fjärde vecka": "Varje månad",
+    "every month": "Varje månad",
+    "normal": "Annat",
+    "dirty": "Annat",
+    "very dirty": "Annat"
+  };
+  return map[normalized] || value;
+}
+
+function clickButtonByText(form: HTMLElement, labels: string[]) {
+  const wanted = labels.map(normalize);
+  const button = Array.from(form.querySelectorAll("button"))
+    .find((item) => wanted.includes(normalize(item.textContent)));
+  button?.click();
+}
+
+function clickExtraIfNeeded(form: HTMLElement, labels: string[]) {
+  const wanted = labels.map(normalize);
+  const button = Array.from(form.querySelectorAll("button"))
+    .find((item) => wanted.includes(normalize(item.textContent)));
+  if (!button) return;
+  const className = cleanText(button.getAttribute("class"));
+  if (!className.includes("bg-gold")) button.click();
+}
+
+function autoFillBookingForm(form: HTMLElement, estimate: CalculatorEstimate) {
+  if (form.dataset.iborenEstimateAutofilled === "1") return;
+  form.dataset.iborenEstimateAutofilled = "1";
+
+  const service = getInput(estimate, ["Tjänst", "Service"]);
+  const serviceMap: Record<string, string[]> = {
+    "Hemstädning": ["Hemstädning", "Home cleaning"],
+    "Home cleaning": ["Hemstädning", "Home cleaning"],
+    "Flyttstädning": ["Flyttstädning", "Move-out cleaning"],
+    "Move-out cleaning": ["Flyttstädning", "Move-out cleaning"],
+    "Kontorsstädning": ["Kontorsstädning", "Office cleaning"],
+    "Office cleaning": ["Kontorsstädning", "Office cleaning"],
+    "Fönsterputs": ["Fönsterputs", "Window cleaning"],
+    "Window cleaning": ["Fönsterputs", "Window cleaning"],
+    "Storstädning": ["Hemstädning", "Home cleaning"],
+    "Deep cleaning": ["Hemstädning", "Home cleaning"]
+  };
+  if (serviceMap[service]) clickButtonByText(form, serviceMap[service]);
+
+  setTextField(form, ["Storlek kvm", "Size sqm"], getInput(estimate, ["Storlek kvm", "Size sqm"]));
+  setTextField(form, ["Antal rum", "Rooms"], getInput(estimate, ["Antal rum", "Rooms"]));
+  setTextField(form, ["Antal badrum", "Bathrooms"], getInput(estimate, ["Antal badrum", "Bathrooms"]));
+  setTextField(form, ["Våning", "Floor"], getInput(estimate, ["Våning", "Floor"]));
+
+  setSelectField(form, ["Frekvens", "Frequency"], getInput(estimate, ["Frekvens", "Frequency"]));
+  setSelectField(form, ["Husdjur", "Pets"], getInput(estimate, ["Husdjur", "Pets"]));
+  setSelectField(form, ["Hiss", "Elevator"], getInput(estimate, ["Hiss", "Elevator"]));
+  setSelectField(form, ["Parkering", "Parking"], getInput(estimate, ["Parkering", "Parking"]));
+
+  if (normalize(service).includes("kontor") || normalize(service).includes("office")) setSelectField(form, ["Typ av objekt", "Property type"], "Kontor");
+
+  const selected = estimate.selectedButtons.map(normalize);
+  const has = (labels: string[]) => labels.some((label) => selected.includes(normalize(label)));
+  if (has(["Fönsterputs", "Window cleaning"]) && !normalize(service).includes("fönster") && !normalize(service).includes("window")) clickExtraIfNeeded(form, ["Fönsterputs", "Window cleaning"]);
+  if (has(["Ugnsrengöring", "Oven cleaning", "Oven"])) clickExtraIfNeeded(form, ["Ugn", "Oven"]);
+  if (has(["Kyl/frys", "Fridge/freezer"])) clickExtraIfNeeded(form, ["Kyl/frys", "Fridge/freezer"]);
+  if (has(["Balkong", "Balcony"])) clickExtraIfNeeded(form, ["Balkong", "Balcony"]);
+  if (has(["Extra smutsigt", "Deep cleaning", "Storstädning"]) || normalize(service).includes("storstäd") || normalize(service).includes("deep cleaning")) clickExtraIfNeeded(form, ["Grovstädning", "Deep cleaning"]);
 }
 
 function BookingRutPanel({ language }: { language: Language }) {
@@ -295,6 +423,8 @@ export default function BookingRutEnhancer() {
 
       const language: Language = isEnglishPath() ? "en" : "sv";
       const estimate = readStoredEstimate();
+
+      if (estimate) autoFillBookingForm(form, estimate);
 
       if (estimate && !document.querySelector("#iboren-calculator-estimate-host")) {
         const host = document.createElement("div");
