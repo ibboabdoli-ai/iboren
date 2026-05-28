@@ -59,8 +59,8 @@ const estimateCopy = {
     beforeRut: "Före RUT",
     afterRut: "Efter RUT / kundpris",
     time: "Uppskattad tid",
-    status: "Status",
-    selected: "Val i kalkylatorn",
+    selected: "Alla val i kalkylatorn",
+    addOns: "Markerade tillval/val",
     noValue: "Ej angivet"
   },
   en: {
@@ -69,8 +69,8 @@ const estimateCopy = {
     beforeRut: "Before RUT",
     afterRut: "After RUT / customer price",
     time: "Estimated time",
-    status: "Status",
-    selected: "Calculator selections",
+    selected: "All calculator selections",
+    addOns: "Selected add-ons/options",
     noValue: "Not entered"
   }
 };
@@ -224,14 +224,7 @@ function BookingRutPanel({ language }: { language: Language }) {
 
 function EstimateSummary({ estimate, language }: { estimate: CalculatorEstimate; language: Language }) {
   const t = estimateCopy[language];
-  const mainInputs = useMemo(() => {
-    const preferred = language === "en"
-      ? ["Service", "Customer type", "Size sqm", "Rooms", "Bathrooms", "Frequency", "Condition", "Pets", "Floor", "Elevator", "Parking", "Access", "Short notice", "Weekend/evening", "RUT"]
-      : ["Tjänst", "Kundtyp", "Storlek kvm", "Antal rum", "Antal badrum", "Frekvens", "Skick", "Husdjur", "Våning", "Hiss", "Parkering", "Åtkomst", "Kort varsel", "Helg/kväll", "RUT"];
-    return preferred
-      .map((key) => [key, estimate.inputs[key]] as const)
-      .filter(([, value]) => value);
-  }, [estimate, language]);
+  const allInputs = useMemo(() => Object.entries(estimate.inputs).filter(([, value]) => cleanText(value)), [estimate]);
 
   return (
     <div className="rounded-[1.5rem] border border-gold/20 bg-gold/10 p-4 text-porcelain">
@@ -247,16 +240,31 @@ function EstimateSummary({ estimate, language }: { estimate: CalculatorEstimate;
         <div className="rounded-2xl bg-night/35 p-3"><p className="text-[10px] font-black uppercase tracking-[.2em] text-gold/80">{t.afterRut}</p><p className="mt-1 font-bold">{estimate.result.priceAfterRut || t.noValue}</p></div>
         <div className="rounded-2xl bg-night/35 p-3"><p className="text-[10px] font-black uppercase tracking-[.2em] text-gold/80">{t.time}</p><p className="mt-1 font-bold">{estimate.result.estimatedTime || t.noValue}</p></div>
       </div>
-      {mainInputs.length > 0 && (
+      {allInputs.length > 0 && (
         <div className="mt-4 rounded-2xl bg-night/25 p-3">
           <p className="mb-2 text-[10px] font-black uppercase tracking-[.2em] text-gold/80">{t.selected}</p>
           <div className="grid gap-1 text-xs text-porcelain/75 sm:grid-cols-2">
-            {mainInputs.map(([key, value]) => <p key={key}><span className="font-bold text-porcelain/90">{key}:</span> {value}</p>)}
+            {allInputs.map(([key, value]) => <p key={key}><span className="font-bold text-porcelain/90">{key}:</span> {value}</p>)}
           </div>
+        </div>
+      )}
+      {estimate.selectedButtons.length > 0 && (
+        <div className="mt-3 rounded-2xl bg-night/25 p-3">
+          <p className="mb-2 text-[10px] font-black uppercase tracking-[.2em] text-gold/80">{t.addOns}</p>
+          <p className="text-xs text-porcelain/75">{estimate.selectedButtons.join(", ")}</p>
         </div>
       )}
     </div>
   );
+}
+
+function insertHostBeforeDetails(form: HTMLElement, host: HTMLElement) {
+  const detailsBlock = Array.from(form.querySelectorAll("p"))
+    .find((node) => node.textContent?.includes("Objekt & detaljer") || node.textContent?.includes("Property & details"))
+    ?.closest("div");
+
+  if (detailsBlock?.parentElement) detailsBlock.insertAdjacentElement("beforebegin", host);
+  else form.querySelector(".grid")?.appendChild(host);
 }
 
 export default function BookingRutEnhancer() {
@@ -276,60 +284,66 @@ export default function BookingRutEnhancer() {
   }, []);
 
   useEffect(() => {
-    const form = document.querySelector<HTMLElement>("#booking form");
-    if (!form) return;
-
-    const language: Language = isEnglishPath() ? "en" : "sv";
     const roots: Root[] = [];
     const hosts: HTMLElement[] = [];
-
-    const detailsBlock = Array.from(form.querySelectorAll("p"))
-      .find((node) => node.textContent?.includes("Objekt & detaljer") || node.textContent?.includes("Property & details"))
-      ?.closest("div");
-
-    const estimate = readStoredEstimate();
-    if (estimate && !document.querySelector("#iboren-calculator-estimate-host")) {
-      const host = document.createElement("div");
-      host.id = "iboren-calculator-estimate-host";
-      if (detailsBlock?.parentElement) detailsBlock.insertAdjacentElement("beforebegin", host);
-      else form.querySelector(".grid")?.appendChild(host);
-      const root = createRoot(host);
-      root.render(<EstimateSummary estimate={estimate} language={language} />);
-      roots.push(root);
-      hosts.push(host);
-    }
-
-    if (!isEnglishPath() && !document.querySelector("#iboren-booking-rut-host")) {
-      window.__iborenBookingRut = { customerType: "Privatperson", rutRequested: true };
-      const host = document.createElement("div");
-      host.id = "iboren-booking-rut-host";
-      if (detailsBlock?.parentElement) detailsBlock.insertAdjacentElement("beforebegin", host);
-      else form.querySelector(".grid")?.appendChild(host);
-      const root = createRoot(host);
-      root.render(<BookingRutPanel language={language} />);
-      roots.push(root);
-      hosts.push(host);
-    }
-
     const originalFetch = window.fetch.bind(window);
-    if (!isEnglishPath()) {
-      window.fetch = ((input: RequestInfo | URL, init?: RequestInit) => {
-        const url = typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
-        if (url.includes("/api/bookings") && init?.method?.toUpperCase() === "POST" && typeof init.body === "string") {
-          try {
-            const body = JSON.parse(init.body);
-            const rut = window.__iborenBookingRut || { customerType: "Privatperson", rutRequested: true };
-            init = { ...init, body: JSON.stringify({ ...body, customerType: rut.customerType, rutRequested: rut.customerType === "Privatperson" && rut.rutRequested }) };
-          } catch {}
-        }
-        return originalFetch(input, init);
-      }) as typeof window.fetch;
+    let fetchPatched = false;
+
+    function enhanceBookingForm() {
+      const form = document.querySelector<HTMLElement>("#booking form");
+      if (!form) return;
+
+      const language: Language = isEnglishPath() ? "en" : "sv";
+      const estimate = readStoredEstimate();
+
+      if (estimate && !document.querySelector("#iboren-calculator-estimate-host")) {
+        const host = document.createElement("div");
+        host.id = "iboren-calculator-estimate-host";
+        insertHostBeforeDetails(form, host);
+        const root = createRoot(host);
+        root.render(<EstimateSummary estimate={estimate} language={language} />);
+        roots.push(root);
+        hosts.push(host);
+      }
+
+      if (!isEnglishPath() && !document.querySelector("#iboren-booking-rut-host")) {
+        window.__iborenBookingRut = { customerType: "Privatperson", rutRequested: true };
+        const host = document.createElement("div");
+        host.id = "iboren-booking-rut-host";
+        insertHostBeforeDetails(form, host);
+        const root = createRoot(host);
+        root.render(<BookingRutPanel language={language} />);
+        roots.push(root);
+        hosts.push(host);
+      }
+
+      if (!isEnglishPath() && !fetchPatched) {
+        fetchPatched = true;
+        window.fetch = ((input: RequestInfo | URL, init?: RequestInit) => {
+          const url = typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
+          if (url.includes("/api/bookings") && init?.method?.toUpperCase() === "POST" && typeof init.body === "string") {
+            try {
+              const body = JSON.parse(init.body);
+              const rut = window.__iborenBookingRut || { customerType: "Privatperson", rutRequested: true };
+              init = { ...init, body: JSON.stringify({ ...body, customerType: rut.customerType, rutRequested: rut.customerType === "Privatperson" && rut.rutRequested }) };
+            } catch {}
+          }
+          return originalFetch(input, init);
+        }) as typeof window.fetch;
+      }
     }
+
+    enhanceBookingForm();
+    const observer = new MutationObserver(enhanceBookingForm);
+    observer.observe(document.body, { childList: true, subtree: true });
+    const timers = [window.setTimeout(enhanceBookingForm, 250), window.setTimeout(enhanceBookingForm, 900), window.setTimeout(enhanceBookingForm, 1600)];
 
     return () => {
+      timers.forEach((timer) => window.clearTimeout(timer));
+      observer.disconnect();
       roots.forEach((root) => root.unmount());
       hosts.forEach((host) => host.remove());
-      if (!isEnglishPath()) window.fetch = originalFetch;
+      if (fetchPatched) window.fetch = originalFetch;
     };
   }, []);
 
