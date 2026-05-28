@@ -9,11 +9,11 @@ export const metadata: Metadata = {
 const sections = [
   {
     title: "1. Vem ansvarar för personuppgifterna?",
-    body: "Iboren ansvarar för behandlingen av personuppgifter som lämnas via webbplatsen, bokningsformulär, konto/profil och e-postkontakt. Kontakt: hej@iboren.se."
+    body: "Iboren ansvarar för behandlingen av personuppgifter som lämnas via webbplatsen, prisberäknaren, bokningsformulär, konto/profil och e-postkontakt. Kontakt: hej@iboren.se."
   },
   {
     title: "2. Vilka uppgifter samlas in?",
-    body: "När du skickar en bokningsförfrågan kan vi behandla namn, e-postadress, telefonnummer, adress, område, önskad tjänst, bostads-/lokalstorlek, antal rum, antal badrum, våning, hiss, parkering, husdjur, extra tjänster, önskat datum, tidsfönster och övriga meddelanden du själv skriver."
+    body: "När du använder prisberäknaren eller skickar en bokningsförfrågan kan vi behandla namn, e-postadress, telefonnummer, adress, område, önskad tjänst, bostads-/lokalstorlek, antal rum, antal badrum, våning, hiss, parkering, husdjur, extra tjänster, önskat datum, tidsfönster, uppgifter som påverkar prisindikationen och övriga meddelanden du själv skriver."
   },
   {
     title: "3. Konto och inloggning",
@@ -25,7 +25,7 @@ const sections = [
   },
   {
     title: "5. Varför behandlas uppgifterna?",
-    body: "Uppgifterna används för att ta emot, administrera och följa upp bokningsförfrågningar, skicka bekräftelsemejl, kontakta dig om uppdraget, visa dina bokningar i din profil och ge admin möjlighet att hantera status och anteckningar."
+    body: "Uppgifterna används för att beräkna prisindikationen, ta emot, administrera och följa upp bokningsförfrågningar, skicka bekräftelsemejl, kontakta dig om uppdraget, visa dina bokningar i din profil, ge admin möjlighet att hantera status och anteckningar samt förbättra våra tjänster och prisunderlag."
   },
   {
     title: "6. E-post och leverantörer",
@@ -33,7 +33,7 @@ const sections = [
   },
   {
     title: "7. Lagringstid",
-    body: "Bokningsuppgifter sparas så länge de behövs för att hantera bokningen, kundkontakt, uppföljning, administration och eventuell dokumentation. Om du vill få dina uppgifter raderade kan du kontakta oss. Vissa uppgifter kan behöva sparas längre om det krävs för bokföring, säkerhet eller rättsliga krav."
+    body: "Bokningsuppgifter och uppgifter kopplade till prisindikationen sparas så länge de behövs för att hantera bokningen, kundkontakt, uppföljning, administration, förbättring av prisunderlag och eventuell dokumentation. Om du vill få dina uppgifter raderade kan du kontakta oss. Vissa uppgifter kan behöva sparas längre om det krävs för bokföring, säkerhet eller rättsliga krav."
   },
   {
     title: "8. Dina rättigheter",
@@ -56,9 +56,9 @@ export default function PrivacyPage() {
         <Link href="/" className="text-sm font-semibold text-burgundy">← Tillbaka till startsidan</Link>
         <p className="eyebrow mt-10">Iboren · Privacy</p>
         <h1 className="display mt-4 text-5xl font-bold leading-[0.9] text-burgundy md:text-7xl">Privacy Policy</h1>
-        <p className="mt-5 text-sm font-semibold text-ink/50">Senast uppdaterad: 19 maj 2026</p>
+        <p className="mt-5 text-sm font-semibold text-ink/50">Senast uppdaterad: 28 maj 2026</p>
         <div className="mt-8 rounded-2xl border border-burgundy/10 bg-cream p-5 text-sm leading-7 text-ink/65">
-          Denna sida beskriver hur Iboren behandlar personuppgifter i samband med webbplatsen, konto, bokningsförfrågningar och e-postkommunikation.
+          Denna sida beskriver hur Iboren behandlar personuppgifter i samband med webbplatsen, prisberäknaren, konto, bokningsförfrågningar och e-postkommunikation.
         </div>
         <div className="mt-8 space-y-7 text-base leading-8 text-ink/70">
           {sections.map((section) => (
