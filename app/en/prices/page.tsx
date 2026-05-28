@@ -18,7 +18,7 @@ export const metadata = {
 };
 
 const priceNotes = [
-  "RUT deduction is normally deducted directly on the invoice for private customers.",
+  "RUT deduction is normally applied directly on the invoice for private customers.",
   "The price is an estimate. Final price is confirmed before the request becomes binding.",
   "Add-ons, property condition, accessibility and windows may affect the final price."
 ];
@@ -39,11 +39,11 @@ export default function EnglishPricesPage() {
         <div className="luxe-container relative grid gap-10 lg:grid-cols-[.86fr_1.14fr] lg:items-start">
           <div>
             <Link href="/en" className="mb-10 inline-flex text-sm font-bold text-burgundy">← Back</Link>
-            <p className="eyebrow">Price directly</p>
-            <h1 className="display mt-4 text-6xl font-bold leading-[.88] text-burgundy md:text-8xl">Calculate cleaning price</h1>
-            <p className="mt-7 max-w-2xl text-lg leading-8 text-ink/75 md:text-xl">Calculate an estimated price for home cleaning, move-out cleaning, deep cleaning, office cleaning or window cleaning in Södertälje and Stockholm.</p>
+            <p className="eyebrow">Instant price estimate</p>
+            <h1 className="display mt-4 text-6xl font-bold leading-[.88] text-burgundy md:text-8xl">Get a cleaning price estimate</h1>
+            <p className="mt-7 max-w-2xl text-lg leading-8 text-ink/75 md:text-xl">Estimate the cost of home cleaning, move-out cleaning, deep cleaning, office cleaning or window cleaning in Södertälje and Stockholm.</p>
             <div className="mt-8 rounded-2xl border border-burgundy/10 bg-porcelain p-5 text-sm leading-7 text-ink/75">
-              <p className="flex gap-3"><Info className="mt-1 h-5 w-5 shrink-0 text-burgundy" /> The calculator shows a price indication with clear RUT calculation. After your request, Iboren confirms final price, time and any add-ons.</p>
+              <p className="flex gap-3"><Info className="mt-1 h-5 w-5 shrink-0 text-burgundy" /> The calculator gives a detailed price estimate with RUT information. After your request, Iboren confirms the final price, time and any add-ons.</p>
             </div>
             <div className="mt-8 grid gap-3 text-sm font-bold text-ink/72">
               {priceNotes.map((item) => <p key={item} className="flex gap-3"><CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-burgundy" /> {item}</p>)}
