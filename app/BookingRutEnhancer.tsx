@@ -7,6 +7,13 @@ const STORAGE_KEY = "iboren:calculatorEstimate:v1";
 type CalculatorEstimate = {
   inputs?: Record<string, string>;
   selectedButtons?: string[];
+  result?: {
+    title?: string;
+    riskLabel?: string;
+    priceBeforeRut?: string;
+    priceAfterRut?: string;
+    estimatedTime?: string;
+  };
 };
 
 function cleanText(value: unknown) {
@@ -15,6 +22,10 @@ function cleanText(value: unknown) {
 
 function normalize(value: unknown) {
   return cleanText(value).toLowerCase();
+}
+
+function escapeRegex(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
 function readEstimate(): CalculatorEstimate | null {
@@ -43,7 +54,25 @@ function labelName(label: HTMLLabelElement) {
   return spanText || fullText;
 }
 
-function captureCalculator(calculator: HTMLElement) {
+function extractAfterLabel(text: string, labels: string[]) {
+  for (const label of labels) {
+    const match = text.match(new RegExp(`${escapeRegex(label)}\\s*([0-9][0-9\\s]*(?:kr|SEK)?(?:\\/(?:mån|month))?)`, "i"));
+    if (match?.[1]) return cleanText(match[1]);
+  }
+  return "";
+}
+
+function extractEstimatedTime(text: string) {
+  const match = text.match(/(?:Uppskattad tid: cirka|Estimated time: about)\s*([0-9,.]+\s*(?:timmar|hours)(?:\s*(?:per besök|per visit))?)/i);
+  return cleanText(match?.[1]);
+}
+
+function extractRiskLabel(text: string) {
+  const labels = ["Bra prisunderlag", "Behöver kontrolleras", "Manuell offert behövs", "Good estimate basis", "Needs review", "Manual quote needed"];
+  return labels.find((label) => text.includes(label)) || "";
+}
+
+function captureCalculator(calculator: HTMLElement): CalculatorEstimate {
   const inputs: Record<string, string> = {};
   calculator.querySelectorAll("label").forEach((labelNode) => {
     const label = labelNode as HTMLLabelElement;
@@ -53,12 +82,32 @@ function captureCalculator(calculator: HTMLElement) {
     inputs[name] = readControlValue(control);
   });
 
+  const nonAddOns = new Set(["privatperson", "private customer", "företag", "company"]);
   const selectedButtons = Array.from(calculator.querySelectorAll("button"))
     .filter((button) => cleanText(button.className).includes("bg-burgundy"))
     .map((button) => cleanText(button.textContent))
-    .filter(Boolean);
+    .filter((value) => value && !nonAddOns.has(normalize(value)));
 
-  return { inputs, selectedButtons };
+  const resultCard = Array.from(calculator.querySelectorAll("div"))
+    .find((element) => {
+      const className = cleanText(element.getAttribute("class"));
+      const text = cleanText(element.textContent);
+      return className.includes("bg-burgundy") && className.includes("text-porcelain") && (text.includes("RUT") || text.includes("estimate") || text.includes("pris"));
+    }) as HTMLElement | undefined;
+
+  const resultText = cleanText(resultCard?.textContent);
+
+  return {
+    inputs,
+    selectedButtons,
+    result: {
+      title: cleanText(resultCard?.querySelector("p")?.textContent),
+      riskLabel: extractRiskLabel(resultText),
+      priceBeforeRut: extractAfterLabel(resultText, ["Före RUT / totalpris", "Before RUT / total price"]),
+      priceAfterRut: extractAfterLabel(resultText, ["Efter RUT / kundpris", "After RUT / customer price", "Kundpris utan RUT", "Customer price without RUT", "Prisindikation", "Monthly estimate"]),
+      estimatedTime: extractEstimatedTime(resultText)
+    }
+  };
 }
 
 function getInput(estimate: CalculatorEstimate, labels: string[]) {
@@ -159,8 +208,7 @@ function calculatorServiceToBooking(service: string) {
 function hasSelected(estimate: CalculatorEstimate, labels: string[]) {
   const selected = (estimate.selectedButtons || []).map(normalize);
   return labels.some((label) => selected.includes(normalize(label)));
-}
-
+}\n
 function applyEstimateToBooking() {
   const estimate = readEstimate();
   const form = document.querySelector<HTMLElement>("#booking form");
