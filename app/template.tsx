@@ -1,4 +1,4 @@
-import BookingCalculatorAutofillFix from "./BookingCalculatorAutofillFix";
+import BookingAutofillSafetyGuard from "./BookingAutofillSafetyGuard";
 import BookingRutEnhancer from "./BookingRutEnhancer";
 import BookingSubmissionSnapshot from "./BookingSubmissionSnapshot";
 import CinematicFrameLock from "./CinematicFrameLock";
@@ -24,9 +24,9 @@ export default function Template({ children }: { children: React.ReactNode }) {
       <HomeMobileLanguageButton />
       <EnglishHomeServicesEnhancer />
       <CinematicFrameLock />
+      <BookingAutofillSafetyGuard />
       <BookingRutEnhancer />
       <BookingSubmissionSnapshot />
-      <BookingCalculatorAutofillFix />
       <PriceCalculatorEmptyDefaults />
       <PerformanceHints />
       {children}
