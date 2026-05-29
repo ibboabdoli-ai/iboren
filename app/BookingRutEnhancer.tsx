@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 
 const STORAGE_KEY = "iboren:calculatorEstimate:v1";
+const ESTIMATE_CARD_ID = "iboren-booking-estimate-card";
 
 type CalculatorEstimate = {
   inputs?: Record<string, string>;
@@ -26,6 +27,15 @@ function normalize(value: unknown) {
 
 function escapeRegex(value: string) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function escapeHtml(value: unknown) {
+  return cleanText(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/\"/g, "&quot;")
+    .replace(/'/g, "&#039;");
 }
 
 function readEstimate(): CalculatorEstimate | null {
@@ -210,6 +220,45 @@ function hasSelected(estimate: CalculatorEstimate, labels: string[]) {
   return labels.some((label) => selected.includes(normalize(label)));
 }
 
+function estimateRutIsRequested(estimate: CalculatorEstimate) {
+  return ["yes", "ja", "true"].includes(normalize(getInput(estimate, ["RUT"])));
+}
+
+function renderEstimateCard(form: HTMLElement, estimate: CalculatorEstimate) {
+  const result = estimate.result;
+  if (!result?.priceBeforeRut && !result?.priceAfterRut && !result?.estimatedTime) return;
+
+  const existing = form.querySelector(`#${ESTIMATE_CARD_ID}`);
+  const card = existing instanceof HTMLElement ? existing : document.createElement("div");
+  card.id = ESTIMATE_CARD_ID;
+  card.className = "mb-6 rounded-[1.6rem] border border-gold/25 bg-night/35 p-5 text-porcelain shadow-soft";
+
+  const beforeRut = result.priceBeforeRut ? `<div><p class=\"text-[10px] font-black uppercase tracking-[.18em] text-gold/75\">Före RUT / totalpris</p><p class=\"mt-1 text-2xl font-black text-porcelain\">${escapeHtml(result.priceBeforeRut)}</p></div>` : "";
+  const afterRut = result.priceAfterRut ? `<div><p class=\"text-[10px] font-black uppercase tracking-[.18em] text-gold/75\">Efter RUT / kundpris</p><p class=\"mt-1 text-2xl font-black text-gold\">${escapeHtml(result.priceAfterRut)}</p></div>` : "";
+  const time = result.estimatedTime ? `<span class=\"rounded-full bg-porcelain/10 px-3 py-1 text-xs font-bold text-porcelain/85\">Tid: ${escapeHtml(result.estimatedTime)}</span>` : "";
+  const risk = result.riskLabel ? `<span class=\"rounded-full bg-gold/15 px-3 py-1 text-xs font-bold text-gold\">${escapeHtml(result.riskLabel)}</span>` : "";
+  const rutText = estimateRutIsRequested(estimate) ? "RUT är valt i kalkylatorn. Moms ingår i prisindikationen." : "RUT är inte valt i kalkylatorn. Moms ingår i prisindikationen.";
+
+  card.innerHTML = `
+    <div class=\"flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between\">
+      <div>
+        <p class=\"text-[10px] font-black uppercase tracking-[.28em] text-gold\">Prisindikation från kalkylatorn</p>
+        <p class=\"mt-2 text-sm leading-6 text-porcelain/72\">Det här är priset kunden såg innan bokningsförfrågan. Slutpris bekräftas av Iboren.</p>
+      </div>
+      ${risk}
+    </div>
+    <div class=\"mt-4 grid gap-4 sm:grid-cols-2\">${beforeRut}${afterRut}</div>
+    <div class=\"mt-4 flex flex-wrap gap-2\">${time}<span class=\"rounded-full bg-porcelain/10 px-3 py-1 text-xs font-bold text-porcelain/85\">Moms ingår</span></div>
+    <p class=\"mt-3 text-xs leading-6 text-porcelain/60\">${escapeHtml(rutText)}</p>
+  `;
+
+  if (!existing) {
+    const header = form.querySelector(".mb-6");
+    if (header) header.insertAdjacentElement("afterend", card);
+    else form.prepend(card);
+  }
+}
+
 function applyEstimateToBooking() {
   const estimate = readEstimate();
   const form = document.querySelector<HTMLElement>("#booking form");
@@ -217,6 +266,8 @@ function applyEstimateToBooking() {
 
   const submitText = normalize(form.querySelector("button[type='submit']")?.textContent);
   if (submitText.includes("skickar") || submitText.includes("sending")) return;
+
+  renderEstimateCard(form, estimate);
 
   const service = getInput(estimate, ["Tjänst", "Service"]);
   const bookingService = calculatorServiceToBooking(service);
