@@ -108,21 +108,26 @@ function accessMultiplier(input: { access: string; parking: string; floor: numbe
   return multiplier;
 }
 
+function setTextIfChanged(element: HTMLElement, value: string) {
+  if (element.textContent !== value) element.textContent = value;
+}
+
 function updatePriceText(card: HTMLElement, beforeRut: number, afterRut: number, addOnsBeforeRut: number, lang: Lang) {
   const paragraphs = Array.from(card.querySelectorAll<HTMLParagraphElement>("p"));
   paragraphs.forEach((paragraph) => {
     const text = normalize(paragraph.textContent);
     const next = paragraph.nextElementSibling as HTMLElement | null;
     if (!next) return;
-    if (text.includes("före rut") || text.includes("before rut")) next.textContent = formatSek(beforeRut, lang);
+    if (text.includes("före rut") || text.includes("before rut")) setTextIfChanged(next, formatSek(beforeRut, lang));
     if (text.includes("efter rut") || text.includes("kundpris") || text.includes("after rut") || text.includes("customer price")) {
-      next.textContent = formatSek(afterRut, lang);
+      setTextIfChanged(next, formatSek(afterRut, lang));
     }
   });
 
   const summary = paragraphs.find((paragraph) => normalize(paragraph.textContent).includes(lang === "en" ? "add-ons before rut" : "tillval före rut"));
   if (summary) {
-    summary.textContent = summary.textContent?.replace(/(Tillval före RUT|Add-ons before RUT):[^.]+\./, `$1: ${formatSek(addOnsBeforeRut, lang)}.`) || "";
+    const nextText = summary.textContent?.replace(/(Tillval före RUT|Add-ons before RUT):[^.]+\./, `$1: ${formatSek(addOnsBeforeRut, lang)}.`) || "";
+    if (summary.textContent !== nextText) summary.textContent = nextText;
   }
 }
 
