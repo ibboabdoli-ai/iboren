@@ -64,10 +64,7 @@ For invoices, the preferred structure is:
 - `= Att betala`
 
 Pending tax/accounting verification:
-- Check the moms reporting period in Skatteverket / Mina sidor:
-  - månad
-  - kvartal
-  - år
+- Check the moms reporting period in Skatteverket / Mina sidor: månad / kvartal / år.
 - Even if sales are zero, a zero momsdeklaration may still be required depending on the reporting period.
 - Create folder `Iboren Bokföring 2026` and save Skatteverket letters there.
 - After the first customer, prepare invoice workflow with moms and RUT correctly.
@@ -94,15 +91,9 @@ Pending tax/accounting verification:
 
 ### Email / contact follow-up tasks
 
-- Add `hej@iboren.se` to:
-  - Google Business Profile
-  - Website footer
-  - Contact page
-  - Facebook
-  - Instagram
+- Add `hej@iboren.se` to Google Business Profile, website footer, contact page, Facebook and Instagram.
 - Test `/boka` and booking forms so booking emails arrive correctly.
-- Later check Vercel environment variable:
-  - `BOOKING_TO_EMAIL=hej@iboren.se`
+- Later check Vercel environment variable: `BOOKING_TO_EMAIL=hej@iboren.se`.
 
 ## Current project status
 
@@ -118,8 +109,19 @@ Completed:
 - Add-ons are aligned between calculator and booking.
 - Calculator data is captured when the customer clicks the calculator CTA.
 - Booking autofill has been rebuilt to separate service and extras more safely:
-  - Calculator service should map only to booking service.
-  - Calculator add-ons/tillval should map only to booking extra services.
+  - Calculator service maps only to booking service.
+  - Calculator add-ons/tillval maps only to booking extra services.
+- Booking now displays a `Prisindikation från kalkylatorn` card when entered from the calculator:
+  - Före RUT / totalpris
+  - Efter RUT / kundpris
+  - Estimated time when available
+  - Moms ingår
+  - RUT status text
+- Booking submission now forwards calculator RUT state into the API payload so Admin email says RUT Ja when calculator RUT is selected.
+- `BookingValueSanityGuard` was added to clean unrealistic autofilled values:
+  - Rooms > 20 becomes blank.
+  - Bathrooms above a size-based maximum becomes blank.
+  - Floor > 60 becomes blank.
 
 Aligned add-ons:
 
@@ -151,11 +153,13 @@ Moms/pricing note:
 - Website price copy must clarify that prices for private customers are shown including moms.
 - Calculator and booking email should continue to distinguish before RUT / after RUT clearly.
 
-### Step 50F — Calculator snapshot to Admin email
+### Step 50F/50G — Calculator snapshot, booking autofill and Admin email QA
 
 Implemented:
 
 - Helper: `app/BookingSubmissionSnapshot.tsx`
+- Helper: `app/BookingRutEnhancer.tsx`
+- Helper: `app/BookingValueSanityGuard.tsx`
 - Enabled in: `app/template.tsx`
 - On booking submit, calculator snapshot and final submitted booking are appended to `notes` before POST to `/api/bookings`.
 - Admin email receives these sections:
@@ -169,18 +173,22 @@ Latest production-tested result:
 - Calculator inputs are included.
 - Final booking values are included.
 - Extra services are included.
-- A cleanup fix was applied so language translations such as `Home cleaning` vs `Hemstädning` and `One-time` vs `Engång` are not reported as real changes.
-- A cleanup fix was applied so only the customer free text is shown as customer free text in the final snapshot, instead of repeating the whole property-details block.
+- RUT is now correct in Admin email when calculator RUT is selected.
+- Price before RUT and price after RUT are included in Admin email.
+- Booking form now shows calculator price indication card.
+- Language translations such as `Home cleaning` vs `Hemstädning` and `One-time` vs `Engång` are not reported as real changes.
+- Customer free text is shown separately and no longer repeats the whole property-details block.
+- `Private customer` no longer appears as selected add-on.
 
 Recent commits:
 
 - `f3e89b96c014bf36385479a1b86567889b3514be` — restored calculator snapshot capture before booking autofill.
 - `e0c189290a8242148b7fdea5f0df452ff23eda8f` — cleaned Admin email snapshot formatting and false changes.
 - `c79b5cfbbeca60e4632205a98ef4446d4f457974` — fixed BookingRutEnhancer syntax error after failed deploy.
-
-Deploy status:
-
-- Commit `c79b5cfbbeca60e4632205a98ef4446d4f457974`: Vercel pending at the time this handoff update started.
+- `9f4253e467f629a0007e7f2a77826653efd19305` — sends calculator RUT state with booking payload.
+- `45e62b2911037a2507421ef4996d56ece3ffbef5` — shows calculator price estimate inside booking form. Vercel success.
+- `85d030b1e12b2ffb1c57f6304dda197ced337a5f` — added booking value sanity guard.
+- `bffa0766643487b2460aa04dcac927378058838c` — enabled booking value sanity guard in template. Vercel pending at time of this handoff update.
 
 ## Important files touched recently
 
@@ -191,8 +199,9 @@ Deploy status:
 - `app/BookingCalculatorAutofillFix.tsx`
 - `app/BookingAutofillSafetyGuard.tsx`
 - `app/BookingSubmissionSnapshot.tsx`
+- `app/BookingValueSanityGuard.tsx`
 - `app/template.tsx`
-- `app/api/bookings/route.ts` was inspected but not heavily changed for Step 50F.
+- `app/api/bookings/route.ts` was inspected but not heavily changed for Step 50F/50G.
 - `HANDOFF.md`
 
 ## Known pending verification
@@ -206,6 +215,8 @@ User should retest after latest deploy:
    - Continue to booking.
    - Confirm service stays `Hemstädning`.
    - Confirm add-ons appear under Extra services.
+   - Confirm price card appears in booking with Före RUT / Efter RUT / Moms ingår.
+   - Test unrealistic values: Size 55, Rooms 55, Bathrooms 5, Floor 555. Expected: Rooms and Floor become blank; Bathrooms should become blank if above the size-based maximum.
    - Submit booking.
    - Admin email should include calculator snapshot and final booking.
    - Admin email should NOT mark `Home cleaning -> Hemstädning` or `One-time -> Engång` as real changes.
@@ -227,12 +238,12 @@ User should retest after latest deploy:
 
 ## Next recommended step
 
-Step 50G — QA and cleanup of booking email format
+Step 50G-Final QA — retest latest guard
 
 Goal:
-- Verify latest email cleanup in a real Admin inbox.
-- If still too long or messy, format Admin email more cleanly in the backend route instead of appending a large block to notes.
-- Later, move calculator snapshot from `notes` into first-class API fields if database/admin dashboard should store it structurally.
+- Confirm `BookingValueSanityGuard` cleans unrealistic autofilled values after deploy.
+- Confirm price card remains visible.
+- Confirm no regression in Admin email.
 
 Step 50H — Moms and official contact cleanup
 
