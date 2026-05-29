@@ -208,7 +208,8 @@ function calculatorServiceToBooking(service: string) {
 function hasSelected(estimate: CalculatorEstimate, labels: string[]) {
   const selected = (estimate.selectedButtons || []).map(normalize);
   return labels.some((label) => selected.includes(normalize(label)));
-}\n
+}
+
 function applyEstimateToBooking() {
   const estimate = readEstimate();
   const form = document.querySelector<HTMLElement>("#booking form");
