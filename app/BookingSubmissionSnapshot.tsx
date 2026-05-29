@@ -27,6 +27,43 @@ function normalize(value: unknown) {
   return cleanText(value).toLowerCase();
 }
 
+function canonical(value: unknown) {
+  const key = normalize(value);
+  const map: Record<string, string> = {
+    "hemstädning": "home-cleaning",
+    "home cleaning": "home-cleaning",
+    "flyttstädning": "move-out-cleaning",
+    "move-out cleaning": "move-out-cleaning",
+    "kontorsstädning": "office-cleaning",
+    "office cleaning": "office-cleaning",
+    "fönsterputs": "window-cleaning",
+    "window cleaning": "window-cleaning",
+    "storstädning": "deep-cleaning",
+    "deep cleaning": "deep-cleaning",
+    "engång": "one-time",
+    "one-time": "one-time",
+    "varje vecka": "weekly",
+    "every week": "weekly",
+    "varannan vecka": "biweekly",
+    "every other week": "biweekly",
+    "varje månad": "monthly",
+    "var fjärde vecka": "monthly",
+    "every fourth week": "monthly",
+    "every month": "monthly",
+    "privatperson": "private-customer",
+    "private customer": "private-customer",
+    "företag": "company",
+    "company": "company",
+    "ja": "yes",
+    "yes": "yes",
+    "true": "yes",
+    "nej": "no",
+    "no": "no",
+    "false": "no"
+  };
+  return map[key] || key;
+}
+
 function sanitizeLine(value: unknown) {
   return cleanText(value).replace(/[<>]/g, "").slice(0, 500);
 }
@@ -61,6 +98,18 @@ function addLine(lines: string[], label: string, value: unknown) {
   if (clean) lines.push(`${label}: ${clean}`);
 }
 
+function customerFreeText(notes: unknown) {
+  const raw = String(notes ?? "").replace(/\r/g, "");
+  const markers = ["--- Customer notes ---", "--- Kundens önskemål ---"];
+  for (const marker of markers) {
+    const index = raw.indexOf(marker);
+    if (index < 0) continue;
+    const after = raw.slice(index + marker.length);
+    return cleanText(after.split("--- Calculator snapshot ---")[0].split("--- Final booking submitted ---")[0].trim());
+  }
+  return "";
+}
+
 function buildCalculatorSection(estimate: CalculatorEstimate) {
   const lines = ["--- Calculator snapshot ---"];
   addLine(lines, "Captured at", estimate.capturedAt);
@@ -79,7 +128,7 @@ function buildCalculatorSection(estimate: CalculatorEstimate) {
   }
 
   if (estimate.selectedButtons?.length) {
-    lines.push("", `Selected add-ons/options: ${estimate.selectedButtons.map(sanitizeLine).filter(Boolean).join(", ")}`);
+    lines.push("", `Selected add-ons: ${estimate.selectedButtons.map(sanitizeLine).filter(Boolean).join(", ")}`);
   }
 
   return lines.join("\n");
@@ -117,7 +166,7 @@ function buildFinalBookingSection(body: Record<string, unknown>) {
   addLine(lines, "Name", fields.name);
   addLine(lines, "Email", fields.email);
   addLine(lines, "Phone", fields.phone);
-  addLine(lines, "Customer notes", body.notes);
+  addLine(lines, "Customer free text", customerFreeText(body.notes));
   return lines.join("\n");
 }
 
@@ -133,7 +182,7 @@ function buildChangesSection(estimate: CalculatorEstimate, body: Record<string, 
 
   const changes = comparisons
     .map(([label, from, to]) => [label, sanitizeLine(from), sanitizeLine(to)] as const)
-    .filter(([, from, to]) => from && to && normalize(from) !== normalize(to));
+    .filter(([, from, to]) => from && to && canonical(from) !== canonical(to));
 
   if (!changes.length) return "--- Changes after estimate ---\nNo key changes detected between calculator estimate and submitted booking.";
 
