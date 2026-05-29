@@ -26,6 +26,41 @@ function readEstimate(): CalculatorEstimate | null {
   }
 }
 
+function readControlValue(control: Element) {
+  if (control instanceof HTMLInputElement) {
+    if (control.type === "checkbox") return control.checked ? "Yes" : "No";
+    return control.value;
+  }
+  if (control instanceof HTMLSelectElement) return control.value;
+  if (control instanceof HTMLTextAreaElement) return control.value;
+  return "";
+}
+
+function labelName(label: HTMLLabelElement) {
+  const spanText = cleanText(label.querySelector("span")?.textContent);
+  const fullText = cleanText(label.textContent);
+  if (fullText.includes("RUT") && (fullText.includes("Skatteverkets") || fullText.includes("conditions") || fullText.includes("Gäller endast"))) return "RUT";
+  return spanText || fullText;
+}
+
+function captureCalculator(calculator: HTMLElement) {
+  const inputs: Record<string, string> = {};
+  calculator.querySelectorAll("label").forEach((labelNode) => {
+    const label = labelNode as HTMLLabelElement;
+    const control = label.querySelector("input, select, textarea");
+    const name = labelName(label);
+    if (!control || !name) return;
+    inputs[name] = readControlValue(control);
+  });
+
+  const selectedButtons = Array.from(calculator.querySelectorAll("button"))
+    .filter((button) => cleanText(button.className).includes("bg-burgundy"))
+    .map((button) => cleanText(button.textContent))
+    .filter(Boolean);
+
+  return { inputs, selectedButtons };
+}
+
 function getInput(estimate: CalculatorEstimate, labels: string[]) {
   const wanted = labels.map(normalize);
   const entry = Object.entries(estimate.inputs || {}).find(([key, value]) => cleanText(value) && wanted.some((label) => normalize(key).includes(label)));
@@ -159,8 +194,21 @@ function applyEstimateToBooking() {
 
 export default function BookingRutEnhancer() {
   useEffect(() => {
+    function handleCalculatorClick(event: MouseEvent) {
+      const target = event.target as Element | null;
+      const link = target?.closest("a[href='/#booking'], a[href='#booking'], a[href='/en#booking']");
+      const calculator = link?.closest("#pris-kalkylator, #price-calculator") as HTMLElement | null;
+      if (!calculator) return;
+      window.sessionStorage.setItem(STORAGE_KEY, JSON.stringify(captureCalculator(calculator)));
+      [150, 450, 900, 1600, 2600].forEach((delay) => window.setTimeout(applyEstimateToBooking, delay));
+    }
+
+    document.addEventListener("click", handleCalculatorClick, true);
     const timers = [150, 450, 900, 1600, 2600].map((delay) => window.setTimeout(applyEstimateToBooking, delay));
-    return () => timers.forEach((timer) => window.clearTimeout(timer));
+    return () => {
+      document.removeEventListener("click", handleCalculatorClick, true);
+      timers.forEach((timer) => window.clearTimeout(timer));
+    };
   }, []);
 
   return null;
