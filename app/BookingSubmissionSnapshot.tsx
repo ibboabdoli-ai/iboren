@@ -98,6 +98,22 @@ function addLine(lines: string[], label: string, value: unknown) {
   if (clean) lines.push(`${label}: ${clean}`);
 }
 
+function selectedContains(estimate: CalculatorEstimate, labels: string[]) {
+  const selected = (estimate.selectedButtons || []).map(normalize);
+  return labels.some((label) => selected.includes(normalize(label)));
+}
+
+function estimateCustomerType(estimate: CalculatorEstimate) {
+  const input = getEstimateInput(estimate, ["kundtyp", "customer type"]);
+  if (input) return canonical(input) === "company" ? "Företag" : "Privatperson";
+  if (selectedContains(estimate, ["Företag", "Company"])) return "Företag";
+  return "Privatperson";
+}
+
+function estimateRutRequested(estimate: CalculatorEstimate) {
+  return canonical(getEstimateInput(estimate, ["rut"])) === "yes";
+}
+
 function customerFreeText(notes: unknown) {
   const raw = String(notes ?? "").replace(/\r/g, "");
   const markers = ["--- Customer notes ---", "--- Kundens önskemål ---"];
@@ -194,19 +210,25 @@ function appendSnapshotToNotes(body: Record<string, unknown>) {
   if (!estimate) return body;
   if (body.__calculatorSnapshotAttached === true) return body;
 
-  const existingNotes = cleanText(body.notes);
+  const enhancedBody: Record<string, unknown> = {
+    ...body,
+    customerType: body.customerType || estimateCustomerType(estimate),
+    rutRequested: body.rutRequested ?? estimateRutRequested(estimate)
+  };
+
+  const existingNotes = cleanText(enhancedBody.notes);
   const snapshotText = [
     existingNotes,
     "",
     buildCalculatorSection(estimate),
     "",
-    buildFinalBookingSection(body),
+    buildFinalBookingSection(enhancedBody),
     "",
-    buildChangesSection(estimate, body)
+    buildChangesSection(estimate, enhancedBody)
   ].filter((part) => cleanText(part)).join("\n");
 
   return {
-    ...body,
+    ...enhancedBody,
     notes: snapshotText.slice(0, 12000),
     calculatorEstimate: estimate,
     __calculatorSnapshotAttached: true
