@@ -1,0 +1,28 @@
+/* Step 53A: Browser chrome / mobile safe-area color polish. Visual-only. */
+
+:root {
+  --browser-chrome: #07110D;
+}
+
+html,
+body {
+  background: var(--browser-chrome) !important;
+}
+
+body {
+  min-height: 100svh;
+}
+
+@supports (background: paint(something)) {
+  html,
+  body {
+    background-color: var(--browser-chrome) !important;
+  }
+}
+
+@media (max-width: 767px) {
+  html,
+  body {
+    background: var(--browser-chrome) !important;
+  }
+}
