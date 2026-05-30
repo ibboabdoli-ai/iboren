@@ -1,0 +1,70 @@
+/* Step 53B: Align internal pages visually with the home page. Visual-only. */
+
+main:not(:has(#top)) {
+  background:
+    radial-gradient(circle at 18% 0%, rgba(212, 165, 116, .13), transparent 34%),
+    radial-gradient(circle at 82% 12%, rgba(255, 253, 248, .045), transparent 38%),
+    var(--night) !important;
+  color: var(--porcelain);
+}
+
+main:not(:has(#top)) .luxe-container {
+  position: relative;
+}
+
+main:not(:has(#top)) .eyebrow,
+main:not(:has(#top)) p[class*="uppercase"][class*="tracking"] {
+  color: var(--gold) !important;
+}
+
+main:not(:has(#top)) .display,
+main:not(:has(#top)) h1,
+main:not(:has(#top)) h2 {
+  color: var(--porcelain);
+  text-shadow: 0 22px 90px rgba(212, 165, 116, .12);
+}
+
+main:not(:has(#top)) section,
+main:not(:has(#top)) article,
+main:not(:has(#top)) aside,
+main:not(:has(#top)) form {
+  border-color: rgba(212, 165, 116, .16) !important;
+}
+
+main:not(:has(#top)) .bg-porcelain,
+main:not(:has(#top)) .bg-cream,
+main:not(:has(#top)) [class*="bg-porcelain"],
+main:not(:has(#top)) [class*="bg-cream"] {
+  background:
+    radial-gradient(circle at 16% 0%, rgba(212, 165, 116, .10), transparent 32%),
+    rgba(255, 253, 248, .94) !important;
+  color: var(--ink);
+}
+
+main:not(:has(#top)) input,
+main:not(:has(#top)) textarea,
+main:not(:has(#top)) select {
+  background: var(--porcelain) !important;
+  color: var(--ink) !important;
+  -webkit-text-fill-color: var(--ink) !important;
+}
+
+main:not(:has(#top)) a,
+main:not(:has(#top)) button {
+  transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease, background-color .2s ease, color .2s ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  main:not(:has(#top)) a:hover,
+  main:not(:has(#top)) button:hover {
+    transform: translateY(-1px);
+  }
+}
+
+@media (max-width: 767px) {
+  main:not(:has(#top)) {
+    background:
+      radial-gradient(circle at 18% 0%, rgba(212, 165, 116, .12), transparent 34%),
+      var(--night) !important;
+  }
+}
