@@ -7,16 +7,29 @@
 html,
 body {
   background: var(--browser-chrome) !important;
+  background-color: var(--browser-chrome) !important;
 }
 
 body {
   min-height: 100svh;
 }
 
-@supports (background: paint(something)) {
-  html,
-  body {
-    background-color: var(--browser-chrome) !important;
+body::before {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: env(safe-area-inset-top, 0px);
+  min-height: 0px;
+  background: var(--browser-chrome);
+  pointer-events: none;
+  z-index: 2147483647;
+}
+
+@supports (height: env(safe-area-inset-top)) {
+  body::before {
+    height: env(safe-area-inset-top);
   }
 }
 
@@ -24,5 +37,10 @@ body {
   html,
   body {
     background: var(--browser-chrome) !important;
+    background-color: var(--browser-chrome) !important;
+  }
+
+  body::before {
+    background: var(--browser-chrome);
   }
 }
