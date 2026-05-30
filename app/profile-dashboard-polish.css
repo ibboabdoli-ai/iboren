@@ -1,4 +1,4 @@
-/* Step 52A: Profile/dashboard UX polish. Visual-only; no auth, booking, pricing, API or Supabase logic. */
+/* Step 52A/B: Profile/dashboard UX polish. Visual-only; no auth, booking, pricing, API or Supabase logic. */
 
 main:has(a[href="/#booking"]),
 main:has(a[href="/en#booking"]),
@@ -60,6 +60,44 @@ main:has(a[href="/admin/time-reports"]) button.rounded-\[1\.4rem\] {
   }
 }
 
+/* Profile booking cards readability. */
+main:has(a[href="/#booking"]) article article,
+main:has(a[href="/en#booking"]) article article {
+  position: relative;
+  overflow: hidden;
+  background:
+    linear-gradient(180deg, rgba(255, 253, 248, .78), rgba(245, 240, 232, .94)) !important;
+}
+
+main:has(a[href="/#booking"]) article article::before,
+main:has(a[href="/en#booking"]) article article::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: .32rem;
+  background: linear-gradient(180deg, var(--gold), var(--burgundy));
+  opacity: .82;
+}
+
+main:has(a[href="/#booking"]) article article h3,
+main:has(a[href="/en#booking"]) article article h3 {
+  letter-spacing: -.035em !important;
+  line-height: .98 !important;
+}
+
+main:has(a[href="/#booking"]) article article span.w-fit,
+main:has(a[href="/en#booking"]) article article span.w-fit {
+  box-shadow: 0 12px 32px rgba(107, 39, 55, .13);
+}
+
+main:has(a[href="/#booking"]) article article pre,
+main:has(a[href="/en#booking"]) article article pre {
+  border: 1px solid rgba(107, 39, 55, .08);
+  background:
+    linear-gradient(180deg, rgba(255, 253, 248, .80), rgba(255, 253, 248, .56)) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 253, 248, .68);
+}
+
 main:has(a[href="/#booking"]) input,
 main:has(a[href="/en#booking"]) input,
 main:has(a[href="/admin/time-reports"]) input,
@@ -114,6 +152,11 @@ main:has(a[href="/admin/time-reports"]) a[href="/profile"] {
   main:has(a[href="/admin/time-reports"]) .rounded-\[2rem\] {
     border-radius: 1.75rem !important;
     padding: 1.25rem !important;
+  }
+
+  main:has(a[href="/#booking"]) article article,
+  main:has(a[href="/en#booking"]) article article {
+    padding-left: 1.35rem !important;
   }
 }
 
