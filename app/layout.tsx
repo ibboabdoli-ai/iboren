@@ -12,6 +12,7 @@ import "./booking-date-mobile-fix.css";
 import "./header-mobile-polish.css";
 import "./footer-trust-polish.css";
 import "./profile-dashboard-polish.css";
+import "./browser-chrome-polish.css";
 
 const title = "Iboren – Städning i Södertälje och Stockholm";
 const description = "Skicka bokningsförfrågan för hemstädning, flyttstädning, kontorsstädning och fönsterputs med Iboren. Prisindikation, RUT-information och snabb återkoppling i Södertälje och Stockholm.";
@@ -59,7 +60,7 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 5,
-  themeColor: "#0B0E0C"
+  themeColor: "#07110D"
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -71,6 +72,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="apple-mobile-web-app-title" content="Iboren" />
+        <meta name="theme-color" content="#07110D" />
       </head>
       <body>
         <StructuredData />
