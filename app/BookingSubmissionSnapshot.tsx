@@ -59,7 +59,20 @@ function canonical(value: unknown) {
     "true": "yes",
     "nej": "no",
     "no": "no",
-    "false": "no"
+    "false": "no",
+    "fönsterputs": "window-cleaning",
+    "ugn": "oven",
+    "ugnsrengöring": "oven",
+    "oven": "oven",
+    "oven cleaning": "oven",
+    "kyl/frys": "fridge-freezer",
+    "fridge/freezer": "fridge-freezer",
+    "balkong": "balcony",
+    "balcony": "balcony",
+    "grovstädning": "deep-cleaning-addon",
+    "extra smutsigt": "deep-cleaning-addon",
+    "skåp/lådor": "cabinets-drawers",
+    "cabinets/drawers": "cabinets-drawers"
   };
   return map[key] || key;
 }
@@ -143,11 +156,38 @@ function buildCalculatorSection(estimate: CalculatorEstimate) {
     inputs.forEach(([key, value]) => addLine(lines, key, value));
   }
 
-  if (estimate.selectedButtons?.length) {
-    lines.push("", `Selected add-ons: ${estimate.selectedButtons.map(sanitizeLine).filter(Boolean).join(", ")}`);
-  }
+  const addOns = estimateAddOns(estimate);
+  if (addOns.length) lines.push("", `Selected add-ons: ${addOns.join(", ")}`);
 
   return lines.join("\n");
+}
+
+function bodyExtraServices(body: Record<string, unknown>) {
+  const raw = body.extraServices ?? body.extra_services ?? body.addOns ?? body.add_ons;
+  if (Array.isArray(raw)) return raw.map(sanitizeLine).filter(Boolean);
+  return cleanText(raw).split(",").map(sanitizeLine).filter(Boolean);
+}
+
+function estimateAddOns(estimate: CalculatorEstimate) {
+  const allowed = new Map([
+    ["window-cleaning", "Fönsterputs"],
+    ["oven", "Ugn"],
+    ["fridge-freezer", "Kyl/frys"],
+    ["balcony", "Balkong"],
+    ["deep-cleaning-addon", "Grovstädning"],
+    ["cabinets-drawers", "Skåp/lådor"]
+  ]);
+  const selected = (estimate.selectedButtons || []).map(canonical).filter((item) => allowed.has(item));
+  return Array.from(new Set(selected)).map((item) => allowed.get(item) || item);
+}
+
+function comparableList(values: string[]) {
+  return Array.from(new Set(values.map(canonical).filter(Boolean))).sort().join("|");
+}
+
+function numberValue(value: unknown) {
+  const parsed = Number(cleanText(value).replace(/[^0-9]/g, ""));
+  return Number.isFinite(parsed) ? parsed : 0;
 }
 
 function finalFieldMap(body: Record<string, unknown>) {
@@ -156,6 +196,9 @@ function finalFieldMap(body: Record<string, unknown>) {
     area: firstFilled(body.area),
     address: firstFilled(body.address),
     size: firstFilled(body.size, body.sizeSqm, body.size_sqm),
+    rooms: firstFilled(body.rooms, body.numberOfRooms, body.number_of_rooms),
+    bathrooms: firstFilled(body.bathrooms, body.numberOfBathrooms, body.number_of_bathrooms),
+    extraServices: bodyExtraServices(body),
     frequency: firstFilled(body.frequency),
     date: firstFilled(body.date, body.preferredDate, body.preferred_date),
     time: firstFilled(body.timeWindow, body.time, body.time_window),
@@ -174,6 +217,9 @@ function buildFinalBookingSection(body: Record<string, unknown>) {
   addLine(lines, "Area", fields.area);
   addLine(lines, "Address", fields.address);
   addLine(lines, "Size", fields.size);
+  addLine(lines, "Rooms", fields.rooms);
+  addLine(lines, "Bathrooms", fields.bathrooms);
+  if (fields.extraServices.length) addLine(lines, "Extra services", fields.extraServices.join(", "));
   addLine(lines, "Frequency", fields.frequency);
   addLine(lines, "Date", fields.date);
   addLine(lines, "Time window", fields.time);
@@ -191,18 +237,43 @@ function buildChangesSection(estimate: CalculatorEstimate, body: Record<string, 
   const comparisons: Array<[string, string, string]> = [
     ["Service", getEstimateInput(estimate, ["tjänst", "service"]), finalFields.service],
     ["Size", getEstimateInput(estimate, ["storlek", "size sqm", "size"]), finalFields.size],
+    ["Rooms", getEstimateInput(estimate, ["antal rum", "rooms"]), finalFields.rooms],
+    ["Bathrooms", getEstimateInput(estimate, ["antal badrum", "bathrooms"]), finalFields.bathrooms],
     ["Frequency", getEstimateInput(estimate, ["frekvens", "frequency"]), finalFields.frequency],
     ["Customer type", getEstimateInput(estimate, ["kundtyp", "customer type"]), finalFields.customerType],
-    ["RUT", getEstimateInput(estimate, ["rut"]), finalFields.rutRequested]
+    ["RUT", getEstimateInput(estimate, ["rut"]), finalFields.rutRequested],
+    ["Extra services", estimateAddOns(estimate).join(", "), finalFields.extraServices.join(", ")]
   ];
 
   const changes = comparisons
     .map(([label, from, to]) => [label, sanitizeLine(from), sanitizeLine(to)] as const)
-    .filter(([, from, to]) => from && to && canonical(from) !== canonical(to));
+    .filter(([label, from, to]) => {
+      if (!from && !to) return false;
+      if (label === "Extra services") return comparableList(from.split(",")) !== comparableList(to.split(","));
+      return from && to && canonical(from) !== canonical(to);
+    });
 
   if (!changes.length) return "--- Changes after estimate ---\nNo key changes detected between calculator estimate and submitted booking.";
 
-  return ["--- Changes after estimate ---", ...changes.map(([label, from, to]) => `${label}: ${from} -> ${to}`)].join("\n");
+  return ["--- Changes after estimate ---", ...changes.map(([label, from, to]) => `${label}: ${from || "not set"} -> ${to || "not set"}`)].join("\n");
+}
+
+function buildAdminCheckSection(estimate: CalculatorEstimate, body: Record<string, unknown>) {
+  const fields = finalFieldMap(body);
+  const warnings: string[] = [];
+  const size = numberValue(fields.size);
+  const rooms = numberValue(fields.rooms);
+  const bathrooms = numberValue(fields.bathrooms);
+  const estimateBathrooms = numberValue(getEstimateInput(estimate, ["antal badrum", "bathrooms"]));
+
+  if (size > 180) warnings.push(`Large home: ${size} sqm. Manual price check recommended.`);
+  if (rooms > 10) warnings.push(`Many rooms: ${rooms}. Check that the booking value is correct.`);
+  if (bathrooms > 5) warnings.push(`Many bathrooms: ${bathrooms}. Check that the booking value is correct.`);
+  if (estimateBathrooms > 10) warnings.push(`Calculator bathrooms looked unusual: ${estimateBathrooms}. Price indication may need manual check.`);
+  if (fields.extraServices.length > 3) warnings.push(`Many extra services selected: ${fields.extraServices.join(", ")}. Check that the price indication covers the work.`);
+
+  if (!warnings.length) return "--- Admin check ---\nStatus: OK\nNo admin warnings detected.";
+  return ["--- Admin check ---", "Status: Manual check recommended", "Warnings:", ...warnings.map((warning) => `- ${sanitizeLine(warning)}`)].join("\n");
 }
 
 function appendSnapshotToNotes(body: Record<string, unknown>) {
@@ -224,12 +295,14 @@ function appendSnapshotToNotes(body: Record<string, unknown>) {
     "",
     buildFinalBookingSection(enhancedBody),
     "",
-    buildChangesSection(estimate, enhancedBody)
+    buildChangesSection(estimate, enhancedBody),
+    "",
+    buildAdminCheckSection(estimate, enhancedBody)
   ].filter((part) => cleanText(part)).join("\n");
 
   return {
     ...enhancedBody,
-    notes: snapshotText.slice(0, 12000),
+    notes: snapshotText.slice(0, 14000),
     calculatorEstimate: estimate,
     __calculatorSnapshotAttached: true
   };
