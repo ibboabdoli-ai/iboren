@@ -200,6 +200,74 @@ select:-webkit-autofill:focus {
   }
 }
 
+/* Booking form section polish: visual only. */
+#booking form {
+  position: relative;
+  overflow: hidden;
+}
+
+#booking form::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  background:
+    radial-gradient(circle at 12% 0%, rgba(212, 165, 116, .08), transparent 30%),
+    linear-gradient(180deg, rgba(255, 253, 248, .06), transparent 42%);
+  opacity: .9;
+}
+
+#booking form > * {
+  position: relative;
+  z-index: 1;
+}
+
+#booking form h3,
+#booking form h4 {
+  margin-top: 1.15rem;
+  padding-top: 1.15rem;
+  border-top: 1px solid rgba(212, 165, 116, .16);
+  color: var(--gold) !important;
+  letter-spacing: .02em;
+}
+
+#booking form label {
+  font-weight: 800;
+  letter-spacing: .01em;
+}
+
+#booking form input,
+#booking form textarea,
+#booking form select {
+  border-color: rgba(32, 32, 32, .14) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 253, 248, .72);
+}
+
+#booking form input:focus,
+#booking form textarea:focus,
+#booking form select:focus {
+  border-color: rgba(212, 165, 116, .72) !important;
+}
+
+#booking form button[type="button"] {
+  border-radius: 1rem !important;
+}
+
+#booking form button[type="submit"] {
+  min-height: 3.25rem;
+  box-shadow: 0 20px 60px rgba(212, 165, 116, .18);
+}
+
+@media (min-width: 1024px) {
+  #booking form h3:first-of-type,
+  #booking form h4:first-of-type {
+    margin-top: .25rem;
+    padding-top: 0;
+    border-top: 0;
+  }
+}
+
 /* Mobile hero cleanup: reduce visual density without touching booking logic. */
 @media (max-width: 767px) {
   .display { letter-spacing: -0.035em; }
