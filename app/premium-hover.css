@@ -184,6 +184,47 @@
   }
 }
 
+/* Desktop booking composition: keep the form on the right and move Summary under the intro copy. */
+@media (min-width: 1024px) {
+  #booking > .luxe-container {
+    grid-template-columns: minmax(20rem, .82fr) minmax(0, 1.18fr) !important;
+    grid-template-areas:
+      "intro form"
+      "summary form";
+    align-items: start !important;
+  }
+
+  #booking > .luxe-container > div:first-child {
+    grid-area: intro;
+  }
+
+  #booking > .luxe-container > div:nth-child(2) {
+    display: contents;
+  }
+
+  #booking form {
+    grid-area: form;
+  }
+
+  #booking aside {
+    grid-area: summary;
+    width: 100%;
+    margin-top: -1.5rem;
+    border-color: rgba(212, 165, 116, .18) !important;
+    background:
+      radial-gradient(circle at 16% 0%, rgba(212, 165, 116, .13), transparent 36%),
+      rgba(245, 240, 232, .96) !important;
+    box-shadow:
+      0 28px 90px rgba(0, 0, 0, .20),
+      inset 0 1px 0 rgba(255, 253, 248, .52) !important;
+  }
+
+  #booking aside pre {
+    max-height: min(38rem, calc(100vh - 16rem));
+    overflow: auto;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   header nav a,
   #iboren-global-menu a,
