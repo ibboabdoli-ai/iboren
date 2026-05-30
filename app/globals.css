@@ -162,8 +162,17 @@ select:-webkit-autofill:focus {
   object-fit: cover !important;
 }
 
-/* Booking summary title polish on desktop. */
+/* Booking summary receipt polish on desktop. */
 @media (min-width: 1024px) {
+  #booking aside {
+    position: relative;
+    overflow: hidden;
+  }
+  #booking aside > div:first-child {
+    margin-bottom: .9rem;
+    padding-bottom: .9rem;
+    border-bottom: 1px dashed rgba(107, 39, 55, .22);
+  }
   #booking aside h3,
   #booking aside .display {
     max-width: 100%;
@@ -175,8 +184,19 @@ select:-webkit-autofill:focus {
     hyphens: auto;
   }
   #booking aside pre {
+    border: 1px solid rgba(107, 39, 55, .10);
+    border-radius: 1.35rem;
+    padding: 1rem 1.05rem !important;
+    background:
+      linear-gradient(180deg, rgba(255, 253, 248, .78), rgba(255, 253, 248, .54)),
+      repeating-linear-gradient(180deg, transparent 0 2.05rem, rgba(107, 39, 55, .055) 2.05rem 2.1rem) !important;
+    box-shadow:
+      inset 0 1px 0 rgba(255, 253, 248, .65),
+      0 14px 40px rgba(107, 39, 55, .06);
+    color: rgba(32, 32, 32, .84) !important;
     font-size: .84rem !important;
     line-height: 1.72 !important;
+    white-space: pre-wrap;
   }
 }
 
