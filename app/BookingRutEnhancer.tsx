@@ -224,32 +224,77 @@ function estimateRutIsRequested(estimate: CalculatorEstimate) {
   return ["yes", "ja", "true"].includes(normalize(getInput(estimate, ["RUT"])));
 }
 
+function isEnglishPage() {
+  return window.location.pathname === "/en" || window.location.pathname.startsWith("/en/");
+}
+
+function translateRiskLabel(label: string, english: boolean) {
+  if (!english) return label;
+  const map: Record<string, string> = {
+    "Bra prisunderlag": "Good estimate basis",
+    "Behöver kontrolleras": "Needs review",
+    "Manuell offert behövs": "Manual quote needed"
+  };
+  return map[label] || label;
+}
+
 function renderEstimateCard(form: HTMLElement, estimate: CalculatorEstimate) {
   const result = estimate.result;
   if (!result?.priceBeforeRut && !result?.priceAfterRut && !result?.estimatedTime) return;
 
   const existing = form.querySelector(`#${ESTIMATE_CARD_ID}`);
   const card = existing instanceof HTMLElement ? existing : document.createElement("div");
+  const english = isEnglishPage();
+  const rutRequested = estimateRutIsRequested(estimate);
   card.id = ESTIMATE_CARD_ID;
-  card.className = "mb-6 rounded-[1.6rem] border border-gold/25 bg-night/35 p-5 text-porcelain shadow-soft";
+  card.className = "mb-6 overflow-hidden rounded-[1.8rem] border border-gold/25 bg-night/45 text-porcelain shadow-soft ring-1 ring-porcelain/5";
 
-  const beforeRut = result.priceBeforeRut ? `<div><p class=\"text-[10px] font-black uppercase tracking-[.18em] text-gold/75\">Före RUT / totalpris</p><p class=\"mt-1 text-2xl font-black text-porcelain\">${escapeHtml(result.priceBeforeRut)}</p></div>` : "";
-  const afterRut = result.priceAfterRut ? `<div><p class=\"text-[10px] font-black uppercase tracking-[.18em] text-gold/75\">Efter RUT / kundpris</p><p class=\"mt-1 text-2xl font-black text-gold\">${escapeHtml(result.priceAfterRut)}</p></div>` : "";
-  const time = result.estimatedTime ? `<span class=\"rounded-full bg-porcelain/10 px-3 py-1 text-xs font-bold text-porcelain/85\">Tid: ${escapeHtml(result.estimatedTime)}</span>` : "";
-  const risk = result.riskLabel ? `<span class=\"rounded-full bg-gold/15 px-3 py-1 text-xs font-bold text-gold\">${escapeHtml(result.riskLabel)}</span>` : "";
-  const rutText = estimateRutIsRequested(estimate) ? "RUT är valt i kalkylatorn. Moms ingår i prisindikationen." : "RUT är inte valt i kalkylatorn. Moms ingår i prisindikationen.";
+  const copy = english ? {
+    eyebrow: "Calculator estimate",
+    title: "Price indication from calculator",
+    body: "This is the estimate the customer saw before sending the request. Iboren confirms the final price before the request becomes binding.",
+    before: "Before RUT / total price",
+    after: rutRequested ? "After RUT / customer price" : "Customer price",
+    time: "Time",
+    vat: "VAT included",
+    rutBadge: rutRequested ? "RUT selected" : "RUT not selected",
+    rutText: rutRequested ? "RUT was selected in the calculator. VAT is included in the estimate." : "RUT was not selected in the calculator. VAT is included in the estimate."
+  } : {
+    eyebrow: "Prisunderlag",
+    title: "Prisindikation från kalkylatorn",
+    body: "Det här är priset kunden såg innan bokningsförfrågan. Iboren bekräftar slutligt pris innan förfrågan blir bindande.",
+    before: "Före RUT / totalpris",
+    after: rutRequested ? "Efter RUT / kundpris" : "Kundpris",
+    time: "Tid",
+    vat: "Moms ingår",
+    rutBadge: rutRequested ? "RUT valt" : "RUT ej valt",
+    rutText: rutRequested ? "RUT är valt i kalkylatorn. Moms ingår i prisindikationen." : "RUT är inte valt i kalkylatorn. Moms ingår i prisindikationen."
+  };
+
+  const risk = result.riskLabel ? `<span class="inline-flex rounded-full border border-gold/25 bg-gold/15 px-3 py-1 text-xs font-black text-gold">${escapeHtml(translateRiskLabel(result.riskLabel, english))}</span>` : "";
+  const beforeRut = result.priceBeforeRut ? `<div class="rounded-2xl border border-porcelain/10 bg-porcelain/[.055] p-4"><p class="text-[10px] font-black uppercase tracking-[.18em] text-porcelain/58">${copy.before}</p><p class="mt-2 text-2xl font-black text-porcelain">${escapeHtml(result.priceBeforeRut)}</p></div>` : "";
+  const afterRut = result.priceAfterRut ? `<div class="relative overflow-hidden rounded-2xl border border-gold/30 bg-gold/[.13] p-4 shadow-[0_20px_60px_rgba(212,165,116,.10)]"><div class="absolute -right-10 -top-10 h-24 w-24 rounded-full bg-gold/20 blur-2xl"></div><p class="relative text-[10px] font-black uppercase tracking-[.18em] text-gold/90">${copy.after}</p><p class="relative mt-2 text-3xl font-black text-gold sm:text-4xl">${escapeHtml(result.priceAfterRut)}</p></div>` : "";
+  const time = result.estimatedTime ? `<span class="rounded-full bg-porcelain/10 px-3 py-1 text-xs font-bold text-porcelain/85">${copy.time}: ${escapeHtml(result.estimatedTime)}</span>` : "";
 
   card.innerHTML = `
-    <div class=\"flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between\">
-      <div>
-        <p class=\"text-[10px] font-black uppercase tracking-[.28em] text-gold\">Prisindikation från kalkylatorn</p>
-        <p class=\"mt-2 text-sm leading-6 text-porcelain/72\">Det här är priset kunden såg innan bokningsförfrågan. Slutpris bekräftas av Iboren.</p>
+    <div class="relative overflow-hidden p-5 sm:p-6">
+      <div class="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_18%_0%,rgba(212,165,116,.18),transparent_36%)]"></div>
+      <div class="relative flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <p class="text-[10px] font-black uppercase tracking-[.28em] text-gold/80">${copy.eyebrow}</p>
+          <p class="mt-2 font-serif text-2xl font-bold leading-none tracking-[-.045em] text-porcelain sm:text-3xl">${copy.title}</p>
+          <p class="mt-3 max-w-xl text-sm leading-6 text-porcelain/72">${copy.body}</p>
+        </div>
+        ${risk}
       </div>
-      ${risk}
+      <div class="relative mt-5 grid gap-3 sm:grid-cols-2">${beforeRut}${afterRut}</div>
+      <div class="relative mt-4 flex flex-wrap gap-2">
+        ${time}
+        <span class="rounded-full bg-porcelain/10 px-3 py-1 text-xs font-bold text-porcelain/85">${copy.vat}</span>
+        <span class="rounded-full border border-gold/20 bg-gold/10 px-3 py-1 text-xs font-bold text-gold">${copy.rutBadge}</span>
+      </div>
+      <p class="relative mt-3 text-xs leading-6 text-porcelain/60">${escapeHtml(copy.rutText)}</p>
     </div>
-    <div class=\"mt-4 grid gap-4 sm:grid-cols-2\">${beforeRut}${afterRut}</div>
-    <div class=\"mt-4 flex flex-wrap gap-2\">${time}<span class=\"rounded-full bg-porcelain/10 px-3 py-1 text-xs font-bold text-porcelain/85\">Moms ingår</span></div>
-    <p class=\"mt-3 text-xs leading-6 text-porcelain/60\">${escapeHtml(rutText)}</p>
   `;
 
   if (!existing) {
