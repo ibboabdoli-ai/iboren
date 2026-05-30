@@ -1,0 +1,71 @@
+/* Header and mobile menu visual polish only. */
+
+header nav {
+  transition: background-color .22s ease, border-color .22s ease, box-shadow .22s ease;
+}
+
+header nav::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: radial-gradient(circle at 10% 0%, rgba(212, 165, 116, .10), transparent 34%);
+}
+
+header .border-t.bg-night\/95 {
+  border-color: rgba(212, 165, 116, .16) !important;
+  background: rgba(2, 5, 4, .965) !important;
+  box-shadow: 0 34px 90px rgba(0, 0, 0, .34);
+}
+
+header .border-t.bg-night\/95 a {
+  border: 1px solid rgba(212, 165, 116, .12);
+  background: rgba(255, 253, 248, .045);
+  color: rgba(255, 253, 248, .86) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 253, 248, .08);
+  transition: transform .2s ease, border-color .2s ease, background-color .2s ease, color .2s ease;
+}
+
+header .border-t.bg-night\/95 a:hover,
+header .border-t.bg-night\/95 a:focus-visible {
+  border-color: rgba(212, 165, 116, .35);
+  background: rgba(255, 253, 248, .075);
+  color: var(--gold) !important;
+  transform: translateY(-1px);
+}
+
+header .border-t.bg-night\/95 a.bg-gold,
+header .border-t.bg-night\/95 a[href="#booking"]:last-child {
+  border-color: rgba(212, 165, 116, .75) !important;
+  background: var(--gold) !important;
+  color: var(--night) !important;
+  box-shadow: 0 22px 70px rgba(212, 165, 116, .20);
+}
+
+@media (max-width: 767px) {
+  header nav {
+    width: min(100% - 1.25rem, 29rem) !important;
+    border-radius: 999px !important;
+    border: 1px solid rgba(212, 165, 116, .14) !important;
+    background: rgba(2, 5, 4, .76) !important;
+    box-shadow: 0 18px 60px rgba(0, 0, 0, .22);
+  }
+
+  header nav a[href="#top"].group {
+    width: 136px !important;
+    height: 46px !important;
+  }
+
+  header nav > button {
+    border-color: rgba(212, 165, 116, .24) !important;
+    background: rgba(255, 253, 248, .045) !important;
+    color: var(--gold) !important;
+  }
+
+  header .border-t.bg-night\/95 {
+    margin-top: .45rem;
+    border-radius: 1.75rem;
+    overflow: hidden;
+  }
+}
