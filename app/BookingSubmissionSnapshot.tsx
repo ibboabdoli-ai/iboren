@@ -60,7 +60,6 @@ function canonical(value: unknown) {
     "nej": "no",
     "no": "no",
     "false": "no",
-    "fönsterputs": "window-cleaning",
     "ugn": "oven",
     "ugnsrengöring": "oven",
     "oven": "oven",
