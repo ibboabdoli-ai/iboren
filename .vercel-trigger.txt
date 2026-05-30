@@ -1,0 +1,4 @@
+Vercel redeploy trigger
+Step: 51C booking form polish
+Timestamp: 2026-05-30 13:05 Europe/Stockholm
+No runtime impact.
