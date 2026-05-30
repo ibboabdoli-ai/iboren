@@ -162,6 +162,24 @@ select:-webkit-autofill:focus {
   object-fit: cover !important;
 }
 
+/* Booking summary title polish on desktop. */
+@media (min-width: 1024px) {
+  #booking aside h3,
+  #booking aside .display {
+    max-width: 100%;
+    font-size: clamp(1.45rem, 2.05vw, 2.25rem) !important;
+    line-height: .96 !important;
+    letter-spacing: -.045em !important;
+    overflow-wrap: anywhere;
+    word-break: normal;
+    hyphens: auto;
+  }
+  #booking aside pre {
+    font-size: .84rem !important;
+    line-height: 1.72 !important;
+  }
+}
+
 /* Mobile hero cleanup: reduce visual density without touching booking logic. */
 @media (max-width: 767px) {
   .display { letter-spacing: -0.035em; }
