@@ -1,27 +1,49 @@
 /* Mobile date input fix: visual-only, no booking/date logic. */
 
 @media (max-width: 767px) {
-  #booking input[type="date"] {
+  #booking,
+  #booking form,
+  #booking form * {
+    max-width: 100%;
+  }
+
+  #booking form {
+    overflow-x: clip !important;
+  }
+
+  #booking label:has(input[type="date"]) {
     display: block !important;
     width: 100% !important;
     max-width: 100% !important;
     min-width: 0 !important;
-    box-sizing: border-box !important;
-    text-align: left !important;
+    overflow: hidden !important;
   }
 
-  #booking label:has(input[type="date"]),
-  #booking label:has(input[type="date"]) input {
+  #booking input[type="date"] {
+    -webkit-appearance: none !important;
+    appearance: none !important;
+    display: block !important;
+    inline-size: 100% !important;
     width: 100% !important;
+    max-inline-size: 100% !important;
     max-width: 100% !important;
+    min-inline-size: 0 !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+    border-radius: 1.4rem !important;
+    text-align: left !important;
+    overflow: hidden !important;
   }
 
   #booking input[type="date"]::-webkit-date-and-time-value {
     min-height: 1.5em;
+    max-width: calc(100vw - 5.5rem);
     text-align: left;
   }
 
   #booking input[type="date"]::-webkit-calendar-picker-indicator {
+    flex: 0 0 auto;
     margin-left: auto;
+    padding-right: .1rem;
   }
 }
