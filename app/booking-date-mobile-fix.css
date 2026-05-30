@@ -1,0 +1,27 @@
+/* Mobile date input fix: visual-only, no booking/date logic. */
+
+@media (max-width: 767px) {
+  #booking input[type="date"] {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+    text-align: left !important;
+  }
+
+  #booking label:has(input[type="date"]),
+  #booking label:has(input[type="date"]) input {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  #booking input[type="date"]::-webkit-date-and-time-value {
+    min-height: 1.5em;
+    text-align: left;
+  }
+
+  #booking input[type="date"]::-webkit-calendar-picker-indicator {
+    margin-left: auto;
+  }
+}
