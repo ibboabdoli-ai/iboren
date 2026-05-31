@@ -11,8 +11,16 @@ declare global {
 }
 
 const GOOGLE_MAPS_SCRIPT_ID = "iboren-google-maps-places";
-const ADDRESS_SELECTORS = ['input[placeholder="Gatuadress"]', 'input[placeholder="Street address"]'];
-const AREA_SELECTORS = ['input[placeholder="Stockholm, Södertälje..."]'];
+const ADDRESS_SELECTORS = [
+  'input[placeholder="Gatuadress"]',
+  'input[placeholder="Gatuadress och nummer"]',
+  'input[placeholder="Street address"]',
+  'input[placeholder="Street address and number"]'
+];
+const AREA_SELECTORS = [
+  'input[placeholder="Stockholm, Södertälje..."]',
+  'input[placeholder="Södertälje"]'
+];
 
 function loadGooglePlaces(apiKey: string) {
   if (typeof window === "undefined") return Promise.resolve();
