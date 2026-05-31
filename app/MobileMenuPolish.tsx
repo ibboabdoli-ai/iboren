@@ -3,8 +3,21 @@
 import { useEffect } from "react";
 import ProfileLanguageSwitch from "./ProfileLanguageSwitch";
 
+function currentPath() {
+  return window.location.pathname.endsWith("/") && window.location.pathname !== "/" ? window.location.pathname.slice(0, -1) : window.location.pathname;
+}
+
 function isEnglishPath() {
-  return window.location.pathname === "/en" || window.location.pathname.startsWith("/en/");
+  return currentPath() === "/en" || currentPath().startsWith("/en/");
+}
+
+function languageTarget() {
+  const pathname = currentPath();
+  if (pathname === "/boka-utan-konto") return "/en/boka-utan-konto";
+  if (pathname === "/en/boka-utan-konto") return "/boka-utan-konto";
+  if (pathname === "/profile") return "/en/profile";
+  if (pathname === "/en/profile") return "/profile";
+  return isEnglishPath() ? "/" : "/en";
 }
 
 function createMenuLink(label: string, href: string, onClick: () => void) {
@@ -47,6 +60,7 @@ function polishMenu() {
 
   const cta = oldItems.find((item) => item.className.includes("bg-gold"));
   const profile = oldItems.find((item) => item.getAttribute("href") === "/profile" || item.getAttribute("href") === "/login");
+  const switchTarget = languageTarget();
 
   list.innerHTML = "";
   list.style.gap = "0.35rem";
@@ -60,7 +74,7 @@ function polishMenu() {
         { label: "About us", href: "/en/about" },
         { label: "Work with us", href: "/en/jobs" },
         { label: profile?.textContent?.trim() || "My profile", href: profile?.getAttribute("href") || "/login" },
-        { label: "Svenska", href: "/" }
+        { label: "Svenska", href: switchTarget }
       ]
     : [
         { label: "Boka städning", href: "#booking" },
@@ -69,7 +83,7 @@ function polishMenu() {
         { label: "Om oss", href: "/om-iboren" },
         { label: "Jobba hos oss", href: "/jobb" },
         { label: profile?.textContent?.trim() || "Min profil", href: profile?.getAttribute("href") || "/login" },
-        { label: "English", href: "/en" }
+        { label: "English", href: switchTarget }
       ];
 
   items.forEach((item) => {
