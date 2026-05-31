@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { createClient } from "@supabase/supabase-js";
 
 export const runtime = "nodejs";
 
@@ -84,6 +85,7 @@ const requiredLabels: Record<string, string> = {
 const englishLabels: Record<string, string> = {
   Hemstädning: "Home cleaning",
   Flyttstädning: "Move-out cleaning",
+  Storstädning: "Deep cleaning",
   Kontorsstädning: "Office cleaning",
   Fönsterputs: "Window cleaning",
   Engång: "One-time",
@@ -134,7 +136,7 @@ function normalizeCustomerType(value: unknown) {
 }
 
 function normalizeRutRequested(value: unknown, customerType: string, service: string) {
-  if (customerType !== "Privatperson" || service === "Kontorsstädning") return false;
+  if (customerType !== "Privatperson" || service === "Kontorsstädning" || service === "Office cleaning") return false;
   return value === true || value === "true" || value === "Ja" || value === "ja" || value === "Yes" || value === "yes";
 }
 
@@ -207,25 +209,68 @@ function hasHoneypotValue(json: PublicBookingPayload) {
   return Boolean(firstFilled(json.website, json.companyWebsite, json.homepage, json.url));
 }
 
+function getAdminClient() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !serviceKey) return null;
+  return createClient(url, serviceKey, { auth: { persistSession: false, autoRefreshToken: false } });
+}
+
+async function savePublicRequest(payload: NormalizedPublicBooking, requestId: string, language: Language) {
+  const supabase = getAdminClient();
+  if (!supabase) {
+    console.warn("IBOREN_PUBLIC_REQUEST_NOT_SAVED", { requestId, reason: "missing_service_role" });
+    return false;
+  }
+
+  const size = numberFromText(payload.size);
+  const { error } = await supabase.from("public_booking_requests").insert({
+    external_id: requestId,
+    status: "new",
+    language,
+    service: payload.service,
+    area: payload.area,
+    address: payload.address || null,
+    size_sqm: size,
+    frequency: payload.frequency || null,
+    preferred_date: payload.date || null,
+    time_window: payload.timeWindow || null,
+    customer_name: payload.name,
+    customer_email: payload.email,
+    customer_phone: payload.phone || null,
+    customer_type: payload.customerType,
+    rut_requested: payload.rutRequested,
+    notes: payload.notes || null,
+    source: "public_form"
+  });
+
+  if (error) {
+    console.warn("IBOREN_PUBLIC_REQUEST_SAVE_FAILED", { requestId, message: error.message });
+    return false;
+  }
+
+  return true;
+}
+
 function buildAdminRutText(payload: NormalizedPublicBooking, language: Language) {
   if (language === "en") {
     if (payload.customerType !== "Privatperson") return "RUT: Not applicable for company requests.";
-    if (payload.service === "Kontorsstädning") return "RUT: No. Office cleaning is handled as a business price or quote.";
+    if (payload.service === "Kontorsstädning" || payload.service === "Office cleaning") return "RUT: No. Office cleaning is handled as a business price or quote.";
     return payload.rutRequested ? "RUT: Yes. The customer has requested RUT deduction according to Skatteverket rules. If RUT is not approved, the remaining amount may be invoiced." : "RUT: No. The customer has not requested RUT deduction.";
   }
   if (payload.customerType !== "Privatperson") return "RUT: Gäller inte för företagsförfrågningar.";
-  if (payload.service === "Kontorsstädning") return "RUT: Nej. Kontorsstädning hanteras som företagspris/offert.";
+  if (payload.service === "Kontorsstädning" || payload.service === "Office cleaning") return "RUT: Nej. Kontorsstädning hanteras som företagspris/offert.";
   return payload.rutRequested ? "RUT: Ja. Kunden har valt RUT och intygar att villkoren hos Skatteverket uppfylls. Om RUT inte godkänns kan resterande belopp faktureras." : "RUT: Nej. Kunden har inte valt RUT-avdrag.";
 }
 
 function buildCustomerRutText(payload: NormalizedPublicBooking, language: Language) {
   if (language === "en") {
     if (payload.customerType !== "Privatperson") return "RUT: Not applicable for company requests.";
-    if (payload.service === "Kontorsstädning") return "RUT: No. Office cleaning is handled as a business price or quote.";
+    if (payload.service === "Kontorsstädning" || payload.service === "Office cleaning") return "RUT: No. Office cleaning is handled as a business price or quote.";
     return payload.rutRequested ? "RUT: Yes. You have requested RUT deduction according to Skatteverket rules. If RUT is not approved, the remaining amount may be invoiced." : "RUT: No. You have not requested RUT deduction.";
   }
   if (payload.customerType !== "Privatperson") return "RUT: Gäller inte för företagsförfrågningar.";
-  if (payload.service === "Kontorsstädning") return "RUT: Nej. Kontorsstädning hanteras som företagspris/offert.";
+  if (payload.service === "Kontorsstädning" || payload.service === "Office cleaning") return "RUT: Nej. Kontorsstädning hanteras som företagspris/offert.";
   return payload.rutRequested ? "RUT: Ja. Du har valt RUT enligt Skatteverkets regler. Om RUT inte godkänns kan resterande belopp faktureras." : "RUT: Nej. Du har inte valt RUT-avdrag.";
 }
 
@@ -233,12 +278,13 @@ function requestId() {
   return `public-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
-function buildAdminText(payload: NormalizedPublicBooking, id: string, language: Language) {
+function buildAdminText(payload: NormalizedPublicBooking, id: string, language: Language, saved: boolean) {
   if (language === "en") {
     return [
       "New Iboren public booking request",
       "",
       `Request ID: ${id}`,
+      `Saved in admin queue: ${saved ? "Yes" : "No - check Supabase public_booking_requests setup"}`,
       "Status: New / unverified / pending review",
       "Important: This is not a confirmed booking. Confirm time and price manually before it becomes binding.",
       `Customer language: ${language}`,
@@ -266,6 +312,7 @@ function buildAdminText(payload: NormalizedPublicBooking, id: string, language: 
     "Ny publik bokningsförfrågan till Iboren",
     "",
     `Förfrågnings-ID: ${id}`,
+    `Sparad i admin-kö: ${saved ? "Ja" : "Nej - kontrollera Supabase public_booking_requests"}`,
     "Status: Ny / overifierad / behöver granskas",
     "Viktigt: Detta är inte en bekräftad bokning. Bekräfta tid och pris manuellt innan den blir bindande.",
     `Kundspråk: ${language}`,
@@ -400,10 +447,11 @@ export async function POST(request: Request) {
     if (!checkRateLimit(rateLimitKey)) return NextResponse.json({ ok: false, message: message(language, "För många förfrågningar på kort tid. Försök igen senare.", "Too many requests in a short time. Try again later.") }, { status: 429 });
 
     const id = requestId();
+    const saved = await savePublicRequest(payload, id, language);
     const resendApiKey = process.env.RESEND_API_KEY;
     const toEmail = process.env.BOOKING_TO_EMAIL || "hej@iboren.se";
     const fromEmail = process.env.BOOKING_FROM_EMAIL || "Iboren <onboarding@resend.dev>";
-    const adminText = buildAdminText(payload, id, language);
+    const adminText = buildAdminText(payload, id, language, saved);
     const customerText = buildCustomerText(payload, id, language);
 
     if (resendApiKey) {
@@ -418,6 +466,7 @@ export async function POST(request: Request) {
     return NextResponse.json({
       ok: true,
       requestId: id,
+      saved,
       message: message(language, "Tack! Din förfrågan har skickats. Vi bekräftar alltid tid och pris innan bokningen blir bindande.", "Thank you. Your request has been sent. We always confirm time and price before the booking becomes binding.")
     });
   } catch (error) {
