@@ -9,7 +9,6 @@ import PwaManifestSwitcher from "./PwaManifestSwitcher";
 import PublicBookingRequestEnhancer from "./PublicBookingRequestEnhancer";
 import PublicBookingRequestLink from "./PublicBookingRequestLink";
 import AdminBookingNotesFormatter from "./AdminBookingNotesFormatter";
-import AdminDashboardSimplifier from "./AdminDashboardSimplifier";
 import "./globals.css";
 import "./premium-hover.css";
 import "./booking-date-mobile-fix.css";
@@ -86,7 +85,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <PublicBookingRequestEnhancer />
         <PublicBookingRequestLink />
         <AdminBookingNotesFormatter />
-        <AdminDashboardSimplifier />
         {children}
         <Script
   id="iboren-service-ai-chat"
