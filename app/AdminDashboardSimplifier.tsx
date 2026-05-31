@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect } from "react";
 
@@ -45,6 +44,32 @@ function addStyles() {
       a[href="/profile"] {
         display: none !important;
       }
+      article[data-iboren-simple-processed="booking"] {
+        border-radius: 1.65rem !important;
+        padding: 1.1rem !important;
+        background: #fffdf7 !important;
+        box-shadow: 0 16px 42px rgba(11, 14, 12, .08) !important;
+      }
+      article[data-iboren-simple-processed="booking"] h2,
+      article[data-iboren-simple-processed="booking"] h3 {
+        font-size: clamp(2.1rem, 12vw, 3.6rem) !important;
+        line-height: .95 !important;
+        word-break: break-word !important;
+      }
+      article[data-iboren-simple-processed="booking"] select {
+        min-height: 3.7rem !important;
+        border: 2px solid rgba(119, 38, 68, .16) !important;
+        background: #fffdf7 !important;
+        color: #1f1b18 !important;
+        font-size: 1.05rem !important;
+        font-weight: 900 !important;
+      }
+      article[data-iboren-simple-processed="booking"] button:not(.iboren-simple-toggle) {
+        opacity: 1 !important;
+        min-height: 3.25rem !important;
+        box-shadow: 0 10px 22px rgba(11, 14, 12, .08) !important;
+        filter: saturate(1.15) contrast(1.05) !important;
+      }
     }
     .iboren-admin-simple-actions {
       position: sticky;
@@ -78,31 +103,22 @@ function addStyles() {
       border: 1px solid rgba(119, 38, 68, .14);
     }
     .iboren-simple-card-collapsed {
-      max-height: 16.5rem;
+      max-height: 34rem;
       overflow: hidden;
       position: relative;
     }
-    .iboren-simple-card-collapsed::after {
-      content: "";
-      position: absolute;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      height: 4rem;
-      background: linear-gradient(to bottom, rgba(248,244,237,0), rgba(248,244,237,.96));
-      pointer-events: none;
-    }
     .iboren-simple-toggle {
-      margin-top: .75rem;
+      margin-top: .85rem;
       display: inline-flex;
       align-items: center;
       justify-content: center;
       border-radius: 999px;
-      padding: .65rem 1rem;
-      font-size: .82rem;
+      padding: .75rem 1.05rem;
+      font-size: .85rem;
       font-weight: 900;
       background: #772644;
       color: #fffdf7;
+      box-shadow: 0 12px 26px rgba(119, 38, 68, .18);
     }
     .iboren-simple-hidden-section {
       display: none !important;
@@ -179,13 +195,15 @@ function simplifyBookingCards() {
     if (article.getAttribute(PROCESSED) === "booking") return;
     if (!hasText(article, "Kund:") || !hasText(article, "Cleaner assignment")) return;
     article.setAttribute(PROCESSED, "booking");
-    article.classList.add("iboren-simple-card-collapsed");
 
     const toggle = document.createElement("button");
     toggle.type = "button";
     toggle.className = "iboren-simple-toggle";
-    toggle.textContent = "Visa mer / dölj detaljer";
-    toggle.addEventListener("click", () => article.classList.toggle("iboren-simple-card-collapsed"));
+    toggle.textContent = "Dölj detaljer";
+    toggle.addEventListener("click", () => {
+      const collapsed = article.classList.toggle("iboren-simple-card-collapsed");
+      toggle.textContent = collapsed ? "Visa alla detaljer" : "Dölj detaljer";
+    });
     article.appendChild(toggle);
   });
 }
