@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { createClient } from "@supabase/supabase-js";
@@ -9,22 +10,6 @@ function getSupabase() {
   const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   if (!url || !key) return null;
   return createClient(url, key, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true } });
-}
-
-function removeInlineLink() {
-  document.querySelectorAll(".iboren-public-booking-inline").forEach((element) => element.remove());
-}
-
-function insertInlineLink() {
-  const priceButton = document.querySelector<HTMLAnchorElement>('a[href="/priser"].btn-primary');
-  const buttonGroup = priceButton?.parentElement;
-  if (!priceButton || !buttonGroup || buttonGroup.querySelector(".iboren-public-booking-inline")) return;
-
-  const link = document.createElement("a");
-  link.href = "/boka-utan-konto";
-  link.className = "btn-secondary iboren-public-booking-inline";
-  link.textContent = "Skicka förfrågan";
-  buttonGroup.appendChild(link);
 }
 
 export default function PublicBookingRequestLink() {
@@ -52,19 +37,16 @@ export default function PublicBookingRequestLink() {
     return () => listener.subscription.unsubscribe();
   }, []);
 
-  useEffect(() => {
-    removeInlineLink();
-    if (pathname !== "/" || !ready || loggedIn) return;
+  if (pathname !== "/" || !ready || loggedIn) return null;
 
-    insertInlineLink();
-    const observer = new MutationObserver(() => insertInlineLink());
-    observer.observe(document.body, { childList: true, subtree: true });
-
-    return () => {
-      observer.disconnect();
-      removeInlineLink();
-    };
-  }, [pathname, ready, loggedIn]);
-
-  return null;
+  return (
+    <div className="pointer-events-none absolute inset-x-5 top-[72dvh] z-40 mx-auto max-w-xl md:top-[70dvh]">
+      <Link
+        href="/boka-utan-konto"
+        className="pointer-events-auto flex min-h-14 items-center justify-center rounded-full border border-gold/35 bg-night/88 px-6 py-4 text-center text-sm font-black uppercase tracking-[.18em] text-gold shadow-[0_16px_46px_rgba(0,0,0,.30)] backdrop-blur-xl"
+      >
+        Skicka förfrågan utan konto
+      </Link>
+    </div>
+  );
 }
