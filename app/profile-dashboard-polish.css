@@ -141,6 +141,58 @@ main:has(a[href="/admin/time-reports"]) article.relative pre {
   line-height: 1.65 !important;
 }
 
+/* Step 52E-safe: Profile booking cards final polish. Profile-only selectors. */
+main:has(.lucide-log-out) article.rounded-\[2rem\].border,
+main:has(.lucide-log-out) article.rounded-\[1\.5rem\].border {
+  border-width: 1px !important;
+  border-color: rgba(107, 39, 55, .10) !important;
+  background:
+    radial-gradient(circle at 0% 0%, rgba(212, 165, 116, .14), transparent 32%),
+    linear-gradient(180deg, rgba(255, 253, 248, .88), rgba(245, 240, 232, .96)) !important;
+  box-shadow:
+    0 18px 58px rgba(32, 32, 32, .065),
+    inset 0 1px 0 rgba(255, 253, 248, .72) !important;
+}
+
+main:has(.lucide-log-out) article.rounded-\[2rem\].border h3,
+main:has(.lucide-log-out) article.rounded-\[1\.5rem\].border h3 {
+  max-width: 44rem;
+}
+
+main:has(.lucide-log-out) article.rounded-\[2rem\].border > div:first-child,
+main:has(.lucide-log-out) article.rounded-\[1\.5rem\].border > div:first-child {
+  gap: 1rem !important;
+}
+
+main:has(.lucide-log-out) article.rounded-\[2rem\].border span.rounded-full,
+main:has(.lucide-log-out) article.rounded-\[1\.5rem\].border span.rounded-full,
+main:has(.lucide-log-out) article.rounded-\[2rem\].border p.rounded-full,
+main:has(.lucide-log-out) article.rounded-\[1\.5rem\].border p.rounded-full {
+  box-shadow: 0 10px 28px rgba(32, 32, 32, .045);
+}
+
+main:has(.lucide-log-out) article.rounded-\[2rem\].border pre,
+main:has(.lucide-log-out) article.rounded-\[1\.5rem\].border pre,
+main:has(.lucide-log-out) article.rounded-\[2rem\].border .rounded-\[1\.5rem\],
+main:has(.lucide-log-out) article.rounded-\[1\.5rem\].border .rounded-\[1\.5rem\],
+main:has(.lucide-log-out) article.rounded-\[2rem\].border .rounded-2xl,
+main:has(.lucide-log-out) article.rounded-\[1\.5rem\].border .rounded-2xl {
+  border: 1px solid rgba(107, 39, 55, .07);
+  box-shadow: inset 0 1px 0 rgba(255, 253, 248, .70);
+}
+
+main:has(.lucide-log-out) article.rounded-\[2rem\].border button,
+main:has(.lucide-log-out) article.rounded-\[1\.5rem\].border button {
+  min-height: 2.65rem;
+  box-shadow: 0 10px 28px rgba(32, 32, 32, .045);
+}
+
+main:has(.lucide-log-out) article.rounded-\[2rem\].border button.border-red-200,
+main:has(.lucide-log-out) article.rounded-\[1\.5rem\].border button.border-red-200 {
+  background: rgba(255, 253, 248, .92) !important;
+  border-color: rgba(185, 28, 28, .22) !important;
+}
+
 @media (hover: hover) and (pointer: fine) {
   main:has(.lucide-log-out) article article:hover,
   main:has(.lucide-log-out) section article:hover,
@@ -155,6 +207,13 @@ main:has(a[href="/admin/time-reports"]) article.relative pre {
     transform: translateY(-1px);
     border-color: rgba(212, 165, 116, .34) !important;
     box-shadow: 0 26px 72px rgba(107, 39, 55, .09) !important;
+  }
+
+  main:has(.lucide-log-out) article.rounded-\[2rem\].border:hover,
+  main:has(.lucide-log-out) article.rounded-\[1\.5rem\].border:hover {
+    transform: translateY(-1px);
+    border-color: rgba(212, 165, 116, .30) !important;
+    box-shadow: 0 24px 70px rgba(107, 39, 55, .085) !important;
   }
 }
 
@@ -181,6 +240,19 @@ main:has(a[href="/admin/time-reports"]) article.relative pre {
   main:has(a[href="/admin/time-reports"]) article.relative {
     border-radius: 1.5rem !important;
     padding: 1.15rem !important;
+  }
+
+  main:has(.lucide-log-out) article.rounded-\[2rem\].border,
+  main:has(.lucide-log-out) article.rounded-\[1\.5rem\].border {
+    border-radius: 1.45rem !important;
+    padding: 1.15rem !important;
+  }
+
+  main:has(.lucide-log-out) article.rounded-\[2rem\].border button,
+  main:has(.lucide-log-out) article.rounded-\[1\.5rem\].border button,
+  main:has(.lucide-log-out) article.rounded-\[2rem\].border a,
+  main:has(.lucide-log-out) article.rounded-\[1\.5rem\].border a {
+    min-height: 2.75rem;
   }
 }
 
