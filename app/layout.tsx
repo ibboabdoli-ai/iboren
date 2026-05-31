@@ -8,6 +8,7 @@ import MobileMenuPolish from "./MobileMenuPolish";
 import PwaManifestSwitcher from "./PwaManifestSwitcher";
 import PublicBookingRequestEnhancer from "./PublicBookingRequestEnhancer";
 import PublicBookingRequestLink from "./PublicBookingRequestLink";
+import AdminPublicRequestsDashboardLink from "./AdminPublicRequestsDashboardLink";
 import "./globals.css";
 import "./premium-hover.css";
 import "./booking-date-mobile-fix.css";
@@ -83,6 +84,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <BookingMobilePolish />
         <PublicBookingRequestEnhancer />
         <PublicBookingRequestLink />
+        <AdminPublicRequestsDashboardLink />
         {children}
         <Script
   id="iboren-service-ai-chat"
