@@ -134,6 +134,27 @@ export default function AdminPublicRequestsPage() {
   }
 
   async function convertRequest(requestId: string) {
+    const request = requests.find((item) => item.id === requestId);
+    if ((request?.status || "new") === "rejected") {
+      setMessage("Avvisade förfrågningar kan inte konverteras. Ändra status först.");
+      return;
+    }
+    if ((request?.status || "new") === "converted" || request?.converted_booking_id) {
+      setMessage("Den här förfrågan är redan konverterad.");
+      return;
+    }
+
+    const confirmed = window.confirm([
+      "Skapa en riktig bokning av den här publika förfrågan?",
+      "",
+      `${request?.customer_name || "Kund"} · ${request?.service || "Tjänst"}`,
+      `${request?.preferred_date || "Datum saknas"} · ${request?.area || "Område saknas"}`,
+      "",
+      "Detta skapar en ny rad i bookings och markerar förfrågan som Konverterad."
+    ].join("\n"));
+
+    if (!confirmed) return;
+
     setUpdatingId(requestId);
     setMessage("");
     try {
@@ -143,7 +164,7 @@ export default function AdminPublicRequestsPage() {
       const result = await response.json();
       if (!response.ok || !result.ok) throw new Error(result.message || "Kunde inte skapa bokning.");
       setRequests((current) => current.map((item) => item.id === requestId ? { ...item, status: "converted", converted_booking_id: result.bookingId || item.converted_booking_id } : item));
-      setMessage(`Bokning skapad: ${result.bookingId}`);
+      setMessage(`Bokning skapad: ${result.bookingId}. Öppna /admin för att hantera bokningen.`);
       setFilter("converted");
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Något gick fel.");
@@ -216,7 +237,7 @@ export default function AdminPublicRequestsPage() {
             <input value={search} onChange={(event) => setSearch(event.target.value)} className="w-full rounded-2xl border border-burgundy/10 bg-cream py-3 pl-11 pr-4 text-sm font-semibold text-ink outline-none focus:border-burgundy/40" placeholder="Sök namn, email, telefon, adress, stad, tjänst..." />
           </label>
 
-          {message && <p className="mt-5 rounded-2xl bg-burgundy/10 p-4 text-sm text-burgundy">{message}</p>}
+          {message && <div className="mt-5 flex flex-col gap-3 rounded-2xl bg-burgundy/10 p-4 text-sm font-bold text-burgundy sm:flex-row sm:items-center sm:justify-between"><span>{message}</span>{message.includes("/admin") && <Link href="/admin" className="rounded-full bg-burgundy px-4 py-2 text-center text-xs uppercase tracking-[.16em] text-porcelain">Open admin</Link>}</div>}
 
           <div className="mt-6 grid gap-4">
             {requestsLoading ? <div className="grid min-h-40 place-items-center text-burgundy"><Loader2 className="h-7 w-7 animate-spin" /></div> : filteredRequests.length === 0 ? <div className="rounded-[2rem] border border-dashed border-burgundy/20 bg-cream p-6 text-ink/65">Inga publika förfrågningar matchar filter/sökning.</div> : filteredRequests.map((request) => {
@@ -233,7 +254,7 @@ export default function AdminPublicRequestsPage() {
                       </div>
                       <h2 className="display mt-4 text-3xl font-bold text-burgundy">{request.service} · {request.area}</h2>
                       <p className="mt-2 text-sm font-bold text-ink/60">{request.external_id}</p>
-                      {request.converted_booking_id && <p className="mt-2 rounded-2xl bg-green-100 px-4 py-2 text-sm font-bold text-green-800">Booking ID: {request.converted_booking_id}</p>}
+                      {request.converted_booking_id && <div className="mt-3 flex flex-col gap-2 rounded-2xl bg-green-100 px-4 py-3 text-sm font-bold text-green-800 sm:flex-row sm:items-center sm:justify-between"><span>Booking ID: {request.converted_booking_id}</span><Link href="/admin" className="rounded-full bg-green-700 px-4 py-2 text-center text-xs uppercase tracking-[.16em] text-white">Open booking dashboard</Link></div>}
                       <div className="mt-4 grid gap-2 text-sm leading-6 text-ink/75 sm:grid-cols-2 lg:grid-cols-3">
                         <p><b>Kund:</b> {request.customer_name}</p>
                         <p><b>E-post:</b> {request.customer_email}</p>
@@ -247,10 +268,12 @@ export default function AdminPublicRequestsPage() {
                       </div>
                       {request.notes && <pre className="mt-4 max-h-72 overflow-auto whitespace-pre-wrap rounded-2xl border border-burgundy/10 bg-porcelain p-4 text-xs leading-6 text-ink/70">{request.notes}</pre>}
                     </div>
-                    <div className="grid gap-2 sm:grid-cols-2 xl:min-w-48 xl:grid-cols-1">
-                      <button disabled={isUpdating || currentStatus === "reviewed" || currentStatus === "converted"} onClick={() => updateRequest(request.id, "reviewed")} className="inline-flex items-center justify-center gap-2 rounded-full bg-blue-100 px-4 py-3 text-sm font-bold text-blue-800 disabled:cursor-not-allowed disabled:opacity-50"><CheckCircle2 size={16} /> Reviewed</button>
+                    <div className="grid gap-2 sm:grid-cols-2 xl:min-w-56 xl:grid-cols-1">
+                      <button disabled={isUpdating || currentStatus === "reviewed" || currentStatus === "converted"} onClick={() => updateRequest(request.id, "reviewed")} className="inline-flex items-center justify-center gap-2 rounded-full bg-blue-100 px-4 py-3 text-sm font-bold text-blue-800 disabled:cursor-not-allowed disabled:opacity-50"><CheckCircle2 size={16} /> Mark reviewed</button>
                       <button disabled={isUpdating || currentStatus === "rejected" || currentStatus === "converted"} onClick={() => updateRequest(request.id, "rejected")} className="inline-flex items-center justify-center gap-2 rounded-full bg-red-100 px-4 py-3 text-sm font-bold text-red-800 disabled:cursor-not-allowed disabled:opacity-50"><XCircle size={16} /> Reject</button>
-                      <button disabled={isUpdating || currentStatus === "converted" || currentStatus === "rejected"} onClick={() => convertRequest(request.id)} className="inline-flex items-center justify-center gap-2 rounded-full bg-green-100 px-4 py-3 text-sm font-bold text-green-800 disabled:cursor-not-allowed disabled:opacity-50"><CheckCircle2 size={16} /> Convert</button>
+                      <button disabled={isUpdating || currentStatus === "converted" || currentStatus === "rejected"} onClick={() => convertRequest(request.id)} className="inline-flex items-center justify-center gap-2 rounded-full bg-green-100 px-4 py-3 text-sm font-bold text-green-800 disabled:cursor-not-allowed disabled:opacity-50"><CheckCircle2 size={16} /> Convert to booking</button>
+                      {currentStatus === "rejected" && <p className="rounded-2xl bg-red-50 px-3 py-2 text-xs font-bold leading-5 text-red-800">Avvisad: ändra status innan konvertering.</p>}
+                      {currentStatus === "converted" && <p className="rounded-2xl bg-green-50 px-3 py-2 text-xs font-bold leading-5 text-green-800">Redan konverterad. Ingen ny bokning skapas.</p>}
                     </div>
                   </div>
                 </article>
