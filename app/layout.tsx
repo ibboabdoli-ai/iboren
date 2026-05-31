@@ -6,6 +6,7 @@ import GoogleAddressEnhancer from "./GoogleAddressEnhancer";
 import BookingFormValidationEnhancer from "./BookingFormValidationEnhancer";
 import MobileMenuPolish from "./MobileMenuPolish";
 import PwaManifestSwitcher from "./PwaManifestSwitcher";
+import PublicBookingRequestEnhancer from "./PublicBookingRequestEnhancer";
 import "./globals.css";
 import "./premium-hover.css";
 import "./booking-date-mobile-fix.css";
@@ -79,6 +80,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <PwaManifestSwitcher />
         <MobileMenuPolish />
         <BookingMobilePolish />
+        <PublicBookingRequestEnhancer />
         {children}
         <Script
   id="iboren-service-ai-chat"
