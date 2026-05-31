@@ -1,4 +1,4 @@
 Vercel redeploy trigger
-Step: 53A browser chrome polish
-Timestamp: 2026-05-30 21:48 Europe/Stockholm
+Step: 52D-safe admin booking card readability polish
+Timestamp: 2026-05-31 redeploy retry
 No runtime impact.
