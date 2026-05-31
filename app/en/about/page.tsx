@@ -18,7 +18,7 @@ const points = [
 export default function EnglishAboutPage() {
   return (
     <main className="min-h-screen bg-cream text-ink">
-      <section className="relative overflow-hidden bg-cream py-20 md:py-28">
+      <section className="relative overflow-hidden py-20 md:py-28">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_20%,rgba(212,165,116,.35),transparent_32%),radial-gradient(circle_at_18%_75%,rgba(107,39,55,.14),transparent_34%)]" />
         <div className="luxe-container relative grid gap-10 md:grid-cols-[1fr_.9fr] md:items-center">
           <div>
@@ -32,7 +32,7 @@ export default function EnglishAboutPage() {
               <Link href="/en/prices" className="btn-secondary">Calculate price</Link>
             </div>
           </div>
-          <aside className="rounded-[2.5rem] border border-burgundy/10 bg-porcelain p-8 text-ink shadow-luxe">
+          <aside className="rounded-[2.5rem] border border-burgundy/10 bg-porcelain/80 p-8 shadow-luxe backdrop-blur-xl">
             <div className="mb-12 grid h-16 w-16 place-items-center rounded-full bg-burgundy text-porcelain"><Sparkles size={30} /></div>
             <h2 className="display text-4xl font-bold text-burgundy">Safer cleaning from first contact.</h2>
             <div className="mt-7 grid gap-4">
