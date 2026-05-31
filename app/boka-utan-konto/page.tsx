@@ -130,7 +130,10 @@ export default function PublicBookingRequestPage() {
     <main className="min-h-screen bg-cream px-5 py-12 text-ink md:py-20">
       <div className="luxe-container grid gap-8 lg:grid-cols-[.82fr_1.18fr]">
         <section className="rounded-[2rem] border border-burgundy/10 bg-porcelain p-7 shadow-soft md:p-9">
-          <p className="text-xs font-black uppercase tracking-[.28em] text-burgundy/60">Bokningsförfrågan</p>
+          <div className="mb-5 flex items-center justify-between gap-3">
+            <p className="text-xs font-black uppercase tracking-[.28em] text-burgundy/60">Bokningsförfrågan</p>
+            <Link href="/en/boka-utan-konto" className="rounded-full border border-burgundy/15 px-4 py-2 text-xs font-black uppercase tracking-[.18em] text-burgundy">EN</Link>
+          </div>
           <h1 className="display mt-4 text-5xl font-normal uppercase leading-[.92] text-burgundy md:text-7xl">Skicka förfrågan utan konto.</h1>
           <p className="mt-6 text-base leading-8 text-ink/70">Fyll i dina uppgifter så återkommer Iboren med tid och pris. Detta är inte en bekräftad bokning.</p>
           <p className="mt-5 rounded-2xl border border-gold/25 bg-gold/10 px-4 py-3 text-sm font-bold text-burgundy">Vi bekräftar alltid tid och pris innan bokningen blir bindande.</p>
