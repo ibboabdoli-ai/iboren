@@ -40,7 +40,7 @@ export default function PublicBookingRequestLink() {
   if (pathname !== "/" || !ready || loggedIn) return null;
 
   return (
-    <div className="pointer-events-none absolute inset-x-5 top-[72dvh] z-40 mx-auto max-w-xl md:top-[70dvh]">
+    <div className="pointer-events-none absolute inset-x-5 top-[calc(72dvh+5.5rem)] z-40 mx-auto max-w-xl md:top-[calc(70dvh+5rem)]">
       <Link
         href="/boka-utan-konto"
         className="pointer-events-auto flex min-h-14 items-center justify-center rounded-full border border-gold/35 bg-night/88 px-6 py-4 text-center text-sm font-black uppercase tracking-[.18em] text-gold shadow-[0_16px_46px_rgba(0,0,0,.30)] backdrop-blur-xl"
