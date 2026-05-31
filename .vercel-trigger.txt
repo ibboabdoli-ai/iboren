@@ -1,4 +1,4 @@
 Vercel redeploy trigger
-Step: 52D-safe admin booking card readability polish
-Timestamp: 2026-05-31 redeploy retry
+Step: 53D-Recovery emergency disable public booking enhancer
+Timestamp: 2026-05-31 deploy after build limit release
 No runtime impact.
