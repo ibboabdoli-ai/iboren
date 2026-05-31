@@ -8,7 +8,6 @@ import MobileMenuPolish from "./MobileMenuPolish";
 import PwaManifestSwitcher from "./PwaManifestSwitcher";
 import PublicBookingRequestEnhancer from "./PublicBookingRequestEnhancer";
 import PublicBookingRequestLink from "./PublicBookingRequestLink";
-import AdminPublicRequestsDashboardLink from "./AdminPublicRequestsDashboardLink";
 import AdminBookingNotesFormatter from "./AdminBookingNotesFormatter";
 import "./globals.css";
 import "./premium-hover.css";
@@ -85,7 +84,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <BookingMobilePolish />
         <PublicBookingRequestEnhancer />
         <PublicBookingRequestLink />
-        <AdminPublicRequestsDashboardLink />
         <AdminBookingNotesFormatter />
         {children}
         <Script
