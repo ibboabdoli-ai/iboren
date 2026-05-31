@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { createClient } from "@supabase/supabase-js";
@@ -10,6 +9,22 @@ function getSupabase() {
   const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   if (!url || !key) return null;
   return createClient(url, key, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true } });
+}
+
+function removeInlineLink() {
+  document.querySelectorAll(".iboren-public-booking-inline").forEach((element) => element.remove());
+}
+
+function insertInlineLink() {
+  const priceButton = document.querySelector<HTMLAnchorElement>('a[href="/priser"].btn-primary');
+  const buttonGroup = priceButton?.parentElement;
+  if (!priceButton || !buttonGroup || buttonGroup.querySelector(".iboren-public-booking-inline")) return;
+
+  const link = document.createElement("a");
+  link.href = "/boka-utan-konto";
+  link.className = "btn-secondary iboren-public-booking-inline";
+  link.textContent = "Skicka förfrågan";
+  buttonGroup.appendChild(link);
 }
 
 export default function PublicBookingRequestLink() {
@@ -37,17 +52,19 @@ export default function PublicBookingRequestLink() {
     return () => listener.subscription.unsubscribe();
   }, []);
 
-  if (pathname !== "/" || !ready || loggedIn) return null;
+  useEffect(() => {
+    removeInlineLink();
+    if (pathname !== "/" || !ready || loggedIn) return;
 
-  return (
-    <div className="fixed inset-x-3 bottom-4 z-40 mx-auto max-w-md md:bottom-6">
-      <Link
-        href="/boka-utan-konto"
-        className="block rounded-[1.4rem] border border-gold/30 bg-night/95 px-5 py-4 text-center shadow-[0_18px_60px_rgba(0,0,0,.28)] backdrop-blur-xl"
-      >
-        <span className="block text-sm font-black uppercase tracking-[.18em] text-gold">Skicka förfrågan utan konto</span>
-        <span className="mt-1 block text-xs font-semibold text-porcelain/70">Vi bekräftar alltid tid och pris innan bokningen blir bindande.</span>
-      </Link>
-    </div>
-  );
+    insertInlineLink();
+    const observer = new MutationObserver(() => insertInlineLink());
+    observer.observe(document.body, { childList: true, subtree: true });
+
+    return () => {
+      observer.disconnect();
+      removeInlineLink();
+    };
+  }, [pathname, ready, loggedIn]);
+
+  return null;
 }
