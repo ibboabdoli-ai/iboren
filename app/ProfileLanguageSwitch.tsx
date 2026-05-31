@@ -8,31 +8,40 @@ function normalize(pathname: string) {
   return pathname.endsWith("/") ? pathname.slice(0, -1) : pathname;
 }
 
-function isProfilePath(pathname: string) {
-  return pathname === "/profile" || pathname === "/en/profile";
+function isManagedPath(pathname: string) {
+  return pathname === "/profile" || pathname === "/en/profile" || pathname === "/boka-utan-konto" || pathname === "/en/boka-utan-konto";
 }
 
-function targetForLabel(label: string) {
-  if (label === "SV" || label === "SVENSKA") return "/profile";
-  if (label === "EN" || label === "ENGLISH") return "/en/profile";
+function cleanLabel(label: string) {
+  return label.trim().toUpperCase();
+}
+
+function targetForLabel(pathname: string, label: string) {
+  const clean = cleanLabel(label);
+  const wantsSwedish = clean === "SV" || clean === "SVENSKA";
+  const wantsEnglish = clean === "EN" || clean === "ENGLISH";
+
+  if (pathname === "/boka-utan-konto" && wantsEnglish) return "/en/boka-utan-konto";
+  if (pathname === "/en/boka-utan-konto" && wantsSwedish) return "/boka-utan-konto";
+
+  if (pathname === "/profile" && wantsEnglish) return "/en/profile";
+  if (pathname === "/en/profile" && wantsSwedish) return "/profile";
+
   return null;
 }
 
-function normalizeProfileHeaderLanguageLinks() {
-  const header = document.querySelector("header");
-  if (!header) return;
-
-  header.querySelectorAll<HTMLAnchorElement>("a").forEach((link) => {
-    const target = targetForLabel((link.textContent || "").trim().toUpperCase());
+function normalizeLanguageLinks(pathname: string) {
+  document.querySelectorAll<HTMLAnchorElement>("a").forEach((link) => {
+    const target = targetForLabel(pathname, link.textContent || "");
     if (target) link.href = target;
   });
 }
 
-function handleProfileLanguageClick(event: MouseEvent) {
+function handleLanguageClick(pathname: string, event: MouseEvent) {
   const link = (event.target as Element | null)?.closest<HTMLAnchorElement>("a");
-  if (!link || !document.querySelector("header")?.contains(link)) return;
+  if (!link) return;
 
-  const target = targetForLabel((link.textContent || "").trim().toUpperCase());
+  const target = targetForLabel(pathname, link.textContent || "");
   if (!target) return;
 
   event.preventDefault();
@@ -44,20 +53,23 @@ export default function ProfileLanguageSwitch() {
   const pathname = normalize(usePathname() || "/");
 
   useEffect(() => {
-    if (!isProfilePath(pathname)) return;
+    if (!isManagedPath(pathname)) return;
 
-    normalizeProfileHeaderLanguageLinks();
-    const firstPass = window.setTimeout(normalizeProfileHeaderLanguageLinks, 0);
-    const secondPass = window.setTimeout(normalizeProfileHeaderLanguageLinks, 250);
-    const observer = new MutationObserver(normalizeProfileHeaderLanguageLinks);
+    const clickHandler = (event: MouseEvent) => handleLanguageClick(pathname, event);
+    normalizeLanguageLinks(pathname);
+    const firstPass = window.setTimeout(() => normalizeLanguageLinks(pathname), 0);
+    const secondPass = window.setTimeout(() => normalizeLanguageLinks(pathname), 250);
+    const thirdPass = window.setTimeout(() => normalizeLanguageLinks(pathname), 1000);
+    const observer = new MutationObserver(() => normalizeLanguageLinks(pathname));
     observer.observe(document.documentElement, { childList: true, subtree: true, characterData: true });
-    document.addEventListener("click", handleProfileLanguageClick, true);
+    document.addEventListener("click", clickHandler, true);
 
     return () => {
       window.clearTimeout(firstPass);
       window.clearTimeout(secondPass);
+      window.clearTimeout(thirdPass);
       observer.disconnect();
-      document.removeEventListener("click", handleProfileLanguageClick, true);
+      document.removeEventListener("click", clickHandler, true);
     };
   }, [pathname]);
 
