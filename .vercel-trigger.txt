@@ -1,4 +1,4 @@
 Vercel redeploy trigger
-Step: 54H English public booking request page
-Timestamp: 2026-05-31 retry after build limit release
+Step: 54J address autocomplete
+Timestamp: 2026-05-31 16:58
 No runtime impact.
