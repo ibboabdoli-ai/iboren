@@ -34,6 +34,12 @@ export function displayArea(area: string) {
   return area.replace(/södertalje/gi, "Södertälje").replace(/sodertalje/gi, "Södertälje");
 }
 
+export function displayAddress(address: string, language: Language) {
+  const normalizedCity = displayArea(address);
+  if (language === "sv") return normalizedCity.replace(/,\s*Sweden\s*$/i, "").replace(/,\s*Sverige\s*$/i, "");
+  return normalizedCity;
+}
+
 export function publicRequestSnapshotLines(payload: SnapshotPayload, language: Language) {
   const details = extractSection(payload.notes, language === "en" ? ["Property & details", "Objekt & detaljer"] : ["Objekt & detaljer", "Property & details"]);
   const price = extractSection(payload.notes, language === "en" ? ["Price indication", "Prisindikation"] : ["Prisindikation", "Price indication"]);
@@ -52,6 +58,6 @@ export function publicRequestSnapshotLines(payload: SnapshotPayload, language: L
   const output: string[] = [];
   if (details.length) output.push("", labels.details, ...details);
   if (price.length) output.push("", labels.price, ...price);
-  if (customerNotes.length) output.push("", labels.customerNotes, ...customerNotes);
+  output.push("", labels.customerNotes, ...(customerNotes.length ? customerNotes : ["-"]));
   return output;
 }
