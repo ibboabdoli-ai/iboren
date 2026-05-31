@@ -1,47 +1,35 @@
-/* Step 52A/B: Profile/dashboard UX polish. Visual-only; no auth, booking, pricing, API or Supabase logic. */
+/* Step 52C-safe: Profile/Admin UX polish with safe selectors only.
+   No public booking/about/homepage selectors. Visual-only; no auth, booking, pricing, API or Supabase logic. */
 
-main:has(a[href="/#booking"]),
-main:has(a[href="/en#booking"]),
+main:has(.lucide-log-out),
 main:has(a[href="/admin/time-reports"]) {
   background:
-    radial-gradient(circle at 14% 0%, rgba(212, 165, 116, .18), transparent 34%),
-    radial-gradient(circle at 86% 10%, rgba(107, 39, 55, .10), transparent 36%),
+    radial-gradient(circle at 14% 0%, rgba(212, 165, 116, .16), transparent 34%),
+    radial-gradient(circle at 86% 10%, rgba(107, 39, 55, .08), transparent 36%),
     var(--cream) !important;
 }
 
-main:has(a[href="/#booking"]) > .luxe-container,
-main:has(a[href="/en#booking"]) > .luxe-container,
+main:has(.lucide-log-out) > .luxe-container,
 main:has(a[href="/admin/time-reports"]) > .luxe-container {
   position: relative;
 }
 
-main:has(a[href="/#booking"]) aside,
-main:has(a[href="/en#booking"]) aside {
-  position: sticky;
-  top: 6rem;
-  border: 1px solid rgba(212, 165, 116, .18) !important;
-  background:
-    radial-gradient(circle at 18% 0%, rgba(212, 165, 116, .16), transparent 38%),
-    #06131A !important;
-  box-shadow: 0 34px 110px rgba(6, 19, 26, .28) !important;
-}
-
-main:has(a[href="/#booking"]) article,
-main:has(a[href="/en#booking"]) section.rounded-\[2\.5rem\],
-main:has(a[href="/en#booking"]) article,
+main:has(.lucide-log-out) article,
+main:has(.lucide-log-out) section,
 main:has(a[href="/admin/time-reports"]) .rounded-\[2\.5rem\],
 main:has(a[href="/admin/time-reports"]) .rounded-\[2rem\] {
-  border: 1px solid rgba(107, 39, 55, .08);
+  border-color: rgba(107, 39, 55, .08) !important;
   box-shadow:
-    0 28px 90px rgba(32, 32, 32, .08),
+    0 28px 90px rgba(32, 32, 32, .07),
     inset 0 1px 0 rgba(255, 253, 248, .68) !important;
 }
 
-main:has(a[href="/#booking"]) article article,
-main:has(a[href="/en#booking"]) article article,
-main:has(a[href="/admin/time-reports"]) article,
-main:has(a[href="/admin/time-reports"]) a.rounded-\[1\.5rem\],
-main:has(a[href="/admin/time-reports"]) button.rounded-\[1\.4rem\] {
+main:has(.lucide-log-out) article article,
+main:has(.lucide-log-out) section article {
+  position: relative;
+  overflow: hidden;
+  background:
+    linear-gradient(180deg, rgba(255, 253, 248, .82), rgba(245, 240, 232, .94)) !important;
   transition:
     transform .2s ease,
     border-color .2s ease,
@@ -49,66 +37,39 @@ main:has(a[href="/admin/time-reports"]) button.rounded-\[1\.4rem\] {
     background-color .2s ease;
 }
 
-@media (hover: hover) and (pointer: fine) {
-  main:has(a[href="/#booking"]) article article:hover,
-  main:has(a[href="/en#booking"]) article article:hover,
-  main:has(a[href="/admin/time-reports"]) a.rounded-\[1\.5rem\]:hover,
-  main:has(a[href="/admin/time-reports"]) button.rounded-\[1\.4rem\]:hover {
-    transform: translateY(-2px);
-    border-color: rgba(212, 165, 116, .28) !important;
-    box-shadow: 0 22px 70px rgba(107, 39, 55, .10) !important;
-  }
-}
-
-/* Profile booking cards readability. */
-main:has(a[href="/#booking"]) article article,
-main:has(a[href="/en#booking"]) article article {
-  position: relative;
-  overflow: hidden;
-  background:
-    linear-gradient(180deg, rgba(255, 253, 248, .78), rgba(245, 240, 232, .94)) !important;
-}
-
-main:has(a[href="/#booking"]) article article::before,
-main:has(a[href="/en#booking"]) article article::before {
+main:has(.lucide-log-out) article article::before,
+main:has(.lucide-log-out) section article::before {
   content: "";
   position: absolute;
   inset: 0 auto 0 0;
   width: .32rem;
   background: linear-gradient(180deg, var(--gold), var(--burgundy));
-  opacity: .82;
+  opacity: .72;
 }
 
-main:has(a[href="/#booking"]) article article h3,
-main:has(a[href="/en#booking"]) article article h3 {
+main:has(.lucide-log-out) article article h3,
+main:has(.lucide-log-out) section article h3 {
   letter-spacing: -.035em !important;
   line-height: .98 !important;
 }
 
-main:has(a[href="/#booking"]) article article span.w-fit,
-main:has(a[href="/en#booking"]) article article span.w-fit {
-  box-shadow: 0 12px 32px rgba(107, 39, 55, .13);
-}
-
-main:has(a[href="/#booking"]) article article pre,
-main:has(a[href="/en#booking"]) article article pre {
+main:has(.lucide-log-out) article article pre,
+main:has(.lucide-log-out) section article pre {
   border: 1px solid rgba(107, 39, 55, .08);
   background:
     linear-gradient(180deg, rgba(255, 253, 248, .80), rgba(255, 253, 248, .56)) !important;
   box-shadow: inset 0 1px 0 rgba(255, 253, 248, .68);
 }
 
-main:has(a[href="/#booking"]) input,
-main:has(a[href="/en#booking"]) input,
+main:has(.lucide-log-out) input,
 main:has(a[href="/admin/time-reports"]) input,
 main:has(a[href="/admin/time-reports"]) select {
   border-color: rgba(107, 39, 55, .13) !important;
-  background: rgba(255, 253, 248, .82) !important;
+  background: rgba(255, 253, 248, .84) !important;
   box-shadow: inset 0 1px 0 rgba(255, 253, 248, .74);
 }
 
-main:has(a[href="/#booking"]) input:focus,
-main:has(a[href="/en#booking"]) input:focus,
+main:has(.lucide-log-out) input:focus,
 main:has(a[href="/admin/time-reports"]) input:focus,
 main:has(a[href="/admin/time-reports"]) select:focus {
   border-color: rgba(212, 165, 116, .65) !important;
@@ -128,41 +89,50 @@ main:has(a[href="/admin/time-reports"]) a[href="/profile"] {
     var(--porcelain) !important;
 }
 
-@media (max-width: 1023px) {
-  main:has(a[href="/#booking"]) aside,
-  main:has(a[href="/en#booking"]) aside {
-    position: relative;
-    top: auto;
+main:has(a[href="/admin/time-reports"]) article,
+main:has(a[href="/admin/time-reports"]) a.rounded-\[1\.5rem\],
+main:has(a[href="/admin/time-reports"]) button.rounded-\[1\.4rem\] {
+  transition:
+    transform .2s ease,
+    border-color .2s ease,
+    box-shadow .2s ease,
+    background-color .2s ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  main:has(.lucide-log-out) article article:hover,
+  main:has(.lucide-log-out) section article:hover,
+  main:has(a[href="/admin/time-reports"]) a.rounded-\[1\.5rem\]:hover,
+  main:has(a[href="/admin/time-reports"]) button.rounded-\[1\.4rem\]:hover {
+    transform: translateY(-2px);
+    border-color: rgba(212, 165, 116, .28) !important;
+    box-shadow: 0 22px 70px rgba(107, 39, 55, .10) !important;
   }
 }
 
 @media (max-width: 767px) {
-  main:has(a[href="/#booking"]),
-  main:has(a[href="/en#booking"]),
+  main:has(.lucide-log-out),
   main:has(a[href="/admin/time-reports"]) {
     padding-top: 2.25rem !important;
     padding-bottom: 2.25rem !important;
   }
 
-  main:has(a[href="/#booking"]) aside,
-  main:has(a[href="/en#booking"]) aside,
-  main:has(a[href="/#booking"]) article,
-  main:has(a[href="/en#booking"]) section.rounded-\[2\.5rem\],
+  main:has(.lucide-log-out) article,
+  main:has(.lucide-log-out) section,
   main:has(a[href="/admin/time-reports"]) .rounded-\[2\.5rem\],
   main:has(a[href="/admin/time-reports"]) .rounded-\[2rem\] {
     border-radius: 1.75rem !important;
     padding: 1.25rem !important;
   }
 
-  main:has(a[href="/#booking"]) article article,
-  main:has(a[href="/en#booking"]) article article {
+  main:has(.lucide-log-out) article article,
+  main:has(.lucide-log-out) section article {
     padding-left: 1.35rem !important;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  main:has(a[href="/#booking"]) *,
-  main:has(a[href="/en#booking"]) *,
+  main:has(.lucide-log-out) *,
   main:has(a[href="/admin/time-reports"]) * {
     transition: none !important;
     transform: none !important;
