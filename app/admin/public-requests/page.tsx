@@ -55,7 +55,7 @@ function statusClass(status: string | null) {
 }
 
 function searchableText(request: PublicRequest) {
-  return [request.external_id, request.service, request.area, request.address, request.customer_name, request.customer_email, request.customer_phone, request.preferred_date, request.frequency, request.time_window, request.notes, request.admin_notes, statusLabel(request.status)].filter(Boolean).join(" ").toLowerCase();
+  return [request.external_id, request.converted_booking_id, request.service, request.area, request.address, request.customer_name, request.customer_email, request.customer_phone, request.preferred_date, request.frequency, request.time_window, request.notes, request.admin_notes, statusLabel(request.status)].filter(Boolean).join(" ").toLowerCase();
 }
 
 function formatDate(value: string | null) {
@@ -127,6 +127,24 @@ export default function AdminPublicRequestsPage() {
       const result = await response.json();
       if (!response.ok || !result.ok) throw new Error(result.message || "Kunde inte uppdatera förfrågan.");
       setRequests((current) => current.map((item) => item.id === requestId ? { ...item, status } : item));
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Något gick fel.");
+    }
+    setUpdatingId(null);
+  }
+
+  async function convertRequest(requestId: string) {
+    setUpdatingId(requestId);
+    setMessage("");
+    try {
+      const token = await getToken();
+      if (!token) throw new Error("Du behöver logga in igen.");
+      const response = await fetch(`/api/admin/public-requests/${requestId}`, { method: "POST", headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" } });
+      const result = await response.json();
+      if (!response.ok || !result.ok) throw new Error(result.message || "Kunde inte skapa bokning.");
+      setRequests((current) => current.map((item) => item.id === requestId ? { ...item, status: "converted", converted_booking_id: result.bookingId || item.converted_booking_id } : item));
+      setMessage(`Bokning skapad: ${result.bookingId}`);
+      setFilter("converted");
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Något gick fel.");
     }
@@ -215,6 +233,7 @@ export default function AdminPublicRequestsPage() {
                       </div>
                       <h2 className="display mt-4 text-3xl font-bold text-burgundy">{request.service} · {request.area}</h2>
                       <p className="mt-2 text-sm font-bold text-ink/60">{request.external_id}</p>
+                      {request.converted_booking_id && <p className="mt-2 rounded-2xl bg-green-100 px-4 py-2 text-sm font-bold text-green-800">Booking ID: {request.converted_booking_id}</p>}
                       <div className="mt-4 grid gap-2 text-sm leading-6 text-ink/75 sm:grid-cols-2 lg:grid-cols-3">
                         <p><b>Kund:</b> {request.customer_name}</p>
                         <p><b>E-post:</b> {request.customer_email}</p>
@@ -229,8 +248,9 @@ export default function AdminPublicRequestsPage() {
                       {request.notes && <pre className="mt-4 max-h-72 overflow-auto whitespace-pre-wrap rounded-2xl border border-burgundy/10 bg-porcelain p-4 text-xs leading-6 text-ink/70">{request.notes}</pre>}
                     </div>
                     <div className="grid gap-2 sm:grid-cols-2 xl:min-w-48 xl:grid-cols-1">
-                      <button disabled={isUpdating || currentStatus === "reviewed"} onClick={() => updateRequest(request.id, "reviewed")} className="inline-flex items-center justify-center gap-2 rounded-full bg-blue-100 px-4 py-3 text-sm font-bold text-blue-800 disabled:cursor-not-allowed disabled:opacity-50"><CheckCircle2 size={16} /> Reviewed</button>
-                      <button disabled={isUpdating || currentStatus === "rejected"} onClick={() => updateRequest(request.id, "rejected")} className="inline-flex items-center justify-center gap-2 rounded-full bg-red-100 px-4 py-3 text-sm font-bold text-red-800 disabled:cursor-not-allowed disabled:opacity-50"><XCircle size={16} /> Reject</button>
+                      <button disabled={isUpdating || currentStatus === "reviewed" || currentStatus === "converted"} onClick={() => updateRequest(request.id, "reviewed")} className="inline-flex items-center justify-center gap-2 rounded-full bg-blue-100 px-4 py-3 text-sm font-bold text-blue-800 disabled:cursor-not-allowed disabled:opacity-50"><CheckCircle2 size={16} /> Reviewed</button>
+                      <button disabled={isUpdating || currentStatus === "rejected" || currentStatus === "converted"} onClick={() => updateRequest(request.id, "rejected")} className="inline-flex items-center justify-center gap-2 rounded-full bg-red-100 px-4 py-3 text-sm font-bold text-red-800 disabled:cursor-not-allowed disabled:opacity-50"><XCircle size={16} /> Reject</button>
+                      <button disabled={isUpdating || currentStatus === "converted" || currentStatus === "rejected"} onClick={() => convertRequest(request.id)} className="inline-flex items-center justify-center gap-2 rounded-full bg-green-100 px-4 py-3 text-sm font-bold text-green-800 disabled:cursor-not-allowed disabled:opacity-50"><CheckCircle2 size={16} /> Convert</button>
                     </div>
                   </div>
                 </article>
