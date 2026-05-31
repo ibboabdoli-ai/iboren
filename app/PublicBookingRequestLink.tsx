@@ -1,15 +1,41 @@
 "use client";
 
-import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { createClient } from "@supabase/supabase-js";
+
+const CTA_CLASS = "iboren-public-booking-inline";
 
 function getSupabase() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   if (!url || !key) return null;
   return createClient(url, key, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true } });
+}
+
+function removeInlineCta() {
+  document.querySelectorAll(`.${CTA_CLASS}`).forEach((element) => element.remove());
+}
+
+function findHeroPriceButton() {
+  return Array.from(document.querySelectorAll<HTMLAnchorElement>('a[href="/priser"]')).find((link) => {
+    const text = link.textContent?.toLowerCase() || "";
+    return text.includes("beräkna") && Boolean(link.closest("#top"));
+  }) || null;
+}
+
+function insertInlineCta() {
+  const priceButton = findHeroPriceButton();
+  const buttonGroup = priceButton?.parentElement;
+  if (!priceButton || !buttonGroup || buttonGroup.querySelector(`.${CTA_CLASS}`)) return false;
+
+  const link = document.createElement("a");
+  link.href = "/boka-utan-konto";
+  link.textContent = "Skicka förfrågan";
+  link.className = `${CTA_CLASS} inline-flex min-h-14 items-center justify-center rounded-full border border-gold/40 bg-night/82 px-8 py-4 text-center text-sm font-black uppercase tracking-[.16em] text-gold shadow-[0_16px_44px_rgba(0,0,0,.24)] backdrop-blur-xl transition hover:bg-gold hover:text-night`;
+
+  priceButton.insertAdjacentElement("afterend", link);
+  return true;
 }
 
 export default function PublicBookingRequestLink() {
@@ -37,21 +63,27 @@ export default function PublicBookingRequestLink() {
     return () => listener.subscription.unsubscribe();
   }, []);
 
-  if (pathname !== "/" || !ready || loggedIn) return null;
+  useEffect(() => {
+    removeInlineCta();
+    if (pathname !== "/" || !ready || loggedIn) return;
 
-  return (
-    <div className="bg-night px-5 pb-10 pt-0 text-center text-porcelain md:hidden">
-      <div className="mx-auto max-w-sm">
-        <Link
-          href="/boka-utan-konto"
-          className="flex min-h-14 items-center justify-center rounded-full border border-gold/35 bg-porcelain/8 px-6 py-4 text-center text-sm font-black uppercase tracking-[.16em] text-gold shadow-[0_16px_44px_rgba(0,0,0,.24)] backdrop-blur-xl"
-        >
-          Skicka förfrågan utan konto
-        </Link>
-        <p className="mt-3 text-xs font-semibold leading-5 text-porcelain/58">
-          Vi bekräftar alltid tid och pris innan bokningen blir bindande.
-        </p>
-      </div>
-    </div>
-  );
+    let attempts = 0;
+    let intervalId: number | undefined;
+
+    const tryInsert = () => {
+      attempts += 1;
+      const inserted = insertInlineCta();
+      if ((inserted || attempts >= 40) && intervalId !== undefined) window.clearInterval(intervalId);
+    };
+
+    tryInsert();
+    intervalId = window.setInterval(tryInsert, 125);
+
+    return () => {
+      if (intervalId !== undefined) window.clearInterval(intervalId);
+      removeInlineCta();
+    };
+  }, [pathname, ready, loggedIn]);
+
+  return null;
 }
