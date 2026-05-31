@@ -1,4 +1,4 @@
 Vercel redeploy trigger
-Step: 53D-Recovery emergency disable public booking enhancer
-Timestamp: 2026-05-31 deploy after build limit release
+Step: 54H English public booking request page
+Timestamp: 2026-05-31 retry after build limit release
 No runtime impact.
