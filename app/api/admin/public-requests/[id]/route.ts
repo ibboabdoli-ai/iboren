@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { generateBookingNumber } from "../../../../lib/bookingNumber";
 
 export const runtime = "nodejs";
 
@@ -14,6 +15,7 @@ type RouteContext = {
 type PublicRequestRow = {
   id: string;
   external_id: string;
+  booking_number: string | null;
   status: string | null;
   language: string | null;
   service: string;
@@ -75,12 +77,32 @@ function bookingNotes(row: PublicRequestRow, adminEmail: string) {
     "",
     "--- Public request conversion ---",
     `Public request ID: ${row.external_id}`,
+    row.booking_number ? `Booking number: ${row.booking_number}` : "",
     `Converted by: ${adminEmail}`,
     `Customer type: ${row.customer_type || "-"}`,
     `RUT requested: ${row.rut_requested ? "Ja" : "Nej"}`,
     `Language: ${row.language || "sv"}`,
     row.admin_notes ? `Admin notes: ${row.admin_notes}` : ""
   ].filter(Boolean).join("\n").trim();
+}
+
+async function ensurePublicRequestBookingNumber(admin: { supabase: NonNullable<ReturnType<typeof getAdminClient>> }, row: PublicRequestRow) {
+  if (row.booking_number) return row.booking_number;
+
+  const bookingNumber = await generateBookingNumber(admin.supabase, {
+    service: row.service,
+    area: row.area,
+    createdAt: row.created_at ? new Date(row.created_at) : new Date()
+  });
+
+  const { error } = await admin.supabase
+    .from("public_booking_requests")
+    .update({ booking_number: bookingNumber })
+    .eq("id", row.id);
+
+  if (error) throw error;
+  row.booking_number = bookingNumber;
+  return bookingNumber;
 }
 
 export async function PATCH(request: Request, context: RouteContext) {
@@ -123,7 +145,7 @@ export async function POST(request: Request, context: RouteContext) {
 
   const { data: row, error: readError } = await admin.supabase
     .from("public_booking_requests")
-    .select("id, external_id, status, language, service, area, address, size_sqm, frequency, preferred_date, time_window, customer_name, customer_email, customer_phone, customer_type, rut_requested, notes, admin_notes, converted_booking_id, source, created_at")
+    .select("id, external_id, booking_number, status, language, service, area, address, size_sqm, frequency, preferred_date, time_window, customer_name, customer_email, customer_phone, customer_type, rut_requested, notes, admin_notes, converted_booking_id, source, created_at")
     .eq("id", id)
     .single();
 
@@ -131,16 +153,24 @@ export async function POST(request: Request, context: RouteContext) {
 
   const publicRequest = row as PublicRequestRow;
   if (publicRequest.converted_booking_id) {
-    return NextResponse.json({ ok: true, alreadyConverted: true, bookingId: publicRequest.converted_booking_id, request: publicRequest });
+    return NextResponse.json({ ok: true, alreadyConverted: true, bookingId: publicRequest.converted_booking_id, bookingNumber: publicRequest.booking_number, request: publicRequest });
   }
   if ((publicRequest.status || "new") === "rejected") {
     return NextResponse.json({ ok: false, message: "Rejected requests cannot be converted. Mark it as reviewed/new first." }, { status: 400 });
+  }
+
+  let bookingNumber: string | null = null;
+  try {
+    bookingNumber = await ensurePublicRequestBookingNumber(admin, publicRequest);
+  } catch (error) {
+    return NextResponse.json({ ok: false, message: error instanceof Error ? error.message : "Could not create booking number." }, { status: 500 });
   }
 
   const { data: booking, error: insertError } = await admin.supabase
     .from("bookings")
     .insert({
       user_id: null,
+      booking_number: bookingNumber,
       service: publicRequest.service,
       area: publicRequest.area,
       address: publicRequest.address || null,
@@ -154,7 +184,7 @@ export async function POST(request: Request, context: RouteContext) {
       notes: bookingNotes(publicRequest, admin.user.email || admin.user.id),
       status: "new"
     })
-    .select("id")
+    .select("id, booking_number")
     .single();
 
   if (insertError || !booking?.id) return NextResponse.json({ ok: false, message: insertError?.message || "Could not create booking." }, { status: 500 });
@@ -162,12 +192,12 @@ export async function POST(request: Request, context: RouteContext) {
   const bookingId = booking.id as string;
   const { data: updatedRequest, error: updateError } = await admin.supabase
     .from("public_booking_requests")
-    .update({ status: "converted", converted_booking_id: bookingId })
+    .update({ status: "converted", converted_booking_id: bookingId, booking_number: bookingNumber })
     .eq("id", id)
-    .select("id, status, converted_booking_id, updated_at")
+    .select("id, status, booking_number, converted_booking_id, updated_at")
     .single();
 
-  if (updateError) return NextResponse.json({ ok: false, bookingId, message: `Booking created, but public request was not marked converted: ${updateError.message}` }, { status: 500 });
+  if (updateError) return NextResponse.json({ ok: false, bookingId, bookingNumber, message: `Booking created, but public request was not marked converted: ${updateError.message}` }, { status: 500 });
 
-  return NextResponse.json({ ok: true, bookingId, request: updatedRequest });
+  return NextResponse.json({ ok: true, bookingId, bookingNumber, request: updatedRequest });
 }
