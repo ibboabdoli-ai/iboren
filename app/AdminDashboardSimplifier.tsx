@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useSearchParams } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { createClient } from "@supabase/supabase-js";
 import { ArrowRight, CalendarCheck2, ClipboardList, Clock3, CreditCard, LayoutDashboard, ShieldCheck, UsersRound } from "lucide-react";
@@ -96,11 +96,20 @@ function CardIcon({ icon }: { icon: AdminCard["icon"] }) {
   return <ArrowRight className={className} />;
 }
 
+function isFullDashboardUrl() {
+  if (typeof window === "undefined") return false;
+  return new URLSearchParams(window.location.search).get("dashboard") === "1";
+}
+
 export default function AdminDashboardSimplifier() {
   const pathname = usePathname();
-  const searchParams = useSearchParams();
   const [isAdmin, setIsAdmin] = useState(false);
-  const showHub = pathname === "/admin" && searchParams.get("dashboard") !== "1" && isAdmin;
+  const [showFullDashboard, setShowFullDashboard] = useState(false);
+  const showHub = pathname === "/admin" && !showFullDashboard && isAdmin;
+
+  useEffect(() => {
+    setShowFullDashboard(isFullDashboardUrl());
+  }, [pathname]);
 
   useEffect(() => {
     let cancelled = false;
