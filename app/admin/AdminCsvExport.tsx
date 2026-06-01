@@ -4,6 +4,7 @@ import { Download } from "lucide-react";
 
 type CsvBooking = {
   id: string;
+  booking_number?: string | null;
   user_id?: string | null;
   service: string;
   area: string;
@@ -128,10 +129,15 @@ function csvEscape(value: unknown) {
   return `"${text.replace(/"/g, '""')}"`;
 }
 
+function shortId(id: string) {
+  return String(id || "").slice(0, 8);
+}
+
 function buildCsv(bookings: CsvBooking[]) {
   const cleanedBookings = collapseDuplicates(bookings);
   const headers = [
-    "ID",
+    "Bokningsnummer",
+    "Intern ID",
     "Status",
     "Tjänst",
     "Område",
@@ -159,6 +165,7 @@ function buildCsv(bookings: CsvBooking[]) {
   const rows = cleanedBookings.map((booking) => {
     const parsed = parseNotes(booking.notes);
     return [
+      booking.booking_number || shortId(booking.id),
       booking.id,
       statusLabel(booking.status),
       booking.service,
