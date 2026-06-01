@@ -24,6 +24,7 @@ const englishLabels: Record<string, string> = {
 
 type BookingRow = {
   id: string;
+  booking_number: string | null;
   service: string;
   area: string;
   address: string | null;
@@ -67,6 +68,15 @@ function english(value: string | null) {
   return englishLabels[clean] || clean;
 }
 
+function bookingReference(booking: BookingRow, locale: "sv" | "en") {
+  if (booking.booking_number) {
+    return locale === "en" ? `Booking number: ${booking.booking_number}` : `Bokningsnummer: ${booking.booking_number}`;
+  }
+
+  const shortId = booking.id ? booking.id.slice(0, 8) : "—";
+  return locale === "en" ? `Booking ID: ${shortId}` : `Boknings-ID: ${shortId}`;
+}
+
 function bookingSummary(booking: BookingRow) {
   const locale = getBookingStatusLocale(booking.notes);
   const service = sanitize(booking.service);
@@ -78,7 +88,7 @@ function bookingSummary(booking: BookingRow) {
   if (locale === "en") {
     const size = booking.size_sqm ? `${booking.size_sqm} sqm` : "Not specified";
     return [
-      `Booking ID: ${booking.id}`,
+      bookingReference(booking, "en"),
       `Service: ${english(service)}`,
       `Area: ${area}`,
       `Address: ${address || "Not specified"}`,
@@ -90,7 +100,7 @@ function bookingSummary(booking: BookingRow) {
 
   const size = booking.size_sqm ? `${booking.size_sqm} kvm` : "Ej angivet";
   return [
-    `Boknings-ID: ${booking.id}`,
+    bookingReference(booking, "sv"),
     `Tjänst: ${service}`,
     `Område: ${area}`,
     `Adress: ${address || "Ej angiven"}`,
@@ -314,7 +324,7 @@ export async function PATCH(request: Request, { params }: { params: { id: string
     .from("bookings")
     .update(update)
     .eq("id", params.id)
-    .select("id, service, area, address, size_sqm, frequency, preferred_date, time_window, customer_name, customer_email, customer_phone, notes, admin_notes, status, created_at")
+    .select("id, booking_number, service, area, address, size_sqm, frequency, preferred_date, time_window, customer_name, customer_email, customer_phone, notes, admin_notes, status, created_at")
     .single<BookingRow>();
 
   if (error) {
