@@ -71,6 +71,10 @@ export default function LoginPage() {
             <div className="mb-8 max-w-[260px] overflow-hidden rounded-[1.35rem] bg-[#06131A] shadow-lg">
               <img src="/logo.svg" alt="Iboren" className="h-auto w-full" />
             </div>
+            <div className="mb-4 flex flex-wrap gap-2 text-xs font-black uppercase tracking-[.14em]">
+              <span className="rounded-full bg-burgundy px-3 py-1 text-porcelain">SV</span>
+              <Link href="/en/login" className="rounded-full bg-cream px-3 py-1 text-burgundy ring-1 ring-burgundy/10">EN</Link>
+            </div>
             <h2 className="display text-4xl font-bold text-burgundy">Välj inloggning</h2>
             <p className="mt-3 leading-7 text-ink/65">Konto skapas automatiskt första gången. Din e-post kommer från Google, LinkedIn eller Microsoft.</p>
             <div className="mt-5 flex items-start gap-3 rounded-2xl border border-burgundy/10 bg-cream p-4 text-sm leading-6 text-ink/68">
