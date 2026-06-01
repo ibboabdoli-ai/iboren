@@ -1,244 +1,178 @@
 "use client";
 
-import { usePathname } from "next/navigation";
-import { useEffect } from "react";
+import Link from "next/link";
+import { usePathname, useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
+import { createClient } from "@supabase/supabase-js";
+import { ArrowRight, CalendarCheck2, ClipboardList, Clock3, CreditCard, LayoutDashboard, ShieldCheck, UsersRound } from "lucide-react";
 
-const STYLE_ID = "iboren-admin-simple-style";
-const PROCESSED = "data-iboren-simple-processed";
+const adminEmails = ["ibbo.abdoli@gmail.com"];
 
-function addStyles() {
-  if (document.getElementById(STYLE_ID)) return;
-  const style = document.createElement("style");
-  style.id = STYLE_ID;
-  style.textContent = `
-    @media (max-width: 900px) {
-      a[href="/admin/time-reports"],
-      a[href="/admin/payroll-basis"],
-      a[href="/supervisor"],
-      a[href="/cleaner"],
-      a[href="/en/cleaner"],
-      a[href="/profile"] {
-        min-height: 0 !important;
-        border-radius: 1.1rem !important;
-        padding: .95rem !important;
-      }
-      a[href="/admin/time-reports"] h2,
-      a[href="/admin/payroll-basis"] h2,
-      a[href="/supervisor"] h2,
-      a[href="/cleaner"] h2,
-      a[href="/en/cleaner"] h2,
-      a[href="/profile"] h2 {
-        font-size: 1.15rem !important;
-        line-height: 1.15 !important;
-      }
-      a[href="/admin/time-reports"] p,
-      a[href="/admin/payroll-basis"] p,
-      a[href="/supervisor"] p,
-      a[href="/cleaner"] p,
-      a[href="/en/cleaner"] p,
-      a[href="/profile"] p {
-        display: none !important;
-      }
-      a[href="/cleaner"],
-      a[href="/en/cleaner"],
-      a[href="/profile"] {
-        display: none !important;
-      }
-      article[data-iboren-simple-processed="booking"] {
-        border-radius: 1.65rem !important;
-        padding: 1.1rem !important;
-        background: #fffdf7 !important;
-        box-shadow: 0 16px 42px rgba(11, 14, 12, .08) !important;
-      }
-      article[data-iboren-simple-processed="booking"] h2,
-      article[data-iboren-simple-processed="booking"] h3 {
-        font-size: clamp(2.1rem, 12vw, 3.6rem) !important;
-        line-height: .95 !important;
-        word-break: break-word !important;
-      }
-      article[data-iboren-simple-processed="booking"] select {
-        min-height: 3.7rem !important;
-        border: 2px solid rgba(119, 38, 68, .16) !important;
-        background: #fffdf7 !important;
-        color: #1f1b18 !important;
-        font-size: 1.05rem !important;
-        font-weight: 900 !important;
-      }
-      article[data-iboren-simple-processed="booking"] button:not(.iboren-simple-toggle) {
-        opacity: 1 !important;
-        min-height: 3.25rem !important;
-        box-shadow: 0 10px 22px rgba(11, 14, 12, .08) !important;
-        filter: saturate(1.15) contrast(1.05) !important;
-      }
-    }
-    .iboren-admin-simple-actions {
-      position: sticky;
-      top: 0;
-      z-index: 35;
-      margin: 1rem 0;
-      border-radius: 1.3rem;
-      border: 1px solid rgba(119, 38, 68, .14);
-      background: rgba(248, 244, 237, .94);
-      padding: .75rem;
-      box-shadow: 0 18px 45px rgba(11, 14, 12, .08);
-      backdrop-filter: blur(14px);
-    }
-    .iboren-admin-simple-actions-inner {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: .55rem;
-    }
-    @media (min-width: 760px) {
-      .iboren-admin-simple-actions-inner { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-    }
-    .iboren-admin-simple-actions a,
-    .iboren-admin-simple-actions button {
-      border-radius: 999px;
-      padding: .75rem .9rem;
-      font-weight: 900;
-      font-size: .82rem;
-      text-align: center;
-      background: #fffdf7;
-      color: #772644;
-      border: 1px solid rgba(119, 38, 68, .14);
-    }
-    .iboren-simple-card-collapsed {
-      max-height: 34rem;
-      overflow: hidden;
-      position: relative;
-    }
-    .iboren-simple-toggle {
-      margin-top: .85rem;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      border-radius: 999px;
-      padding: .75rem 1.05rem;
-      font-size: .85rem;
-      font-weight: 900;
-      background: #772644;
-      color: #fffdf7;
-      box-shadow: 0 12px 26px rgba(119, 38, 68, .18);
-    }
-    .iboren-simple-hidden-section {
-      display: none !important;
-    }
-  `;
-  document.head.appendChild(style);
-}
+type AdminCard = {
+  href: string;
+  title: string;
+  description: string;
+  badge: string;
+  icon: "operations" | "bookings" | "public" | "staff" | "time" | "payroll" | "supervisor" | "profile";
+  primary?: boolean;
+};
 
-function removeStyles() {
-  document.getElementById(STYLE_ID)?.remove();
-}
-
-function hasText(element: Element, text: string) {
-  return (element.textContent || "").toLowerCase().includes(text.toLowerCase());
-}
-
-function addQuickActions() {
-  if (document.querySelector(".iboren-admin-simple-actions")) return;
-  const hero = Array.from(document.querySelectorAll("div")).find((element) => hasText(element, "Booking dashboard") && hasText(element, "Hantera inkommande bokningar"));
-  const container = hero?.parentElement;
-  if (!container) return;
-
-  const panel = document.createElement("div");
-  panel.className = "iboren-admin-simple-actions";
-  panel.innerHTML = `
-    <div class="iboren-admin-simple-actions-inner">
-      <a href="#bookings">Bokningar</a>
-      <a href="/admin/public-requests">Public requests</a>
-      <button type="button" data-iboren-jump-staff="true">Personal</button>
-      <a href="/admin/time-reports">Tider</a>
-    </div>
-  `;
-  container.insertBefore(panel, container.children[1] || null);
-
-  panel.querySelector<HTMLButtonElement>("[data-iboren-jump-staff]")?.addEventListener("click", () => {
-    const staff = document.querySelector<HTMLElement>('[data-iboren-simple-section="staff"]');
-    if (staff) {
-      staff.classList.remove("iboren-simple-hidden-section");
-      staff.scrollIntoView({ behavior: "smooth", block: "start" });
-    }
-  });
-}
-
-function markBookingsList() {
-  const searchInput = document.querySelector<HTMLInputElement>('input[placeholder="Sök namn, email, telefon, adress, stad, tjänst..."]');
-  const block = searchInput?.closest("div")?.parentElement?.parentElement;
-  if (block && !block.id) block.id = "bookings";
-}
-
-function simplifyStaffAccess() {
-  const heading = Array.from(document.querySelectorAll("p,h2,h3,div")).find((element) => element.textContent?.trim() === "STAFF ACCESS");
-  let wrapper = heading?.parentElement;
-  for (let i = 0; wrapper && i < 5; i += 1) {
-    const text = wrapper.textContent || "";
-    if (text.includes("User & staff roles") && text.includes("SAVE ROLE")) break;
-    wrapper = wrapper.parentElement;
+const cards: AdminCard[] = [
+  {
+    href: "/admin/operations",
+    title: "Operations",
+    description: "Daglig Need Action-vy: nya förfrågningar, saknad personal, problem och tidrapporter.",
+    badge: "Start här",
+    icon: "operations",
+    primary: true
+  },
+  {
+    href: "/admin?dashboard=1",
+    title: "Booking dashboard",
+    description: "Full lista med bokningar, status, cleaner assignment, anteckningar och CSV-export.",
+    badge: "Full vy",
+    icon: "bookings"
+  },
+  {
+    href: "/admin/public-requests",
+    title: "Public requests",
+    description: "Förfrågningar utan konto. Granska, avvisa eller konvertera till riktig bokning.",
+    badge: "Leads",
+    icon: "public"
+  },
+  {
+    href: "/admin?dashboard=1#staff-access",
+    title: "Staff access",
+    description: "Hantera admin, supervisor och cleaner roles utan Supabase SQL.",
+    badge: "Roller",
+    icon: "staff"
+  },
+  {
+    href: "/admin/time-reports",
+    title: "Time reports",
+    description: "Granska, godkänn eller avvisa cleaner-rapporterade timmar.",
+    badge: "Timmar",
+    icon: "time"
+  },
+  {
+    href: "/admin/payroll-basis",
+    title: "Payroll basis",
+    description: "Exportera löneunderlag och markera godkända poster som paid.",
+    badge: "Lön",
+    icon: "payroll"
+  },
+  {
+    href: "/supervisor",
+    title: "Supervisor",
+    description: "Read-only översikt över dagens och kommande jobb samt assigned cleaners.",
+    badge: "Översikt",
+    icon: "supervisor"
+  },
+  {
+    href: "/profile",
+    title: "Profile",
+    description: "Öppna kundprofilen och kontrollera role-länkar från användarens vy.",
+    badge: "Konto",
+    icon: "profile"
   }
-  if (!wrapper || wrapper.getAttribute(PROCESSED) === "staff") return;
-  wrapper.setAttribute(PROCESSED, "staff");
-  wrapper.setAttribute("data-iboren-simple-section", "staff");
-  wrapper.classList.add("iboren-simple-hidden-section");
+];
 
-  const button = document.createElement("button");
-  button.type = "button";
-  button.className = "iboren-simple-toggle";
-  button.textContent = "Visa/dölj personalhantering";
-  button.addEventListener("click", () => wrapper?.classList.toggle("iboren-simple-hidden-section"));
-  wrapper.parentElement?.insertBefore(button, wrapper);
+function getSupabase() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (!url || !key) return null;
+  return createClient(url, key, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false } });
 }
 
-function simplifyBookingCards() {
-  const articles = Array.from(document.querySelectorAll<HTMLElement>("article"));
-  articles.forEach((article) => {
-    if (article.getAttribute(PROCESSED) === "booking") return;
-    if (!hasText(article, "Kund:") || !hasText(article, "Cleaner assignment")) return;
-    article.setAttribute(PROCESSED, "booking");
-
-    const toggle = document.createElement("button");
-    toggle.type = "button";
-    toggle.className = "iboren-simple-toggle";
-    toggle.textContent = "Dölj detaljer";
-    toggle.addEventListener("click", () => {
-      const collapsed = article.classList.toggle("iboren-simple-card-collapsed");
-      toggle.textContent = collapsed ? "Visa alla detaljer" : "Dölj detaljer";
-    });
-    article.appendChild(toggle);
-  });
-}
-
-function simplifyAdmin() {
-  addQuickActions();
-  markBookingsList();
-  simplifyStaffAccess();
-  simplifyBookingCards();
+function CardIcon({ icon }: { icon: AdminCard["icon"] }) {
+  const className = "h-6 w-6";
+  if (icon === "operations") return <LayoutDashboard className={className} />;
+  if (icon === "bookings") return <CalendarCheck2 className={className} />;
+  if (icon === "public") return <ClipboardList className={className} />;
+  if (icon === "staff") return <UsersRound className={className} />;
+  if (icon === "time") return <Clock3 className={className} />;
+  if (icon === "payroll") return <CreditCard className={className} />;
+  if (icon === "supervisor") return <ShieldCheck className={className} />;
+  return <ArrowRight className={className} />;
 }
 
 export default function AdminDashboardSimplifier() {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const [isAdmin, setIsAdmin] = useState(false);
+  const showHub = pathname === "/admin" && searchParams.get("dashboard") !== "1" && isAdmin;
 
   useEffect(() => {
-    if (pathname !== "/admin") return;
-    addStyles();
+    let cancelled = false;
 
-    let frame = 0;
-    const schedule = () => {
-      if (frame) window.cancelAnimationFrame(frame);
-      frame = window.requestAnimationFrame(simplifyAdmin);
-    };
+    async function checkAdmin() {
+      if (pathname !== "/admin") {
+        setIsAdmin(false);
+        return;
+      }
+      const supabase = getSupabase();
+      if (!supabase) return;
+      const { data } = await supabase.auth.getUser();
+      if (cancelled) return;
+      setIsAdmin(Boolean(data.user?.email && adminEmails.includes(data.user.email.toLowerCase())));
+    }
 
-    schedule();
-    const observer = new MutationObserver(schedule);
-    observer.observe(document.body, { childList: true, subtree: true });
-
-    return () => {
-      if (frame) window.cancelAnimationFrame(frame);
-      observer.disconnect();
-      removeStyles();
-      document.querySelectorAll(".iboren-admin-simple-actions").forEach((element) => element.remove());
-    };
+    void checkAdmin();
+    return () => { cancelled = true; };
   }, [pathname]);
 
-  return null;
+  useEffect(() => {
+    document.body.classList.toggle("iboren-admin-hub-active", showHub);
+    return () => document.body.classList.remove("iboren-admin-hub-active");
+  }, [showHub]);
+
+  if (!showHub) return null;
+
+  return (
+    <div className="iboren-admin-hub min-h-screen bg-cream py-10 text-ink md:py-14">
+      <style jsx global>{`
+        body.iboren-admin-hub-active > main,
+        body.iboren-admin-hub-active > div:not(.iboren-admin-hub) main {
+          display: none !important;
+        }
+      `}</style>
+      <section className="luxe-container">
+        <div className="rounded-[2.5rem] bg-burgundy p-7 text-porcelain shadow-luxe md:p-9">
+          <p className="text-xs font-black uppercase tracking-[.32em] text-gold">Iboren Admin</p>
+          <h1 className="display mt-3 text-5xl font-bold leading-[.92] md:text-7xl">Admin start</h1>
+          <p className="mt-5 max-w-2xl leading-8 text-porcelain/72">
+            Välj rätt arbetsyta. Operations är för dagliga beslut. Booking dashboard är den fulla listan när du behöver ändra status, tilldela cleaner eller exportera CSV.
+          </p>
+        </div>
+
+        <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          {cards.map((card) => (
+            <Link
+              key={card.href + card.title}
+              href={card.href}
+              className={`group rounded-[1.8rem] border p-5 shadow-soft transition hover:-translate-y-0.5 hover:shadow-luxe ${card.primary ? "border-burgundy bg-burgundy text-porcelain" : "border-burgundy/10 bg-porcelain text-ink"}`}
+            >
+              <div className="flex items-start justify-between gap-4">
+                <span className={`grid h-12 w-12 place-items-center rounded-full ${card.primary ? "bg-gold text-ink" : "bg-cream text-burgundy"}`}>
+                  <CardIcon icon={card.icon} />
+                </span>
+                <span className={`rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-[.16em] ${card.primary ? "bg-night/25 text-gold" : "bg-cream text-ink/55 ring-1 ring-burgundy/10"}`}>
+                  {card.badge}
+                </span>
+              </div>
+              <h2 className={`display mt-5 text-3xl font-bold ${card.primary ? "text-porcelain" : "text-burgundy"}`}>{card.title}</h2>
+              <p className={`mt-3 text-sm font-bold leading-6 ${card.primary ? "text-porcelain/70" : "text-ink/58"}`}>{card.description}</p>
+              <span className={`mt-5 inline-flex items-center gap-2 text-sm font-black ${card.primary ? "text-gold" : "text-burgundy"}`}>
+                Öppna <ArrowRight className="h-4 w-4 transition group-hover:translate-x-1" />
+              </span>
+            </Link>
+          ))}
+        </div>
+
+        <div className="mt-6 rounded-[1.8rem] border border-burgundy/10 bg-porcelain p-5 text-sm leading-7 text-ink/62 shadow-sm">
+          <p><strong className="text-ink">Tips:</strong> använd <span className="font-black text-burgundy">Operations</span> först. Gå till fulla Booking dashboard bara när du behöver detaljhantera en bokning.</p>
+        </div>
+      </section>
+    </div>
+  );
 }
