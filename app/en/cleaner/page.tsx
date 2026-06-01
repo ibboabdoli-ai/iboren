@@ -114,7 +114,7 @@ export default function EnglishCleanerPage() {
           <h1 className="display text-5xl font-bold text-burgundy">Cleaner panel</h1>
           <p className="mt-4 leading-8 text-ink/70">You need to log in before we can check your staff access.</p>
           {message && <p className="mt-4 rounded-2xl bg-red-100 p-4 text-sm font-bold text-red-800">{message}</p>}
-          <Link href="/login" className="btn-primary mt-7">Log in</Link>
+          <Link href="/en/login" className="btn-primary mt-7">Log in</Link>
         </section>
       </main>
     );
