@@ -31,6 +31,7 @@ function getToken(request: Request) {
 function cleanText(value: unknown, max = 200) { return String(value || "").replace(/[<>]/g, "").trim().slice(0, max); }
 function isStaffRole(value: unknown): value is StaffRole { return STAFF_ROLES.includes(String(value || "") as StaffRole); }
 function metadataName(user: { email?: string; user_metadata?: Record<string, unknown> }) { return cleanText(user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split("@")[0] || "Employee", 160); }
+function isVisibleCleanerBooking(booking: BookingRow | undefined | null) { return Boolean(booking && booking.status !== "cancelled"); }
 
 async function verifyStaff(request: Request) {
   const supabase = getAdminClient();
@@ -124,18 +125,36 @@ export async function GET(request: Request) {
     return NextResponse.json({ ok: true, role: staff.role, employee: staff.employee, jobs: [], bookings: data || [] });
   }
 
-  const { data: assignmentsData, error: assignmentsError } = await staff.supabase.from("booking_assignments").select("id, booking_id, employee_id, status, note, created_at, updated_at").in("status", ["assigned", "accepted", "confirmed"]).eq("employee_id", staff.employee.id).order("created_at", { ascending: false });
+  const { data: assignmentsData, error: assignmentsError } = await staff.supabase
+    .from("booking_assignments")
+    .select("id, booking_id, employee_id, status, note, created_at, updated_at")
+    .in("status", ["assigned", "accepted", "confirmed"])
+    .eq("employee_id", staff.employee.id)
+    .order("created_at", { ascending: false });
   if (assignmentsError) return NextResponse.json({ ok: false, message: assignmentsError.message }, { status: 500 });
+
   const assignments = (assignmentsData || []) as AssignmentRow[];
   const bookingIds = [...new Set(assignments.map((assignment) => assignment.booking_id))];
   const employeeIds = [...new Set(assignments.map((assignment) => assignment.employee_id))];
   if (!assignments.length || !bookingIds.length) return NextResponse.json({ ok: true, role: staff.role, employee: staff.employee, jobs: [], bookings: [] });
-  const { data: bookingsData, error: bookingsError } = await staff.supabase.from("bookings").select("id, service, area, address, size_sqm, frequency, preferred_date, time_window, customer_name, customer_email, customer_phone, notes, status, created_at").in("id", bookingIds);
+
+  const { data: bookingsData, error: bookingsError } = await staff.supabase
+    .from("bookings")
+    .select("id, service, area, address, size_sqm, frequency, preferred_date, time_window, customer_name, customer_email, customer_phone, notes, status, created_at")
+    .in("id", bookingIds);
   if (bookingsError) return NextResponse.json({ ok: false, message: bookingsError.message }, { status: 500 });
-  const { data: employeesData, error: employeesError } = await staff.supabase.from("employees").select("id, email, name, phone, role, active").in("id", employeeIds);
+
+  const { data: employeesData, error: employeesError } = await staff.supabase
+    .from("employees")
+    .select("id, email, name, phone, role, active")
+    .in("id", employeeIds);
   if (employeesError) return NextResponse.json({ ok: false, message: employeesError.message }, { status: 500 });
-  const bookings = new Map((bookingsData || []).map((booking: BookingRow) => [booking.id, booking]));
+
+  const bookings = new Map((bookingsData || []).filter((booking: BookingRow) => isVisibleCleanerBooking(booking)).map((booking: BookingRow) => [booking.id, booking]));
   const employees = new Map((employeesData || []).map((employee: EmployeeRow) => [employee.id, employee]));
-  const jobs = assignments.map((assignment) => ({ assignment, booking: bookings.get(assignment.booking_id) || null, employee: employees.get(assignment.employee_id) || null })).filter((job) => Boolean(job.booking));
+  const jobs = assignments
+    .map((assignment) => ({ assignment, booking: bookings.get(assignment.booking_id) || null, employee: employees.get(assignment.employee_id) || null }))
+    .filter((job) => Boolean(job.booking));
+
   return NextResponse.json({ ok: true, role: staff.role, employee: staff.employee, jobs, bookings: [] });
 }
