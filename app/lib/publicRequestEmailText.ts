@@ -66,7 +66,23 @@ function customerRutText(payload: PublicEmailPayload, language: Language) {
   return payload.rutRequested ? "RUT: Ja. Du har valt RUT enligt Skatteverkets regler. Om RUT inte godkänns kan resterande belopp faktureras." : "RUT: Nej. Du har inte valt RUT-avdrag.";
 }
 
-export function buildPublicRequestAdminEmail(payload: PublicEmailPayload, id: string, language: Language, saved: boolean) {
+function requestReferenceLines(id: string, language: Language, bookingNumber?: string | null) {
+  if (language === "en") {
+    return [
+      `Request ID: ${id}`,
+      bookingNumber ? `Booking number: ${bookingNumber}` : null,
+      "Status: Request received"
+    ].filter(Boolean) as string[];
+  }
+
+  return [
+    `Förfrågnings-ID: ${id}`,
+    bookingNumber ? `Bokningsnummer: ${bookingNumber}` : null,
+    "Status: Förfrågan mottagen"
+  ].filter(Boolean) as string[];
+}
+
+export function buildPublicRequestAdminEmail(payload: PublicEmailPayload, id: string, language: Language, saved: boolean, bookingNumber?: string | null) {
   const area = displayArea(payload.area);
   const snapshot = publicRequestSnapshotLines(payload, language);
 
@@ -74,7 +90,7 @@ export function buildPublicRequestAdminEmail(payload: PublicEmailPayload, id: st
     return [
       "New Iboren public booking request",
       "",
-      `Request ID: ${id}`,
+      ...requestReferenceLines(id, "en", bookingNumber),
       `Saved in admin queue: ${saved ? "Yes" : "No - check Supabase public_booking_requests setup"}`,
       "Status: New / unverified / pending review",
       "Important: This is not a confirmed booking. Confirm time and price manually before it becomes binding.",
@@ -102,7 +118,7 @@ export function buildPublicRequestAdminEmail(payload: PublicEmailPayload, id: st
   return [
     "Ny publik bokningsförfrågan till Iboren",
     "",
-    `Förfrågnings-ID: ${id}`,
+    ...requestReferenceLines(id, "sv", bookingNumber),
     `Sparad i admin-kö: ${saved ? "Ja" : "Nej - kontrollera Supabase public_booking_requests"}`,
     "Status: Ny / overifierad / behöver granskas",
     "Viktigt: Detta är inte en bekräftad bokning. Bekräfta tid och pris manuellt innan den blir bindande.",
@@ -127,7 +143,7 @@ export function buildPublicRequestAdminEmail(payload: PublicEmailPayload, id: st
   ].join("\n");
 }
 
-export function buildPublicRequestCustomerEmail(payload: PublicEmailPayload, id: string, language: Language) {
+export function buildPublicRequestCustomerEmail(payload: PublicEmailPayload, id: string, language: Language, bookingNumber?: string | null) {
   const area = displayArea(payload.area);
   const snapshot = publicRequestSnapshotLines(payload, language);
 
@@ -139,7 +155,7 @@ export function buildPublicRequestCustomerEmail(payload: PublicEmailPayload, id:
       "We always confirm time and price before the booking becomes binding.",
       "",
       "Your summary:",
-      `Request ID: ${id}`,
+      ...requestReferenceLines(id, "en", bookingNumber),
       `Service: ${english(payload.service)}`,
       `Area: ${area}`,
       `Address: ${payload.address}`,
@@ -167,7 +183,7 @@ export function buildPublicRequestCustomerEmail(payload: PublicEmailPayload, id:
     "Vi bekräftar alltid tid och pris innan bokningen blir bindande.",
     "",
     "Din sammanfattning:",
-    `Förfrågnings-ID: ${id}`,
+    ...requestReferenceLines(id, "sv", bookingNumber),
     `Tjänst: ${payload.service}`,
     `Område: ${area}`,
     `Adress: ${payload.address}`,
