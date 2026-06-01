@@ -11,7 +11,7 @@ import PublicBookingRequestLink from "./PublicBookingRequestLink";
 import AdminBookingNotesFormatter from "./AdminBookingNotesFormatter";
 import AdminOperationsQuickLink from "./AdminOperationsQuickLink";
 import ProfileAccessLinks from "./ProfileAccessLinks";
-import AdminBookingNumberEnhancer from "./AdminBookingNumberEnhancer";
+import BookingNumberUiEnhancer from "./BookingNumberUiEnhancer";
 import "./globals.css";
 import "./premium-hover.css";
 import "./booking-date-mobile-fix.css";
@@ -90,7 +90,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <AdminBookingNotesFormatter />
         <AdminOperationsQuickLink />
         <ProfileAccessLinks />
-        <AdminBookingNumberEnhancer />
+        <BookingNumberUiEnhancer />
         {children}
         <Script
   id="iboren-service-ai-chat"
