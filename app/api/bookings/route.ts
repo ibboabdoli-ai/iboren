@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient, User } from "@supabase/supabase-js";
+import { generateBookingNumber } from "../../lib/bookingNumber";
 
 export const runtime = "nodejs";
 
@@ -55,7 +56,7 @@ type NormalizedBookingPayload = {
 };
 
 type AuthContext = { user: User; token: string };
-type SaveBookingResult = { id: string; duplicate: boolean; date: string };
+type SaveBookingResult = { id: string; bookingNumber: string | null; duplicate: boolean; date: string };
 type RecurringPlan = { count: number; stepDays?: number; stepMonths?: number; label: string };
 
 class DuplicateBookingError extends Error {
@@ -232,6 +233,13 @@ function getSupabase(token?: string) {
   return createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false }, global: token ? { headers: { [AUTH_HEADER]: `${TOKEN_PREFIX} ${token}` } } : undefined });
 }
 
+function getAdminClient() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !serviceKey) return null;
+  return createClient(url, serviceKey, { auth: { persistSession: false, autoRefreshToken: false } });
+}
+
 async function getAuthContext(request: Request): Promise<AuthContext | null> {
   const authHeader = request.headers.get(AUTH_HEADER.toLowerCase()) || "";
   const token = authHeader.toLowerCase().startsWith(`${TOKEN_PREFIX.toLowerCase()} `) ? authHeader.slice(TOKEN_PREFIX.length + 1).trim() : "";
@@ -265,43 +273,56 @@ function buildCustomerRutText(payload: NormalizedBookingPayload, language: Langu
   return payload.rutRequested ? "RUT: Ja. Du har valt RUT och intygar att villkoren hos Skatteverket uppfylls. Om RUT inte godkänns kan resterande belopp faktureras." : "RUT: Nej. Du har inte valt RUT-avdrag.";
 }
 
-function buildAdminTextEn(payload: NormalizedBookingPayload, user: User, bookingId: string, language: Language, recurring?: { total: number; dates: string[] }) {
-  return ["New Iboren booking request", "", `Booking ID: ${bookingId}`, recurring && recurring.total > 1 ? `Recurring visits created: ${recurring.total}` : "Recurring visits created: 1", recurring && recurring.total > 1 ? `Visit dates: ${recurring.dates.join(", ")}` : "", `Authenticated user: ${user.email || user.id}`, `Customer language: ${language}`, "", `Customer type: ${english(payload.customerType)}`, buildAdminRutText(payload, "en"), "", `Service: ${english(payload.service)}`, `Area: ${payload.area}`, `Address: ${payload.address || "Not provided"}`, `Size: ${payload.size} sqm`, `Frequency: ${english(payload.frequency)}`, `Date: ${payload.date}`, `Time window: ${english(payload.timeWindow)}`, "", `Name: ${payload.name}`, `Email: ${payload.email}`, `Phone: ${payload.phone || "Not provided"}`, "", `Notes: ${payload.notes || "-"}`].filter(Boolean).join("\n");
+function bookingReference(booking: Pick<SaveBookingResult, "id" | "bookingNumber">, language: Language) {
+  if (booking.bookingNumber) return language === "en" ? `Booking number: ${booking.bookingNumber}` : `Bokningsnummer: ${booking.bookingNumber}`;
+  const shortId = booking.id.slice(0, 8);
+  return language === "en" ? `Booking ID: ${shortId}` : `Boknings-ID: ${shortId}`;
 }
 
-function buildAdminTextSv(payload: NormalizedBookingPayload, user: User, bookingId: string, language: Language, recurring?: { total: number; dates: string[] }) {
-  return ["Ny bokningsförfrågan till Iboren", "", `Boknings-ID: ${bookingId}`, recurring && recurring.total > 1 ? `Återkommande besök skapade: ${recurring.total}` : "Återkommande besök skapade: 1", recurring && recurring.total > 1 ? `Besöksdatum: ${recurring.dates.join(", ")}` : "", `Inloggad användare: ${user.email || user.id}`, `Kundspråk: ${language}`, "", `Kundtyp: ${payload.customerType}`, buildAdminRutText(payload, "sv"), "", `Tjänst: ${payload.service}`, `Område: ${payload.area}`, `Adress: ${payload.address || "Ej angivet"}`, `Storlek: ${payload.size} kvm`, `Frekvens: ${payload.frequency}`, `Datum: ${payload.date}`, `Tid: ${payload.timeWindow}`, "", `Namn: ${payload.name}`, `E-post: ${payload.email}`, `Telefon: ${payload.phone || "Ej angivet"}`, "", `Anteckningar: ${payload.notes || "-"}`].filter(Boolean).join("\n");
+function buildAdminTextEn(payload: NormalizedBookingPayload, user: User, booking: SaveBookingResult, language: Language, recurring?: { total: number; dates: string[] }) {
+  return ["New Iboren booking request", "", bookingReference(booking, "en"), recurring && recurring.total > 1 ? `Recurring visits created: ${recurring.total}` : "Recurring visits created: 1", recurring && recurring.total > 1 ? `Visit dates: ${recurring.dates.join(", ")}` : "", `Authenticated user: ${user.email || user.id}`, `Customer language: ${language}`, "", `Customer type: ${english(payload.customerType)}`, buildAdminRutText(payload, "en"), "", `Service: ${english(payload.service)}`, `Area: ${payload.area}`, `Address: ${payload.address || "Not provided"}`, `Size: ${payload.size} sqm`, `Frequency: ${english(payload.frequency)}`, `Date: ${payload.date}`, `Time window: ${english(payload.timeWindow)}`, "", `Name: ${payload.name}`, `Email: ${payload.email}`, `Phone: ${payload.phone || "Not provided"}`, "", `Notes: ${payload.notes || "-"}`].filter(Boolean).join("\n");
 }
 
-function buildAdminText(payload: NormalizedBookingPayload, user: User, bookingId: string, language: Language, recurring?: { total: number; dates: string[] }) { return language === "sv" ? buildAdminTextSv(payload, user, bookingId, language, recurring) : buildAdminTextEn(payload, user, bookingId, language, recurring); }
+function buildAdminTextSv(payload: NormalizedBookingPayload, user: User, booking: SaveBookingResult, language: Language, recurring?: { total: number; dates: string[] }) {
+  return ["Ny bokningsförfrågan till Iboren", "", bookingReference(booking, "sv"), recurring && recurring.total > 1 ? `Återkommande besök skapade: ${recurring.total}` : "Återkommande besök skapade: 1", recurring && recurring.total > 1 ? `Besöksdatum: ${recurring.dates.join(", ")}` : "", `Inloggad användare: ${user.email || user.id}`, `Kundspråk: ${language}`, "", `Kundtyp: ${payload.customerType}`, buildAdminRutText(payload, "sv"), "", `Tjänst: ${payload.service}`, `Område: ${payload.area}`, `Adress: ${payload.address || "Ej angivet"}`, `Storlek: ${payload.size} kvm`, `Frekvens: ${payload.frequency}`, `Datum: ${payload.date}`, `Tid: ${payload.timeWindow}`, "", `Namn: ${payload.name}`, `E-post: ${payload.email}`, `Telefon: ${payload.phone || "Ej angivet"}`, "", `Anteckningar: ${payload.notes || "-"}`].filter(Boolean).join("\n");
+}
+
+function buildAdminText(payload: NormalizedBookingPayload, user: User, booking: SaveBookingResult, language: Language, recurring?: { total: number; dates: string[] }) { return language === "sv" ? buildAdminTextSv(payload, user, booking, language, recurring) : buildAdminTextEn(payload, user, booking, language, recurring); }
 function buildAdminSubject(payload: NormalizedBookingPayload, language: Language) { return language === "sv" ? `Ny Iboren-bokning: ${payload.service} · ${payload.area}` : `New Iboren booking: ${english(payload.service)} · ${payload.area}`; }
 
-function buildCustomerTextSv(payload: NormalizedBookingPayload, bookingId: string, recurring?: { total: number; dates: string[] }) {
-  return [`Hej ${payload.name},`, "", "Tack för din bokningsförfrågan till Iboren. Vi har tagit emot den och återkommer så snart som möjligt.", recurring && recurring.total > 1 ? `Vi har skapat ${recurring.total} kommande besök utifrån din valda frekvens.` : "", recurring && recurring.total > 1 ? `Datum: ${recurring.dates.join(", ")}` : "", "", "Din sammanfattning:", `Boknings-ID: ${bookingId}`, `Tjänst: ${payload.service}`, `Område: ${payload.area}`, `Adress: ${payload.address}`, `Storlek: ${payload.size} kvm`, `Frekvens: ${payload.frequency}`, `Startdatum: ${payload.date}`, `Tid: ${payload.timeWindow}`, `Kundtyp: ${payload.customerType}`, buildCustomerRutText(payload, "sv"), "", "Om något inte stämmer kan du svara på det här mejlet eller kontakta oss på hej@iboren.se.", "", "Vänliga hälsningar,", "Iboren"].filter(Boolean).join("\n");
+function buildCustomerTextSv(payload: NormalizedBookingPayload, booking: SaveBookingResult, recurring?: { total: number; dates: string[] }) {
+  return [`Hej ${payload.name},`, "", "Tack för din bokningsförfrågan till Iboren. Vi har tagit emot den och återkommer så snart som möjligt.", recurring && recurring.total > 1 ? `Vi har skapat ${recurring.total} kommande besök utifrån din valda frekvens.` : "", recurring && recurring.total > 1 ? `Datum: ${recurring.dates.join(", ")}` : "", "", "Din sammanfattning:", bookingReference(booking, "sv"), `Tjänst: ${payload.service}`, `Område: ${payload.area}`, `Adress: ${payload.address}`, `Storlek: ${payload.size} kvm`, `Frekvens: ${payload.frequency}`, `Startdatum: ${payload.date}`, `Tid: ${payload.timeWindow}`, `Kundtyp: ${payload.customerType}`, buildCustomerRutText(payload, "sv"), "", "Om något inte stämmer kan du svara på det här mejlet eller kontakta oss på hej@iboren.se.", "", "Vänliga hälsningar,", "Iboren"].filter(Boolean).join("\n");
 }
 
-function buildCustomerTextEn(payload: NormalizedBookingPayload, bookingId: string, recurring?: { total: number; dates: string[] }) {
-  return [`Hi ${payload.name},`, "", "Thank you for your booking request to Iboren. We have received it and will get back to you as soon as possible.", recurring && recurring.total > 1 ? `We have created ${recurring.total} upcoming visits based on your selected frequency.` : "", recurring && recurring.total > 1 ? `Dates: ${recurring.dates.join(", ")}` : "", "", "Your summary:", `Booking ID: ${bookingId}`, `Service: ${english(payload.service)}`, `Area: ${payload.area}`, `Address: ${payload.address}`, `Size: ${payload.size} sqm`, `Frequency: ${english(payload.frequency)}`, `Start date: ${payload.date}`, `Time: ${english(payload.timeWindow)}`, `Customer type: ${english(payload.customerType)}`, buildCustomerRutText(payload, "en"), "", "If anything is incorrect, you can reply to this email or contact us at hej@iboren.se.", "", "Best regards,", "Iboren"].filter(Boolean).join("\n");
+function buildCustomerTextEn(payload: NormalizedBookingPayload, booking: SaveBookingResult, recurring?: { total: number; dates: string[] }) {
+  return [`Hi ${payload.name},`, "", "Thank you for your booking request to Iboren. We have received it and will get back to you as soon as possible.", recurring && recurring.total > 1 ? `We have created ${recurring.total} upcoming visits based on your selected frequency.` : "", recurring && recurring.total > 1 ? `Dates: ${recurring.dates.join(", ")}` : "", "", "Your summary:", bookingReference(booking, "en"), `Service: ${english(payload.service)}`, `Area: ${payload.area}`, `Address: ${payload.address}`, `Size: ${payload.size} sqm`, `Frequency: ${english(payload.frequency)}`, `Start date: ${payload.date}`, `Time: ${english(payload.timeWindow)}`, `Customer type: ${english(payload.customerType)}`, buildCustomerRutText(payload, "en"), "", "If anything is incorrect, you can reply to this email or contact us at hej@iboren.se.", "", "Best regards,", "Iboren"].filter(Boolean).join("\n");
 }
 
-function buildCustomerText(payload: NormalizedBookingPayload, bookingId: string, language: Language, recurring?: { total: number; dates: string[] }) { return language === "en" ? buildCustomerTextEn(payload, bookingId, recurring) : buildCustomerTextSv(payload, bookingId, recurring); }
+function buildCustomerText(payload: NormalizedBookingPayload, booking: SaveBookingResult, language: Language, recurring?: { total: number; dates: string[] }) { return language === "en" ? buildCustomerTextEn(payload, booking, recurring) : buildCustomerTextSv(payload, booking, recurring); }
 function buildCustomerSubject(payload: NormalizedBookingPayload, language: Language) { return language === "en" ? `Iboren has received your booking request · ${english(payload.service)}` : `Iboren har tagit emot din bokning · ${payload.service}`; }
+
+async function createBookingNumber(payload: NormalizedBookingPayload) {
+  const adminClient = getAdminClient();
+  if (!adminClient) throw new Error("Supabase service role saknas för bokningsnummer.");
+  return generateBookingNumber(adminClient, { service: payload.service, area: payload.area, createdAt: new Date() });
+}
 
 async function saveBooking(payload: NormalizedBookingPayload, auth: AuthContext, language: Language): Promise<SaveBookingResult> {
   const supabase = getSupabase(auth.token);
   if (!supabase) throw new Error("Supabase saknas.");
   const size = Number.parseInt(payload.size, 10);
   const sizeSqm = Number.isFinite(size) ? size : null;
-  const { data: existing, error: lookupError } = await supabase.from("bookings").select("id").eq("user_id", auth.user.id).eq("service", payload.service).eq("address", payload.address).eq("preferred_date", payload.date).eq("size_sqm", sizeSqm).eq("frequency", payload.frequency).eq("time_window", payload.timeWindow).eq("customer_email", payload.email).neq("status", "cancelled").limit(1).maybeSingle();
+  const { data: existing, error: lookupError } = await supabase.from("bookings").select("id, booking_number").eq("user_id", auth.user.id).eq("service", payload.service).eq("address", payload.address).eq("preferred_date", payload.date).eq("size_sqm", sizeSqm).eq("frequency", payload.frequency).eq("time_window", payload.timeWindow).eq("customer_email", payload.email).neq("status", "cancelled").limit(1).maybeSingle<{ id: string; booking_number: string | null }>();
   if (lookupError) throw new Error(`Kunde inte kontrollera tidigare bokning: ${lookupError.message}`);
-  if (existing?.id) return { id: existing.id as string, duplicate: true, date: payload.date };
+  if (existing?.id) return { id: existing.id, bookingNumber: existing.booking_number || null, duplicate: true, date: payload.date };
+  const bookingNumber = await createBookingNumber(payload);
   const notesWithRut = [payload.notes || "", "", "--- Kundtyp & RUT ---", `Kundtyp: ${payload.customerType}`, `RUT önskas: ${payload.rutRequested ? "Ja" : "Nej"}`, `Språk / Language: ${language}`].join("\n").trim();
-  const { data, error } = await supabase.from("bookings").insert({ user_id: auth.user.id, service: payload.service, area: payload.area, address: payload.address || null, size_sqm: sizeSqm, frequency: payload.frequency, preferred_date: payload.date, time_window: payload.timeWindow, customer_name: payload.name, customer_email: payload.email, customer_phone: payload.phone || null, notes: notesWithRut || null, status: "new" }).select("id").single();
+  const { data, error } = await supabase.from("bookings").insert({ user_id: auth.user.id, booking_number: bookingNumber, service: payload.service, area: payload.area, address: payload.address || null, size_sqm: sizeSqm, frequency: payload.frequency, preferred_date: payload.date, time_window: payload.timeWindow, customer_name: payload.name, customer_email: payload.email, customer_phone: payload.phone || null, notes: notesWithRut || null, status: "new" }).select("id, booking_number").single<{ id: string; booking_number: string | null }>();
   if (error) {
     if (isUniqueDuplicateError(error)) throw new DuplicateBookingError();
     throw new Error(`Kunde inte spara bokningen i databasen: ${error.message}`);
   }
-  return { id: data.id as string, duplicate: false, date: payload.date };
+  return { id: data.id, bookingNumber: data.booking_number || bookingNumber, duplicate: false, date: payload.date };
 }
 
 async function saveRecurringBookings(payload: NormalizedBookingPayload, auth: AuthContext, language: Language) {
@@ -341,28 +362,30 @@ export async function POST(request: Request) {
     if (auth.user.email && payload.email.toLowerCase() !== auth.user.email.toLowerCase()) return NextResponse.json({ ok: false, message: language === "en" ? "The booking email must match your logged-in account." : "Bokningens e-post måste matcha ditt inloggade konto." }, { status: 403 });
 
     const bookingSet = await saveRecurringBookings(payload, auth, language);
-    if (!bookingSet.created.length && bookingSet.first?.duplicate) return NextResponse.json({ ok: false, duplicate: true, bookingId: bookingSet.first.id, message: language === "en" ? "This booking already exists. Change the date, time or details if you want to create a new booking." : "Den här bokningen finns redan. Ändra datum, tid eller uppgifter om du vill skapa en ny bokning." }, { status: 409 });
+    if (!bookingSet.created.length && bookingSet.first?.duplicate) return NextResponse.json({ ok: false, duplicate: true, bookingId: bookingSet.first.id, bookingNumber: bookingSet.first.bookingNumber, message: language === "en" ? "This booking already exists. Change the date, time or details if you want to create a new booking." : "Den här bokningen finns redan. Ändra datum, tid eller uppgifter om du vill skapa en ny bokning." }, { status: 409 });
 
     const recurring = { total: bookingSet.results.length, dates: bookingSet.dates };
-    const bookingId = bookingSet.first.id;
+    const firstBooking = bookingSet.first;
+    const bookingId = firstBooking.id;
+    const bookingNumber = firstBooking.bookingNumber;
     const resendApiKey = process.env.RESEND_API_KEY;
     const toEmail = process.env.BOOKING_TO_EMAIL || "hej@iboren.se";
     const fromEmail = process.env.BOOKING_FROM_EMAIL || "Iboren <onboarding@resend.dev>";
-    const adminText = buildAdminText(payload, auth.user, bookingId, language, recurring);
+    const adminText = buildAdminText(payload, auth.user, firstBooking, language, recurring);
     const adminSubject = buildAdminSubject(payload, language);
-    const customerText = buildCustomerText(payload, bookingId, language, recurring);
+    const customerText = buildCustomerText(payload, firstBooking, language, recurring);
     const customerSubject = buildCustomerSubject(payload, language);
 
     if (resendApiKey) {
       const adminEmail = sendEmail({ apiKey: resendApiKey, from: fromEmail, to: toEmail, replyTo: payload.email, subject: adminSubject, text: adminText });
       const customerEmail = sendEmail({ apiKey: resendApiKey, from: fromEmail, to: payload.email, replyTo: toEmail, subject: customerSubject, text: customerText });
       const emailResult = await Promise.race([Promise.allSettled([adminEmail, customerEmail]), wait(EMAIL_WAIT_LIMIT_MS)]);
-      if (emailResult === "timeout") console.warn("IBOREN_BOOKING_EMAIL_WAIT_TIMEOUT", { bookingId });
-      return NextResponse.json({ ok: true, bookingId, bookingIds: bookingSet.created.map((item) => item.id), visitDates: bookingSet.dates, duplicates: bookingSet.duplicates.length, message: language === "en" ? "Thank you. Your booking request has been saved. Iboren will get back to you as soon as possible." : "Tack! Din bokningsförfrågan är sparad. Iboren återkommer så snart som möjligt." });
+      if (emailResult === "timeout") console.warn("IBOREN_BOOKING_EMAIL_WAIT_TIMEOUT", { bookingId, bookingNumber });
+      return NextResponse.json({ ok: true, bookingId, bookingNumber, bookingIds: bookingSet.created.map((item) => item.id), bookingNumbers: bookingSet.created.map((item) => item.bookingNumber), visitDates: bookingSet.dates, duplicates: bookingSet.duplicates.length, message: language === "en" ? "Thank you. Your booking request has been saved. Iboren will get back to you as soon as possible." : "Tack! Din bokningsförfrågan är sparad. Iboren återkommer så snart som möjligt." });
     }
 
     console.info("IBOREN_BOOKING_REQUEST", adminText);
-    return NextResponse.json({ ok: true, bookingId, bookingIds: bookingSet.created.map((item) => item.id), visitDates: bookingSet.dates, duplicates: bookingSet.duplicates.length, message: language === "en" ? "The booking has been saved. Demo mode: add RESEND_API_KEY in Vercel for real email." : "Bokningen är sparad. Demo-läge: lägg till RESEND_API_KEY i Vercel för riktig e-post." });
+    return NextResponse.json({ ok: true, bookingId, bookingNumber, bookingIds: bookingSet.created.map((item) => item.id), bookingNumbers: bookingSet.created.map((item) => item.bookingNumber), visitDates: bookingSet.dates, duplicates: bookingSet.duplicates.length, message: language === "en" ? "The booking has been saved. Demo mode: add RESEND_API_KEY in Vercel for real email." : "Bokningen är sparad. Demo-läge: lägg till RESEND_API_KEY i Vercel för riktig e-post." });
   } catch (error) {
     if (error instanceof DuplicateBookingError) return NextResponse.json({ ok: false, duplicate: true, message: error.message }, { status: 409 });
     if (error instanceof BookingValidationError) return NextResponse.json({ ok: false, message: error.message }, { status: 400 });
