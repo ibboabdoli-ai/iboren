@@ -8,6 +8,7 @@ const allowedStatuses = ["new", "reviewed", "rejected", "converted"];
 type AdminPublicRequest = {
   id: string;
   external_id: string;
+  booking_number: string | null;
   status: string | null;
   language: string | null;
   service: string;
@@ -70,7 +71,7 @@ export async function GET(request: Request) {
 
   const { data, error } = await admin.supabase
     .from("public_booking_requests")
-    .select("id, external_id, status, language, service, area, address, size_sqm, frequency, preferred_date, time_window, customer_name, customer_email, customer_phone, customer_type, rut_requested, notes, admin_notes, converted_booking_id, source, created_at, updated_at")
+    .select("id, external_id, booking_number, status, language, service, area, address, size_sqm, frequency, preferred_date, time_window, customer_name, customer_email, customer_phone, customer_type, rut_requested, notes, admin_notes, converted_booking_id, source, created_at, updated_at")
     .order("created_at", { ascending: false })
     .limit(200);
 
