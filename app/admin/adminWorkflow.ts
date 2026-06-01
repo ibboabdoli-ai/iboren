@@ -1,5 +1,6 @@
 export type AdminWorkflowBooking = {
   id: string;
+  booking_number?: string | null;
   service: string;
   area: string;
   address: string | null;
