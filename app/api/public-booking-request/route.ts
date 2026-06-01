@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { generateBookingNumber } from "../../lib/bookingNumber";
 import { buildPublicRequestAdminEmail, buildPublicRequestCustomerEmail } from "../../lib/publicRequestEmailText";
 
 export const runtime = "nodejs";
@@ -217,7 +218,19 @@ function getAdminClient() {
   return createClient(url, serviceKey, { auth: { persistSession: false, autoRefreshToken: false } });
 }
 
-async function savePublicRequest(payload: NormalizedPublicBooking, requestId: string, language: Language) {
+async function getPublicRequestBookingNumber(payload: NormalizedPublicBooking) {
+  const supabase = getAdminClient();
+  if (!supabase) return null;
+
+  try {
+    return await generateBookingNumber(supabase, { service: payload.service, area: payload.area, createdAt: new Date() });
+  } catch (error) {
+    console.warn("IBOREN_PUBLIC_REQUEST_BOOKING_NUMBER_FAILED", { message: error instanceof Error ? error.message : "unknown_error" });
+    return null;
+  }
+}
+
+async function savePublicRequest(payload: NormalizedPublicBooking, requestId: string, language: Language, bookingNumber: string | null) {
   const supabase = getAdminClient();
   if (!supabase) {
     console.warn("IBOREN_PUBLIC_REQUEST_NOT_SAVED", { requestId, reason: "missing_service_role" });
@@ -227,6 +240,7 @@ async function savePublicRequest(payload: NormalizedPublicBooking, requestId: st
   const size = numberFromText(payload.size);
   const { error } = await supabase.from("public_booking_requests").insert({
     external_id: requestId,
+    booking_number: bookingNumber,
     status: "new",
     language,
     service: payload.service,
@@ -246,7 +260,7 @@ async function savePublicRequest(payload: NormalizedPublicBooking, requestId: st
   });
 
   if (error) {
-    console.warn("IBOREN_PUBLIC_REQUEST_SAVE_FAILED", { requestId, message: error.message });
+    console.warn("IBOREN_PUBLIC_REQUEST_SAVE_FAILED", { requestId, bookingNumber, message: error.message });
     return false;
   }
 
@@ -316,18 +330,19 @@ export async function POST(request: Request) {
     if (!checkRateLimit(rateLimitKey)) return NextResponse.json({ ok: false, message: message(language, "För många förfrågningar på kort tid. Försök igen senare.", "Too many requests in a short time. Try again later.") }, { status: 429 });
 
     const id = requestId();
-    const saved = await savePublicRequest(payload, id, language);
+    const bookingNumber = await getPublicRequestBookingNumber(payload);
+    const saved = await savePublicRequest(payload, id, language, bookingNumber);
     const resendApiKey = process.env.RESEND_API_KEY;
     const toEmail = process.env.BOOKING_TO_EMAIL || "hej@iboren.se";
     const fromEmail = process.env.BOOKING_FROM_EMAIL || "Iboren <onboarding@resend.dev>";
-    const adminText = buildPublicRequestAdminEmail(payload, id, language, saved);
-    const customerText = buildPublicRequestCustomerEmail(payload, id, language);
+    const adminText = buildPublicRequestAdminEmail(payload, id, language, saved, bookingNumber);
+    const customerText = buildPublicRequestCustomerEmail(payload, id, language, bookingNumber);
 
     if (resendApiKey) {
       const adminEmail = sendEmail({ apiKey: resendApiKey, from: fromEmail, to: toEmail, replyTo: payload.email, subject: buildAdminSubject(payload, language), text: adminText });
       const customerEmail = sendEmail({ apiKey: resendApiKey, from: fromEmail, to: payload.email, replyTo: toEmail, subject: buildCustomerSubject(language), text: customerText });
       const emailResult = await Promise.race([Promise.allSettled([adminEmail, customerEmail]), wait(EMAIL_WAIT_LIMIT_MS)]);
-      if (emailResult === "timeout") console.warn("IBOREN_PUBLIC_REQUEST_EMAIL_WAIT_TIMEOUT", { requestId: id });
+      if (emailResult === "timeout") console.warn("IBOREN_PUBLIC_REQUEST_EMAIL_WAIT_TIMEOUT", { requestId: id, bookingNumber });
     } else {
       console.info("IBOREN_PUBLIC_BOOKING_REQUEST", adminText);
     }
@@ -335,6 +350,7 @@ export async function POST(request: Request) {
     return NextResponse.json({
       ok: true,
       requestId: id,
+      bookingNumber,
       saved,
       message: message(language, "Tack! Din förfrågan har skickats. Vi bekräftar alltid tid och pris innan bokningen blir bindande.", "Thank you. Your request has been sent. We always confirm time and price before the booking becomes binding.")
     });
