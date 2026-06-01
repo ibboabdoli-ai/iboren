@@ -66,19 +66,19 @@ function customerRutText(payload: PublicEmailPayload, language: Language) {
   return payload.rutRequested ? "RUT: Ja. Du har valt RUT enligt Skatteverkets regler. Om RUT inte godkänns kan resterande belopp faktureras." : "RUT: Nej. Du har inte valt RUT-avdrag.";
 }
 
-function requestReferenceLines(id: string, language: Language, bookingNumber?: string | null) {
+function requestReferenceLines(id: string, language: Language, bookingNumber?: string | null, includeReceivedStatus = true) {
   if (language === "en") {
     return [
       `Request ID: ${id}`,
       bookingNumber ? `Booking number: ${bookingNumber}` : null,
-      "Status: Request received"
+      includeReceivedStatus ? "Status: Request received" : null
     ].filter(Boolean) as string[];
   }
 
   return [
     `Förfrågnings-ID: ${id}`,
     bookingNumber ? `Bokningsnummer: ${bookingNumber}` : null,
-    "Status: Förfrågan mottagen"
+    includeReceivedStatus ? "Status: Förfrågan mottagen" : null
   ].filter(Boolean) as string[];
 }
 
@@ -90,7 +90,7 @@ export function buildPublicRequestAdminEmail(payload: PublicEmailPayload, id: st
     return [
       "New Iboren public booking request",
       "",
-      ...requestReferenceLines(id, "en", bookingNumber),
+      ...requestReferenceLines(id, "en", bookingNumber, false),
       `Saved in admin queue: ${saved ? "Yes" : "No - check Supabase public_booking_requests setup"}`,
       "Status: New / unverified / pending review",
       "Important: This is not a confirmed booking. Confirm time and price manually before it becomes binding.",
@@ -118,7 +118,7 @@ export function buildPublicRequestAdminEmail(payload: PublicEmailPayload, id: st
   return [
     "Ny publik bokningsförfrågan till Iboren",
     "",
-    ...requestReferenceLines(id, "sv", bookingNumber),
+    ...requestReferenceLines(id, "sv", bookingNumber, false),
     `Sparad i admin-kö: ${saved ? "Ja" : "Nej - kontrollera Supabase public_booking_requests"}`,
     "Status: Ny / overifierad / behöver granskas",
     "Viktigt: Detta är inte en bekräftad bokning. Bekräfta tid och pris manuellt innan den blir bindande.",
