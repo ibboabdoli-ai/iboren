@@ -104,19 +104,24 @@ function sectionTone(title: string) {
   return "border-burgundy/10 bg-porcelain text-ink";
 }
 
+function shouldOpenByDefault(title: string) {
+  return title === "Admin kontroll" || title === "Prisunderlag från kalkylatorn" || title === "Prisindikation";
+}
+
 function buildSection(section: Section) {
-  const box = document.createElement("section");
+  const box = document.createElement("details");
+  box.open = shouldOpenByDefault(section.title);
   box.className = `rounded-2xl border p-4 ${sectionTone(section.title)}`;
 
-  const title = document.createElement("h4");
-  title.className = "text-xs font-black uppercase tracking-[.16em] text-burgundy";
-  title.textContent = section.title;
+  const summary = document.createElement("summary");
+  summary.className = "cursor-pointer text-xs font-black uppercase tracking-[.16em] text-burgundy";
+  summary.textContent = section.title;
 
   const pre = document.createElement("pre");
   pre.className = "mt-3 whitespace-pre-wrap break-words font-sans text-xs leading-6 text-ink/75";
   pre.textContent = section.body;
 
-  box.appendChild(title);
+  box.appendChild(summary);
   box.appendChild(pre);
   return box;
 }
