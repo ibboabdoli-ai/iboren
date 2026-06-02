@@ -105,19 +105,18 @@ function sectionTone(title: string) {
 }
 
 function buildSection(section: Section) {
-  const box = document.createElement("details");
-  box.open = section.title === "Admin kontroll" || section.title === "Prisunderlag från kalkylatorn" || section.title === "Prisindikation";
+  const box = document.createElement("section");
   box.className = `rounded-2xl border p-4 ${sectionTone(section.title)}`;
 
-  const summary = document.createElement("summary");
-  summary.className = "cursor-pointer text-xs font-black uppercase tracking-[.16em] text-burgundy";
-  summary.textContent = section.title;
+  const title = document.createElement("h4");
+  title.className = "text-xs font-black uppercase tracking-[.16em] text-burgundy";
+  title.textContent = section.title;
 
   const pre = document.createElement("pre");
   pre.className = "mt-3 whitespace-pre-wrap break-words font-sans text-xs leading-6 text-ink/75";
   pre.textContent = section.body;
 
-  box.appendChild(summary);
+  box.appendChild(title);
   box.appendChild(pre);
   return box;
 }
