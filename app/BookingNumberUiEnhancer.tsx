@@ -28,11 +28,6 @@ function getSupabase() {
   return createClient(url, key, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false } });
 }
 
-function referenceText(item: BookingLike, fallbackLabel = "Boknings-ID") {
-  if (item.booking_number) return `Bokningsnummer: ${item.booking_number}`;
-  return `${fallbackLabel}: ${String(item.id || "").slice(0, 8) || "—"}`;
-}
-
 function articleMatches(article: Element, item: BookingLike) {
   const text = article.textContent || "";
   const anchors = [item.service, item.customer_name, item.preferred_date].filter(Boolean) as string[];
@@ -62,18 +57,6 @@ function addHiddenSearchToken(article: Element, key: string, token: string) {
   article.appendChild(hidden);
 }
 
-function injectBookingNumbers(items: BookingLike[], path: string) {
-  const articles = Array.from(document.querySelectorAll("article"));
-  for (const item of items) {
-    const key = item.id || item.booking_number || item.preferred_date || "unknown";
-    const article = articles.find((candidate) => articleMatches(candidate, item));
-    if (!article) continue;
-    const label = path.includes("public-requests") ? "Förfrågnings-ID" : "Boknings-ID";
-    addBadge(article, key, referenceText(item, label));
-    addHiddenSearchToken(article, `${key}-search`, [item.booking_number, item.id].filter(Boolean).join(" "));
-  }
-}
-
 function injectPublicRequestNumbers(items: PublicRequestLike[]) {
   const articles = Array.from(document.querySelectorAll("article"));
   for (const item of items) {
@@ -96,12 +79,6 @@ async function getToken() {
   return data.session?.access_token || null;
 }
 
-async function fetchAdminBookings(token: string) {
-  const response = await fetch("/api/admin/bookings", { headers: { [AUTH_HEADER]: `${TOKEN_PREFIX} ${token}`, Authorization: `${TOKEN_PREFIX} ${token}` } });
-  const result = await response.json().catch(() => null) as { ok?: boolean; bookings?: BookingLike[] } | null;
-  return response.ok && result?.ok ? result.bookings || [] : [];
-}
-
 async function fetchPublicRequests(token: string) {
   const response = await fetch("/api/admin/public-requests", { headers: { [AUTH_HEADER]: `${TOKEN_PREFIX} ${token}`, Authorization: `${TOKEN_PREFIX} ${token}` } });
   const result = await response.json().catch(() => null) as { ok?: boolean; requests?: PublicRequestLike[] } | null;
@@ -116,20 +93,15 @@ export default function BookingNumberUiEnhancer() {
 
     async function run() {
       const path = window.location.pathname;
-      if (!["/admin/operations", "/admin/public-requests"].includes(path)) return;
+      if (path !== "/admin/public-requests") return;
 
       const token = await getToken();
       if (!token) return;
 
-      let bookings: BookingLike[] = [];
-      let publicRequests: PublicRequestLike[] = [];
-
-      if (path === "/admin/operations") bookings = await fetchAdminBookings(token);
-      if (path === "/admin/public-requests" || path === "/admin/operations") publicRequests = await fetchPublicRequests(token);
+      const publicRequests = await fetchPublicRequests(token);
 
       if (cancelled) return;
       const paint = () => {
-        if (bookings.length) injectBookingNumbers(bookings, path);
         if (publicRequests.length) injectPublicRequestNumbers(publicRequests);
       };
       requestAnimationFrame(paint);
