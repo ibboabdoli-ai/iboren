@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import ProfileAvatarPolish from "./ProfileAvatarPolish";
+import ProfileBookingReferencePolish from "./ProfileBookingReferencePolish";
 import ProfileCancellationPolicy from "./ProfileCancellationPolicy";
 
 const title = "Iboren Kund";
@@ -24,6 +25,7 @@ export default function ProfileLayout({ children }: { children: ReactNode }) {
     <>
       <ProfileCancellationPolicy />
       <ProfileAvatarPolish />
+      <ProfileBookingReferencePolish />
       {children}
     </>
   );
