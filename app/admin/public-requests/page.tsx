@@ -8,6 +8,7 @@ import { ArrowLeft, CheckCircle2, Loader2, RefreshCw, Search, XCircle } from "lu
 type PublicRequest = {
   id: string;
   external_id: string;
+  booking_number: string | null;
   status: string | null;
   language: string | null;
   service: string;
@@ -54,8 +55,14 @@ function statusClass(status: string | null) {
   return "bg-burgundy text-porcelain ring-1 ring-burgundy/20";
 }
 
+function requestReference(request: PublicRequest) {
+  if (request.booking_number) return { label: "Bokningsnummer", value: request.booking_number };
+  if (request.external_id) return { label: "Förfrågnings-ID", value: request.external_id };
+  return { label: "Förfrågnings-ID", value: request.id ? request.id.slice(0, 8).toUpperCase() : "—" };
+}
+
 function searchableText(request: PublicRequest) {
-  return [request.external_id, request.converted_booking_id, request.service, request.area, request.address, request.customer_name, request.customer_email, request.customer_phone, request.preferred_date, request.frequency, request.time_window, request.notes, request.admin_notes, statusLabel(request.status)].filter(Boolean).join(" ").toLowerCase();
+  return [request.booking_number, request.external_id, request.converted_booking_id, request.service, request.area, request.address, request.customer_name, request.customer_email, request.customer_phone, request.preferred_date, request.frequency, request.time_window, request.notes, request.admin_notes, statusLabel(request.status)].filter(Boolean).join(" ").toLowerCase();
 }
 
 function formatDate(value: string | null) {
@@ -163,8 +170,8 @@ export default function AdminPublicRequestsPage() {
       const response = await fetch(`/api/admin/public-requests/${requestId}`, { method: "POST", headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" } });
       const result = await response.json();
       if (!response.ok || !result.ok) throw new Error(result.message || "Kunde inte skapa bokning.");
-      setRequests((current) => current.map((item) => item.id === requestId ? { ...item, status: "converted", converted_booking_id: result.bookingId || item.converted_booking_id } : item));
-      setMessage(`Bokning skapad: ${result.bookingId}. Öppna /admin för att hantera bokningen.`);
+      setRequests((current) => current.map((item) => item.id === requestId ? { ...item, status: "converted", booking_number: result.bookingNumber || item.booking_number, converted_booking_id: result.bookingId || item.converted_booking_id } : item));
+      setMessage(`Bokning skapad: ${result.bookingNumber || result.bookingId}. Öppna /admin för att hantera bokningen.`);
       setFilter("converted");
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Något gick fel.");
@@ -234,7 +241,7 @@ export default function AdminPublicRequestsPage() {
         <div className="mt-6 rounded-[2rem] bg-porcelain p-5 shadow-soft md:p-7">
           <label className="relative block">
             <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-burgundy/55" />
-            <input value={search} onChange={(event) => setSearch(event.target.value)} className="w-full rounded-2xl border border-burgundy/10 bg-cream py-3 pl-11 pr-4 text-sm font-semibold text-ink outline-none focus:border-burgundy/40" placeholder="Sök namn, email, telefon, adress, stad, tjänst..." />
+            <input value={search} onChange={(event) => setSearch(event.target.value)} className="w-full rounded-2xl border border-burgundy/10 bg-cream py-3 pl-11 pr-4 text-sm font-semibold text-ink outline-none focus:border-burgundy/40" placeholder="Sök namn, email, telefon, adress, stad, tjänst, bokningsnummer..." />
           </label>
 
           {message && <div className="mt-5 flex flex-col gap-3 rounded-2xl bg-burgundy/10 p-4 text-sm font-bold text-burgundy sm:flex-row sm:items-center sm:justify-between"><span>{message}</span>{message.includes("/admin") && <Link href="/admin" className="rounded-full bg-burgundy px-4 py-2 text-center text-xs uppercase tracking-[.16em] text-porcelain">Open admin</Link>}</div>}
@@ -243,18 +250,20 @@ export default function AdminPublicRequestsPage() {
             {requestsLoading ? <div className="grid min-h-40 place-items-center text-burgundy"><Loader2 className="h-7 w-7 animate-spin" /></div> : filteredRequests.length === 0 ? <div className="rounded-[2rem] border border-dashed border-burgundy/20 bg-cream p-6 text-ink/65">Inga publika förfrågningar matchar filter/sökning.</div> : filteredRequests.map((request) => {
               const currentStatus = request.status || "new";
               const isUpdating = updatingId === request.id;
+              const reference = requestReference(request);
               return (
                 <article key={request.id} className="rounded-[2rem] border border-burgundy/10 bg-cream p-5 shadow-sm">
                   <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
                     <div className="min-w-0">
                       <div className="flex flex-wrap items-center gap-2">
                         <span className={`rounded-full px-3 py-1 text-xs font-black uppercase tracking-[.18em] ${statusClass(currentStatus)}`}>{statusLabel(currentStatus)}</span>
+                        <span className="rounded-full bg-porcelain px-3 py-1 text-xs font-black uppercase tracking-[.14em] text-burgundy ring-1 ring-burgundy/10">{reference.label}: {reference.value}</span>
                         <span className="rounded-full bg-porcelain px-3 py-1 text-xs font-bold text-ink/60">{request.language || "sv"}</span>
                         <span className="rounded-full bg-porcelain px-3 py-1 text-xs font-bold text-ink/60">{formatCreated(request.created_at)}</span>
                       </div>
                       <h2 className="display mt-4 text-3xl font-bold text-burgundy">{request.service} · {request.area}</h2>
-                      <p className="mt-2 text-sm font-bold text-ink/60">{request.external_id}</p>
-                      {request.converted_booking_id && <div className="mt-3 flex flex-col gap-2 rounded-2xl bg-green-100 px-4 py-3 text-sm font-bold text-green-800 sm:flex-row sm:items-center sm:justify-between"><span>Booking ID: {request.converted_booking_id}</span><Link href="/admin" className="rounded-full bg-green-700 px-4 py-2 text-center text-xs uppercase tracking-[.16em] text-white">Open booking dashboard</Link></div>}
+                      {request.external_id && request.booking_number && <p className="mt-2 text-xs font-bold text-ink/45">Förfrågnings-ID: {request.external_id}</p>}
+                      {request.converted_booking_id && <div className="mt-3 flex flex-col gap-2 rounded-2xl bg-green-100 px-4 py-3 text-sm font-bold text-green-800 sm:flex-row sm:items-center sm:justify-between"><span>{request.booking_number ? `Bokningsnummer: ${request.booking_number}` : `Booking ID: ${request.converted_booking_id}`}</span><Link href="/admin" className="rounded-full bg-green-700 px-4 py-2 text-center text-xs uppercase tracking-[.16em] text-white">Open booking dashboard</Link></div>}
                       <div className="mt-4 grid gap-2 text-sm leading-6 text-ink/75 sm:grid-cols-2 lg:grid-cols-3">
                         <p><b>Kund:</b> {request.customer_name}</p>
                         <p><b>E-post:</b> {request.customer_email}</p>
