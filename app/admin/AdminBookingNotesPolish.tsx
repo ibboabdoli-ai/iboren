@@ -17,11 +17,19 @@ const SECTION_TITLES: Record<string, string> = {
   "Recurring visit": "Återkommande besök"
 };
 
-const MARKER_RE = /^---\s*(.*?)\s*---$/gm;
+const DASH_MARKER_RE = /^---\s*(.*?)\s*---$/gm;
+const HEADING_RE = /^(KUNDENS ÖNSKEMÅL|KUNDTYP & RUT|PUBLIC REQUEST CONVERSION|OBJEKT & DETALJER|PRISINDIKATION)$/gm;
+const LEGACY_HEADINGS = ["KUNDENS ÖNSKEMÅL", "KUNDTYP & RUT", "PUBLIC REQUEST CONVERSION", "OBJEKT & DETALJER", "PRISINDIKATION"];
 
 function parseSections(raw: string) {
+  if (Array.from(raw.matchAll(DASH_MARKER_RE)).length > 0) return parseDashSections(raw);
+  if (LEGACY_HEADINGS.some((heading) => raw.includes(heading))) return parseLegacySections(raw);
+  return [{ title: "Kundens önskemål", body: normalizeIntro(raw) }];
+}
+
+function parseDashSections(raw: string) {
   const sections: Section[] = [];
-  const matches = Array.from(raw.matchAll(MARKER_RE));
+  const matches = Array.from(raw.matchAll(DASH_MARKER_RE));
   const firstIndex = matches[0]?.index ?? raw.length;
   const intro = raw.slice(0, firstIndex).trim();
   if (intro) sections.push({ title: "Kundens uppgifter", body: normalizeIntro(intro) });
@@ -37,6 +45,45 @@ function parseSections(raw: string) {
   return sections;
 }
 
+function parseLegacySections(raw: string) {
+  const sections: Section[] = [];
+  const matches = Array.from(raw.matchAll(HEADING_RE));
+  const firstIndex = matches[0]?.index ?? raw.length;
+  const intro = raw.slice(0, firstIndex).trim();
+  if (intro) sections.push({ title: "Kundens uppgifter", body: normalizeIntro(intro.replace(/^Kundens önskemål:\s*/i, "")) });
+
+  matches.forEach((match, index) => {
+    const rawTitle = match[1]?.trim() || "Detaljer";
+    const start = (match.index ?? 0) + match[0].length;
+    const end = matches[index + 1]?.index ?? raw.length;
+    const body = raw.slice(start, end).trim();
+    if (!body) return;
+    sections.push({ title: legacyTitle(rawTitle), body: normalizeLegacyBody(body) });
+  });
+
+  return sections;
+}
+
+function legacyTitle(title: string) {
+  if (title === "KUNDENS ÖNSKEMÅL") return "Kundens önskemål";
+  if (title === "OBJEKT & DETALJER") return "Objekt & detaljer";
+  if (title === "PRISINDIKATION") return "Prisindikation";
+  if (title === "PUBLIC REQUEST CONVERSION") return "Public request conversion";
+  return title;
+}
+
+function normalizeLegacyBody(value: string) {
+  const lines = value.split("\n").map((line) => line.trim()).filter(Boolean);
+  const pairs: string[] = [];
+  for (let index = 0; index < lines.length; index += 2) {
+    const key = lines[index];
+    const val = lines[index + 1];
+    if (val && !LEGACY_HEADINGS.includes(val)) pairs.push(`${key}: ${val}`);
+    else if (key) pairs.push(key);
+  }
+  return pairs.join("\n");
+}
+
 function normalizeIntro(value: string) {
   const labels = ["Typ av objekt", "Antal rum", "Antal badrum", "Husdjur", "Våning", "Hiss", "Parkering", "Extra tjänster", "Önskemål"];
   let next = value.trim();
@@ -45,11 +92,7 @@ function normalizeIntro(value: string) {
 }
 
 function normalizeBody(value: string) {
-  return value
-    .split("\n")
-    .map((line) => line.trim())
-    .filter(Boolean)
-    .join("\n");
+  return value.split("\n").map((line) => line.trim()).filter(Boolean).join("\n");
 }
 
 function sectionTone(title: string) {
@@ -57,12 +100,13 @@ function sectionTone(title: string) {
   if (lower.includes("admin")) return "border-red-200 bg-red-50 text-red-900";
   if (lower.includes("pris")) return "border-gold/35 bg-gold/10 text-ink";
   if (lower.includes("ändring")) return "border-blue-200 bg-blue-50 text-blue-900";
+  if (lower.includes("conversion")) return "border-green-200 bg-green-50 text-green-900";
   return "border-burgundy/10 bg-porcelain text-ink";
 }
 
 function buildSection(section: Section) {
   const box = document.createElement("details");
-  box.open = section.title === "Admin kontroll" || section.title === "Prisunderlag från kalkylatorn";
+  box.open = section.title === "Admin kontroll" || section.title === "Prisunderlag från kalkylatorn" || section.title === "Prisindikation";
   box.className = `rounded-2xl border p-4 ${sectionTone(section.title)}`;
 
   const summary = document.createElement("summary");
@@ -80,7 +124,7 @@ function buildSection(section: Section) {
 
 function shouldPolish(node: HTMLElement) {
   const text = node.textContent || "";
-  return text.includes("--- Calculator snapshot ---") || text.includes("--- Admin check ---") || text.includes("--- Final booking submitted ---");
+  return text.includes("--- Calculator snapshot ---") || text.includes("--- Admin check ---") || text.includes("--- Final booking submitted ---") || LEGACY_HEADINGS.some((heading) => text.includes(heading));
 }
 
 function polishNode(node: HTMLElement) {
