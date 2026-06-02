@@ -21,9 +21,13 @@ export const metadata: Metadata = {
 
 const adminLinks = [
   { href: "/admin", label: "Dashboard" },
+  { href: "/admin/operations", label: "Operations" },
+  { href: "/admin/public-requests", label: "Public requests" },
   { href: "/admin/time-reports", label: "Time reports" },
   { href: "/admin/payroll-basis", label: "Payroll basis" },
-  { href: "/admin/payroll-paid", label: "Paid archive" }
+  { href: "/admin/payroll-paid", label: "Paid archive" },
+  { href: "/supervisor", label: "Supervisor" },
+  { href: "/profile", label: "Profile" }
 ];
 
 export default function AdminLayout({ children }: { children: ReactNode }) {
