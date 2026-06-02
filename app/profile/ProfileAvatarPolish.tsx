@@ -9,6 +9,20 @@ function initialsFromProfile() {
   return initials || "IA";
 }
 
+function isGoogleAvatar(src: string) {
+  try {
+    const url = new URL(src);
+    const host = url.hostname.toLowerCase();
+    return url.protocol === "https:" && (host === "googleusercontent.com" || host.endsWith(".googleusercontent.com"));
+  } catch {
+    return false;
+  }
+}
+
+function avatarProxySrc(src: string) {
+  return `/api/avatar-proxy?url=${encodeURIComponent(src)}`;
+}
+
 function showFallback(img: HTMLImageElement) {
   if (img.dataset.iborenAvatarFallback === "1") return;
   img.dataset.iborenAvatarFallback = "1";
@@ -23,26 +37,40 @@ function showFallback(img: HTMLImageElement) {
   img.style.display = "none";
 }
 
+function tryProxy(img: HTMLImageElement) {
+  const originalSrc = img.dataset.iborenAvatarOriginalSrc || img.src;
+  if (!originalSrc || !isGoogleAvatar(originalSrc) || img.dataset.iborenAvatarProxyTried === "1") return false;
+
+  img.dataset.iborenAvatarProxyTried = "1";
+  img.dataset.iborenAvatarOriginalSrc = originalSrc;
+  img.referrerPolicy = "no-referrer";
+  img.src = avatarProxySrc(originalSrc);
+  return true;
+}
+
 function polishAvatar(img: HTMLImageElement) {
   if (img.dataset.iborenAvatarPolished === "1") return;
   img.dataset.iborenAvatarPolished = "1";
+  img.dataset.iborenAvatarOriginalSrc = img.src;
   img.referrerPolicy = "no-referrer";
+  img.crossOrigin = "anonymous";
+
+  if (isGoogleAvatar(img.src)) {
+    const originalSrc = img.src;
+    window.setTimeout(() => {
+      if (img.complete && img.naturalWidth > 0) return;
+      if (img.src === originalSrc) tryProxy(img);
+    }, 450);
+  }
 
   img.addEventListener("error", () => {
-    if (!img.dataset.iborenAvatarRetried && img.src) {
-      img.dataset.iborenAvatarRetried = "1";
-      const src = img.src;
-      window.setTimeout(() => {
-        img.referrerPolicy = "no-referrer";
-        img.src = src;
-      }, 80);
-      return;
-    }
-
+    if (tryProxy(img)) return;
     showFallback(img);
   });
 
-  if (img.complete && img.naturalWidth === 0) showFallback(img);
+  if (img.complete && img.naturalWidth === 0) {
+    if (!tryProxy(img)) showFallback(img);
+  }
 }
 
 export default function ProfileAvatarPolish() {
