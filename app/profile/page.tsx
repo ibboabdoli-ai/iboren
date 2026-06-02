@@ -7,6 +7,7 @@ import { ArrowLeft, CalendarCheck2, Loader2, LogOut, Save, ShieldCheck, UserRoun
 
 type Booking = {
   id: string;
+  booking_number: string | null;
   service: string;
   area: string;
   address: string | null;
@@ -88,6 +89,11 @@ function statusClass(status: string | null) {
   if (status === "confirmed") return "bg-green-100 text-green-800 border-green-200";
   if (status === "completed") return "bg-ink text-porcelain border-ink";
   return "bg-burgundy text-porcelain border-burgundy";
+}
+
+function bookingReference(booking: Pick<Booking, "id" | "booking_number">) {
+  if (booking.booking_number) return booking.booking_number;
+  return booking.id ? booking.id.slice(0, 8) : "—";
 }
 
 function parseRecurringMeta(booking: Booking): RecurringMeta | null {
@@ -206,7 +212,7 @@ export default function ProfilePage() {
     setBookingsLoading(true);
     const { data, error } = await supabase
       .from("bookings")
-      .select("id, service, area, address, size_sqm, frequency, preferred_date, time_window, customer_name, customer_email, customer_phone, notes, status, created_at")
+      .select("id, booking_number, service, area, address, size_sqm, frequency, preferred_date, time_window, customer_name, customer_email, customer_phone, notes, status, created_at")
       .eq("user_id", currentUser.id)
       .order("preferred_date", { ascending: true });
 
@@ -407,6 +413,7 @@ export default function ProfilePage() {
                           <div className="min-w-0">
                             <div className="flex flex-wrap gap-2">
                               <p className={`inline-flex rounded-full border px-3 py-1 text-xs font-bold uppercase tracking-[.18em] ${statusClass(currentStatus)}`}>{statusLabel(currentStatus)}</p>
+                              <p className="inline-flex rounded-full bg-porcelain px-3 py-1 text-xs font-black uppercase tracking-[.14em] text-burgundy ring-1 ring-burgundy/10">Bokningsnummer: {bookingReference(representative)}</p>
                               {isRecurring && <p className="inline-flex rounded-full bg-gold px-3 py-1 text-xs font-black uppercase tracking-[.18em] text-ink">Serie · {group.bookings.length} besök</p>}
                             </div>
                             <h3 className="display mt-3 break-words text-3xl font-bold text-burgundy">{representative.service}</h3>
@@ -436,7 +443,7 @@ export default function ProfilePage() {
                               const visitNumber = meta?.current || index + 1;
                               const cannotCancel = booking.status === "cancelled" || booking.status === "completed";
                               return <div key={booking.id} className="flex flex-col gap-2 rounded-xl bg-cream p-3 text-sm sm:flex-row sm:items-center sm:justify-between">
-                                <p className="font-bold text-ink">{booking.preferred_date || "Datum saknas"} <span className="text-ink/45">· besök {visitNumber}/{meta?.total || group.bookings.length}</span></p>
+                                <p className="font-bold text-ink">{booking.preferred_date || "Datum saknas"} <span className="text-ink/45">· besök {visitNumber}/{meta?.total || group.bookings.length} · {bookingReference(booking)}</span></p>
                                 <div className="flex flex-wrap items-center gap-2">
                                   <span className={`rounded-full border px-3 py-1 text-xs font-bold uppercase tracking-[.12em] ${statusClass(booking.status)}`}>{statusLabel(booking.status)}</span>
                                   {!cannotCancel && <button onClick={() => cancelBooking(booking.id)} disabled={cancelingId === booking.id} className="inline-flex items-center gap-2 rounded-full border border-red-200 bg-white px-3 py-1.5 text-xs font-bold text-red-700 disabled:opacity-60">{cancelingId === booking.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <XCircle className="h-3.5 w-3.5" />} Avboka</button>}
