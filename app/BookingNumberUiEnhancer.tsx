@@ -116,7 +116,7 @@ export default function BookingNumberUiEnhancer() {
 
     async function run() {
       const path = window.location.pathname;
-      if (!["/admin", "/admin/operations", "/admin/public-requests"].includes(path)) return;
+      if (!["/admin/operations", "/admin/public-requests"].includes(path)) return;
 
       const token = await getToken();
       if (!token) return;
@@ -124,7 +124,7 @@ export default function BookingNumberUiEnhancer() {
       let bookings: BookingLike[] = [];
       let publicRequests: PublicRequestLike[] = [];
 
-      if (path === "/admin" || path === "/admin/operations") bookings = await fetchAdminBookings(token);
+      if (path === "/admin/operations") bookings = await fetchAdminBookings(token);
       if (path === "/admin/public-requests" || path === "/admin/operations") publicRequests = await fetchPublicRequests(token);
 
       if (cancelled) return;
