@@ -108,21 +108,6 @@ async function fetchPublicRequests(token: string) {
   return response.ok && result?.ok ? result.requests || [] : [];
 }
 
-async function fetchProfileBookings() {
-  const supabase = getSupabase();
-  if (!supabase) return [] as BookingLike[];
-  const { data: sessionData } = await supabase.auth.getSession();
-  const user = sessionData.session?.user;
-  if (!user) return [] as BookingLike[];
-  const { data, error } = await supabase
-    .from("bookings")
-    .select("id, booking_number, service, area, address, customer_name, preferred_date")
-    .eq("user_id", user.id)
-    .order("preferred_date", { ascending: true });
-  if (error) return [] as BookingLike[];
-  return (data || []) as BookingLike[];
-}
-
 export default function BookingNumberUiEnhancer() {
   const pathname = usePathname();
 
@@ -131,19 +116,16 @@ export default function BookingNumberUiEnhancer() {
 
     async function run() {
       const path = window.location.pathname;
-      if (!["/admin", "/admin/operations", "/admin/public-requests", "/profile"].includes(path)) return;
+      if (!["/admin", "/admin/operations", "/admin/public-requests"].includes(path)) return;
+
+      const token = await getToken();
+      if (!token) return;
 
       let bookings: BookingLike[] = [];
       let publicRequests: PublicRequestLike[] = [];
 
-      if (path === "/profile") {
-        bookings = await fetchProfileBookings();
-      } else {
-        const token = await getToken();
-        if (!token) return;
-        if (path === "/admin" || path === "/admin/operations") bookings = await fetchAdminBookings(token);
-        if (path === "/admin/public-requests" || path === "/admin/operations") publicRequests = await fetchPublicRequests(token);
-      }
+      if (path === "/admin" || path === "/admin/operations") bookings = await fetchAdminBookings(token);
+      if (path === "/admin/public-requests" || path === "/admin/operations") publicRequests = await fetchPublicRequests(token);
 
       if (cancelled) return;
       const paint = () => {
