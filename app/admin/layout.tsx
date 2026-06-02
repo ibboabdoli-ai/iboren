@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import type { ReactNode } from "react";
+import AdminBookingCardsPolish from "./AdminBookingCardsPolish";
 import AdminBookingNotesPolish from "./AdminBookingNotesPolish";
 import AdminFilterPanelsPolish from "./AdminFilterPanelsPolish";
 import AdminQuickCardsPolish from "./AdminQuickCardsPolish";
@@ -37,6 +38,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
   return (
     <div className={styles.adminShell}>
       <AdminBookingNotesPolish />
+      <AdminBookingCardsPolish />
       <AdminFilterPanelsPolish />
       <AdminQuickCardsPolish />
       <nav className="sticky top-0 z-50 border-b border-burgundy/10 bg-cream/95 px-3 py-3 backdrop-blur md:px-6" aria-label="Admin quick navigation">
