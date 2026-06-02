@@ -37,13 +37,21 @@ function publicReference(item: PublicRequestLike) {
   return `Förfrågnings-ID: ${item.external_id || String(item.id || "").slice(0, 8).toUpperCase() || "—"}`;
 }
 
+function normalize(value: string) {
+  return value.toLowerCase().replace(/\s+/g, " ").trim();
+}
+
 function articleMatches(article: Element, item: BookingLike) {
-  const text = article.textContent || "";
-  const anchors = [item.service, item.customer_name, item.preferred_date].filter(Boolean) as string[];
-  if (anchors.length && !anchors.every((value) => text.includes(value))) return false;
-  if (item.address && text.includes(item.address)) return true;
-  if (item.area && text.includes(item.area)) return true;
-  return anchors.length > 0;
+  const text = normalize(article.textContent || "");
+  const serviceOk = !item.service || text.includes(normalize(item.service));
+  const nameOk = !item.customer_name || text.includes(normalize(item.customer_name));
+  const addressOk = !item.address || text.includes(normalize(item.address));
+  const areaOk = !item.area || text.includes(normalize(item.area));
+
+  if (serviceOk && nameOk) return true;
+  if (serviceOk && addressOk) return true;
+  if (serviceOk && areaOk) return true;
+  return false;
 }
 
 function addBadge(article: Element, key: string, text: string) {
@@ -78,6 +86,7 @@ async function fetchPublicRequests(token: string) {
 export default function OperationsBookingReferenceEnhancer() {
   useEffect(() => {
     let cancelled = false;
+    let observer: MutationObserver | null = null;
 
     async function run() {
       if (window.location.pathname !== "/admin/operations") return;
@@ -106,10 +115,15 @@ export default function OperationsBookingReferenceEnhancer() {
       requestAnimationFrame(paint);
       setTimeout(paint, 500);
       setTimeout(paint, 1500);
+      observer = new MutationObserver(paint);
+      observer.observe(document.body, { childList: true, subtree: true });
     }
 
     void run();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+      observer?.disconnect();
+    };
   }, []);
 
   return null;
