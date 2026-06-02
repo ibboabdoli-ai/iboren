@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import ProfileAvatarPolish from "./ProfileAvatarPolish";
+import ProfileBookingNotesPolish from "./ProfileBookingNotesPolish";
 import ProfileBookingReferencePolish from "./ProfileBookingReferencePolish";
 import ProfileCancellationPolicy from "./ProfileCancellationPolicy";
 
@@ -12,12 +13,7 @@ export const metadata: Metadata = {
   description,
   applicationName: "Iboren Kund",
   manifest: "/api/pwa-manifest?start=/profile",
-  alternates: { canonical: "https://iboren.se/profile" },
-  appleWebApp: {
-    capable: true,
-    title: "Iboren Kund",
-    statusBarStyle: "black-translucent"
-  }
+  alternates: { canonical: "https://iboren.se/profile" }
 };
 
 export default function ProfileLayout({ children }: { children: ReactNode }) {
@@ -26,6 +22,7 @@ export default function ProfileLayout({ children }: { children: ReactNode }) {
       <ProfileCancellationPolicy />
       <ProfileAvatarPolish />
       <ProfileBookingReferencePolish />
+      <ProfileBookingNotesPolish />
       {children}
     </>
   );
