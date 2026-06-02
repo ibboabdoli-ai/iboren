@@ -12,6 +12,7 @@ import AvailableCleanersBox from "./AvailableCleanersBox";
 
 type AdminBooking = {
   id: string;
+  booking_number: string | null;
   user_id: string | null;
   service: string;
   area: string;
@@ -88,8 +89,15 @@ function statusCount(bookings: AdminBooking[], status: string) {
   return bookings.filter((booking) => (booking.status || "new") === status).length;
 }
 
+function bookingReference(booking: Pick<AdminBooking, "id" | "booking_number">) {
+  if (booking.booking_number) return { label: "Bokningsnummer", value: booking.booking_number };
+  return { label: "Boknings-ID", value: booking.id ? booking.id.slice(0, 8).toUpperCase() : "—" };
+}
+
 function searchableText(booking: AdminBooking) {
   return [
+    booking.booking_number,
+    booking.id,
     booking.service,
     booking.area,
     booking.address,
@@ -440,6 +448,7 @@ export default function AdminPage() {
                 const currentStatus = booking.status || "new";
                 const isUpdating = updatingId === booking.id;
                 const recurring = getRecurringInfo(booking);
+                const reference = bookingReference(booking);
 
                 return (
                   <article key={booking.id} className={`relative overflow-hidden rounded-[2rem] border p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-soft ${statusCardClass(currentStatus)}`}>
@@ -448,6 +457,7 @@ export default function AdminPage() {
                       <div className="min-w-0">
                         <div className="flex flex-wrap gap-2">
                           <p className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-bold uppercase tracking-[.18em] ${statusPillClass(currentStatus)}`}><ShieldCheck className="h-3.5 w-3.5" /> {statusLabel(currentStatus)}</p>
+                          <p className="inline-flex items-center rounded-full bg-porcelain px-3 py-1 text-xs font-black uppercase tracking-[.14em] text-burgundy ring-1 ring-burgundy/10">{reference.label}: {reference.value}</p>
                           {recurring && (
                             <p className="inline-flex items-center rounded-full bg-gold px-3 py-1 text-xs font-black uppercase tracking-[.16em] text-ink">
                               Recurring {recurring.current && recurring.total ? `${recurring.current}/${recurring.total}` : "visit"}
