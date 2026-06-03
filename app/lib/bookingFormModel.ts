@@ -1,4 +1,5 @@
 import {
+  estimatePrice,
   formatSek,
   normalizePricingAddOn,
   normalizePricingFrequency,
@@ -10,7 +11,6 @@ import {
   type PricingCondition,
   type PricingEstimateInput,
   type PricingFurnished,
-  type PricingService,
   type PricingWindowSide,
   type PricingYesNo
 } from "./pricingCalculator";
@@ -85,7 +85,6 @@ export type BookingFormSummaryLabels = {
   beforeRut: string;
   afterRut: string;
   estimatedTime: string;
-  customerNotes: string;
   yes: string;
   no: string;
   notFilled: string;
@@ -119,7 +118,6 @@ export const bookingFormSummaryLabels: Record<BookingFormLanguage, BookingFormSu
     beforeRut: "Före RUT",
     afterRut: "Efter RUT",
     estimatedTime: "Uppskattad tid",
-    customerNotes: "Kundens önskemål",
     yes: "Ja",
     no: "Nej",
     notFilled: "Ej ifyllt",
@@ -151,7 +149,6 @@ export const bookingFormSummaryLabels: Record<BookingFormLanguage, BookingFormSu
     beforeRut: "Before RUT",
     afterRut: "After RUT",
     estimatedTime: "Estimated time",
-    customerNotes: "Customer notes",
     yes: "Yes",
     no: "No",
     notFilled: "Not filled in",
@@ -175,8 +172,8 @@ export function createBookingFormDraft(language: BookingFormLanguage): BookingFo
     floor: "0",
     elevator: language === "sv" ? "Ja" : "Yes",
     parking: language === "sv" ? "Ja" : "Yes",
-    condition: language === "sv" ? "Normal" : "Normal",
-    access: language === "sv" ? "Normal" : "Normal",
+    condition: "Normal",
+    access: "Normal",
     shortNotice: language === "sv" ? "Nej" : "No",
     weekend: language === "sv" ? "Nej" : "No",
     extras: [],
@@ -207,6 +204,10 @@ export function isOfficeBooking(draft: BookingFormDraft) {
   return draft.service === "Kontorsstädning" || draft.service === "Office cleaning" || isBusinessCustomer(draft);
 }
 
+export function normalizeBookingAddOns(extras: string[]): PricingAddOn[] {
+  return extras.map(normalizePricingAddOn).filter(Boolean) as PricingAddOn[];
+}
+
 export function bookingFormVisibility(draft: BookingFormDraft): BookingFormVisibility {
   const normalizedService = normalizePricingService(draft.service);
   const normalizedAddOns = normalizeBookingAddOns(draft.extras);
@@ -219,10 +220,6 @@ export function bookingFormVisibility(draft: BookingFormDraft): BookingFormVisib
     showAddOns: !isOffice,
     rutEligible: !isOffice && normalizedService !== "Kontorsstädning"
   };
-}
-
-export function normalizeBookingAddOns(extras: string[]): PricingAddOn[] {
-  return extras.map(normalizePricingAddOn).filter(Boolean) as PricingAddOn[];
 }
 
 export function normalizeBookingCondition(value: string): PricingCondition {
@@ -257,7 +254,6 @@ export function normalizeBookingBalconyGlass(value: string): PricingBalconyGlass
 export function buildBookingPricingInput(draft: BookingFormDraft): PricingEstimateInput {
   const service = normalizePricingService(draft.service);
   const visibility = bookingFormVisibility(draft);
-  const useRut = draft.rutRequested && visibility.rutEligible;
   return {
     service,
     sqm: parseBookingNumber(draft.size, 0),
@@ -280,7 +276,7 @@ export function buildBookingPricingInput(draft: BookingFormDraft): PricingEstima
     balconyGlass: normalizeBookingBalconyGlass(draft.balconyGlass),
     kitchen: "Nej" as PricingYesNo,
     selectedAddOns: visibility.showAddOns ? normalizeBookingAddOns(draft.extras) : [],
-    useRut
+    useRut: draft.rutRequested && visibility.rutEligible
   };
 }
 
@@ -300,7 +296,7 @@ export function buildBookingSummary(draft: BookingFormDraft, language: BookingFo
   const labels = bookingFormSummaryLabels[language];
   const pricingInput = buildBookingPricingInput(draft);
   const visibility = bookingFormVisibility(draft);
-  const estimate = pricingInput ? undefined : undefined;
+  const estimate = estimatePrice(pricingInput);
   const lines = [
     `${labels.service}: ${displayValue(draft.service, labels)}`,
     `${labels.customerType}: ${displayValue(draft.customerType, labels)}`,
@@ -327,9 +323,9 @@ export function buildBookingSummary(draft: BookingFormDraft, language: BookingFo
     visibility.showBalconyFields ? `${labels.balconyGlass}: ${displayValue(draft.balconyGlass, labels)}` : "",
     "",
     language === "sv" ? "--- Prisindikation ---" : "--- Price indication ---",
-    `${labels.beforeRut}: ${formatSek(0)}`,
-    `${labels.afterRut}: ${formatSek(0)}`,
-    `${labels.estimatedTime}: ${formatBookingHours(undefined, language)}`,
+    `${labels.beforeRut}: ${formatSek(estimate.beforeRut)}`,
+    `${labels.afterRut}: ${formatSek(estimate.afterRut)}`,
+    `${labels.estimatedTime}: ${formatBookingHours(estimate.hours, language, estimate.monthly)}`,
     "",
     language === "sv" ? "--- Kundens önskemål ---" : "--- Customer notes ---",
     draft.notes || "-"
