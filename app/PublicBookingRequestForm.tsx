@@ -146,7 +146,7 @@ const options = {
     types: ["Lägenhet", "Villa", "Radhus", "Kontor", "Annat"],
     freqs: ["Engång", "Varje vecka", "Varannan vecka", "Varje månad"],
     times: ["Morgon", "Förmiddag", "Eftermiddag", "Kväll", "Flexibel"],
-    extras: ["Fönsterputs", "Ugn", "Kyl/frys", "Balkong", "Grovstädning", "Skåp/lådor"],
+    extras: ["Fönsterputs", "Ugn", "Kyl/frys", "Balkong", "Grovstädning", "Skåp/lådor", "Garage"],
     customerTypes: ["Privatperson", "Företag"]
   },
   en: {
@@ -154,7 +154,7 @@ const options = {
     types: ["Apartment", "House", "Townhouse", "Office", "Other"],
     freqs: ["One-time", "Every week", "Every other week", "Every month"],
     times: ["Morning", "Late morning", "Afternoon", "Evening", "Flexible"],
-    extras: ["Window cleaning", "Oven", "Fridge/freezer", "Balcony", "Deep cleaning", "Cabinets/drawers"],
+    extras: ["Window cleaning", "Oven", "Fridge/freezer", "Balcony", "Deep cleaning", "Cabinets/drawers", "Garage"],
     customerTypes: ["Private customer", "Company"]
   }
 };
