@@ -4,6 +4,7 @@ import StructuredData from "./StructuredData";
 import BookingMobilePolish from "./BookingMobilePolish";
 import GoogleAddressEnhancer from "./GoogleAddressEnhancer";
 import BookingFormValidationEnhancer from "./BookingFormValidationEnhancer";
+import BookingAddonDetailsEnhancer from "./BookingAddonDetailsEnhancer";
 import MobileMenuPolish from "./MobileMenuPolish";
 import PwaManifestSwitcher from "./PwaManifestSwitcher";
 import PublicBookingRequestEnhancer from "./PublicBookingRequestEnhancer";
@@ -82,6 +83,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <StructuredData />
         <GoogleAddressEnhancer />
         <BookingFormValidationEnhancer />
+        <BookingAddonDetailsEnhancer />
         <PwaManifestSwitcher />
         <MobileMenuPolish />
         <BookingMobilePolish />
