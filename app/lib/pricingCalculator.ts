@@ -1,6 +1,6 @@
 export type PricingService = "Hemstädning" | "Flyttstädning" | "Storstädning" | "Kontorsstädning" | "Fönsterputs";
 export type PricingFrequency = "Engång" | "Varje vecka" | "Varannan vecka" | "Var fjärde vecka";
-export type PricingAddOn = "Fönsterputs" | "Ugn" | "Kyl/frys" | "Balkong" | "Grovstädning" | "Skåp/lådor";
+export type PricingAddOn = "Fönsterputs" | "Ugn" | "Kyl/frys" | "Balkong" | "Grovstädning" | "Skåp/lådor" | "Garage";
 export type PricingCustomerType = "Privatperson" | "Företag";
 export type PricingCondition = "Normal" | "Smutsigt" | "Mycket smutsigt";
 export type PricingYesNo = "Ja" | "Nej";
@@ -82,6 +82,8 @@ export function normalizePricingAddOn(addOn: string): PricingAddOn | null {
     Balcony: "Balkong",
     "Deep cleaning": "Grovstädning",
     "Cabinets/drawers": "Skåp/lådor",
+    Garage: "Garage",
+    "Garage cleaning": "Garage",
     Fönsterputs: "Fönsterputs",
     Ugn: "Ugn",
     "Kyl/frys": "Kyl/frys",
@@ -105,6 +107,7 @@ function addOnBeforeRutPrice(addOn: PricingAddOn) {
   if (addOn === "Balkong") return 450;
   if (addOn === "Grovstädning") return 650;
   if (addOn === "Skåp/lådor") return 450;
+  if (addOn === "Garage") return 650;
   return 0;
 }
 
@@ -131,6 +134,7 @@ function riskLevel(input: PricingEstimateInput): PricingRiskLevel {
   if (input.floor > 4 && input.elevator === "Nej") return "Röd";
   if (input.service === "Fönsterputs" && input.windows > 25) return "Röd";
   if (input.condition === "Smutsigt" || input.weekend === "Ja" || input.parking === "Nej" || input.balconyGlass !== "Nej") return "Gul";
+  if (input.selectedAddOns.includes("Garage")) return "Gul";
   if (input.service === "Flyttstädning" || input.windows > 15) return "Gul";
   return "Grön";
 }
