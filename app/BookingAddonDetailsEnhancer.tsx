@@ -2,8 +2,8 @@
 
 import { useEffect } from "react";
 
-const BLOCK_START = "--- Tilläggsdetaljer ---";
-const BLOCK_END = "--- Slut tilläggsdetaljer ---";
+const BLOCK_START = "--- Tilläggsdetaljer / Add-on details ---";
+const BLOCK_END = "--- Slut tilläggsdetaljer / End add-on details ---";
 
 type AddonState = {
   windowCount: string;
@@ -16,12 +16,37 @@ type AddonState = {
 
 const state: AddonState = {
   windowCount: "",
-  windowSides: "Båda sidor",
-  windowAccess: "Normal åtkomst",
-  balconyType: "Balkong",
-  balconyGlass: "Vet ej",
+  windowSides: "Båda sidor / Both sides",
+  windowAccess: "Normal åtkomst / Normal access",
+  balconyType: "Balkong / Balcony",
+  balconyGlass: "Vet ej / Not sure",
   balconyNotes: ""
 };
+
+function isEnglish() {
+  return window.location.pathname === "/en";
+}
+
+function isBookingPage() {
+  return window.location.pathname === "/" || window.location.pathname === "/en";
+}
+
+function copy() {
+  const en = isEnglish();
+  return {
+    title: en ? "Details for selected add-ons" : "Detaljer för valda tillägg",
+    help: en ? "Add extra details for window cleaning or balcony. The information is saved automatically in customer notes." : "Fyll i extra information för fönsterputs eller balkong. Informationen sparas automatiskt i kundens önskemål.",
+    windowCount: en ? "Number of windows" : "Antal fönster",
+    windowCleaning: en ? "Window cleaning" : "Fönsterputs",
+    access: en ? "Access" : "Åtkomst",
+    balconyType: en ? "Balcony type" : "Balkongtyp",
+    balconyGlass: en ? "Glazed balcony" : "Inglasad balkong",
+    balconyDetails: en ? "Balcony details" : "Balkongdetaljer",
+    windowPlaceholder: en ? "e.g. 8" : "t.ex. 8",
+    balconyPlaceholder: en ? "e.g. glazed, dirty, furniture" : "t.ex. inglasad, smutsig, möbler",
+    notFilled: en ? "Not filled" : "Ej ifyllt"
+  };
+}
 
 function normalize(text: string) {
   return text.toLowerCase().replace(/\s+/g, " ").trim();
@@ -31,8 +56,13 @@ function isSelected(button: HTMLButtonElement) {
   return button.className.includes("bg-gold") || button.getAttribute("aria-pressed") === "true";
 }
 
-function findButtonByText(text: string) {
-  return Array.from(document.querySelectorAll<HTMLButtonElement>("#booking button")).find((button) => normalize(button.textContent || "") === normalize(text));
+function findButtonsByTexts(texts: string[]) {
+  const normalized = texts.map(normalize);
+  return Array.from(document.querySelectorAll<HTMLButtonElement>("#booking button")).filter((button) => normalized.includes(normalize(button.textContent || "")));
+}
+
+function findFirstButtonByTexts(texts: string[]) {
+  return findButtonsByTexts(texts)[0] || null;
 }
 
 function findTextarea() {
@@ -47,28 +77,38 @@ function setNativeTextareaValue(textarea: HTMLTextAreaElement, value: string) {
 }
 
 function stripAddonBlock(value: string) {
-  const start = value.indexOf(BLOCK_START);
-  const end = value.indexOf(BLOCK_END);
-  if (start < 0 || end < start) return value.trim();
-  return `${value.slice(0, start).trim()}\n${value.slice(end + BLOCK_END.length).trim()}`.trim();
+  const legacyStarts = ["--- Tilläggsdetaljer ---", "--- Tilläggsdetaljer / Add-on details ---"];
+  const legacyEnds = ["--- Slut tilläggsdetaljer ---", "--- Slut tilläggsdetaljer / End add-on details ---"];
+
+  let cleaned = value.trim();
+  for (const startMarker of legacyStarts) {
+    const start = cleaned.indexOf(startMarker);
+    if (start < 0) continue;
+    const endMarker = legacyEnds.find((marker) => cleaned.indexOf(marker, start) >= 0);
+    if (!endMarker) continue;
+    const end = cleaned.indexOf(endMarker, start);
+    cleaned = `${cleaned.slice(0, start).trim()}\n${cleaned.slice(end + endMarker.length).trim()}`.trim();
+  }
+  return cleaned;
 }
 
 function buildAddonBlock(showWindows: boolean, showBalcony: boolean) {
+  const t = copy();
   const lines = [BLOCK_START];
 
   if (showWindows) {
-    lines.push("Fönsterputs:");
-    lines.push(`Antal fönster: ${state.windowCount || "Ej ifyllt"}`);
-    lines.push(`Putsning: ${state.windowSides}`);
-    lines.push(`Åtkomst: ${state.windowAccess}`);
+    lines.push(isEnglish() ? "Window cleaning:" : "Fönsterputs:");
+    lines.push(`${t.windowCount}: ${state.windowCount || t.notFilled}`);
+    lines.push(`${t.windowCleaning}: ${state.windowSides}`);
+    lines.push(`${t.access}: ${state.windowAccess}`);
   }
 
   if (showBalcony) {
     if (showWindows) lines.push("");
-    lines.push("Balkong:");
-    lines.push(`Typ: ${state.balconyType}`);
-    lines.push(`Inglasad balkong: ${state.balconyGlass}`);
-    lines.push(`Detaljer: ${state.balconyNotes || "Ej ifyllt"}`);
+    lines.push(isEnglish() ? "Balcony:" : "Balkong:");
+    lines.push(`${t.balconyType}: ${state.balconyType}`);
+    lines.push(`${t.balconyGlass}: ${state.balconyGlass}`);
+    lines.push(`${t.balconyDetails}: ${state.balconyNotes || t.notFilled}`);
   }
 
   lines.push(BLOCK_END);
@@ -128,47 +168,49 @@ function select(label: string, value: string, options: string[], onChange: (valu
 }
 
 function createPanel() {
+  const t = copy();
   const panel = document.createElement("div");
   panel.dataset.iborenAddonDetails = "1";
   panel.className = "hidden rounded-[1.5rem] border border-gold/20 bg-night/35 p-4";
 
   const title = document.createElement("p");
   title.className = "text-xs font-black uppercase tracking-[.22em] text-gold";
-  title.textContent = "Detaljer för valda tillägg";
+  title.textContent = t.title;
   panel.appendChild(title);
 
   const help = document.createElement("p");
   help.className = "mt-2 text-sm leading-6 text-porcelain/65";
-  help.textContent = "Fyll i extra information för fönsterputs eller balkong. Informationen sparas automatiskt i kundens önskemål.";
+  help.textContent = t.help;
   panel.appendChild(help);
 
   const windowBox = document.createElement("div");
   windowBox.dataset.iborenWindowDetails = "1";
   windowBox.className = "mt-4 grid gap-3 sm:grid-cols-3";
-  windowBox.appendChild(input("Antal fönster", state.windowCount, (value) => { state.windowCount = value.replace(/[^0-9]/g, ""); sync(); }, "t.ex. 8"));
-  windowBox.appendChild(select("Fönsterputs", state.windowSides, ["Båda sidor", "Endast insida", "Endast utsida"], (value) => { state.windowSides = value; sync(); }));
-  windowBox.appendChild(select("Åtkomst", state.windowAccess, ["Normal åtkomst", "Svår åtkomst", "Vet ej"], (value) => { state.windowAccess = value; sync(); }));
+  windowBox.appendChild(input(t.windowCount, state.windowCount, (value) => { state.windowCount = value.replace(/[^0-9]/g, ""); sync(); }, t.windowPlaceholder));
+  windowBox.appendChild(select(t.windowCleaning, state.windowSides, ["Båda sidor / Both sides", "Endast insida / Inside only", "Endast utsida / Outside only"], (value) => { state.windowSides = value; sync(); }));
+  windowBox.appendChild(select(t.access, state.windowAccess, ["Normal åtkomst / Normal access", "Svår åtkomst / Difficult access", "Vet ej / Not sure"], (value) => { state.windowAccess = value; sync(); }));
   panel.appendChild(windowBox);
 
   const balconyBox = document.createElement("div");
   balconyBox.dataset.iborenBalconyDetails = "1";
   balconyBox.className = "mt-4 grid gap-3 sm:grid-cols-3";
-  balconyBox.appendChild(select("Balkongtyp", state.balconyType, ["Balkong", "Fransk balkong", "Stor balkong", "Terrass", "Vet ej"], (value) => { state.balconyType = value; sync(); }));
-  balconyBox.appendChild(select("Inglasad balkong", state.balconyGlass, ["Ja", "Nej", "Vet ej"], (value) => { state.balconyGlass = value; sync(); }));
-  balconyBox.appendChild(input("Balkongdetaljer", state.balconyNotes, (value) => { state.balconyNotes = value; sync(); }, "t.ex. inglasad, smutsig, möbler"));
+  balconyBox.appendChild(select(t.balconyType, state.balconyType, ["Balkong / Balcony", "Fransk balkong / French balcony", "Stor balkong / Large balcony", "Terrass / Terrace", "Vet ej / Not sure"], (value) => { state.balconyType = value; sync(); }));
+  balconyBox.appendChild(select(t.balconyGlass, state.balconyGlass, ["Ja / Yes", "Nej / No", "Vet ej / Not sure"], (value) => { state.balconyGlass = value; sync(); }));
+  balconyBox.appendChild(input(t.balconyDetails, state.balconyNotes, (value) => { state.balconyNotes = value; sync(); }, t.balconyPlaceholder));
   panel.appendChild(balconyBox);
 
   return panel;
 }
 
 function selectedAddons() {
-  const serviceWindow = isSelected(findButtonByText("Fönsterputs") || document.createElement("button"));
-  const extraWindowButton = Array.from(document.querySelectorAll<HTMLButtonElement>("#booking button")).filter((button) => normalize(button.textContent || "") === "fönsterputs").at(-1);
-  const extraBalconyButton = findButtonByText("Balkong");
+  const windowButtons = findButtonsByTexts(["Fönsterputs", "Window cleaning"]);
+  const serviceWindow = Boolean(windowButtons[0] && isSelected(windowButtons[0]));
+  const extraWindow = Boolean(windowButtons.at(-1) && isSelected(windowButtons.at(-1)!));
+  const balconyButton = findFirstButtonByTexts(["Balkong", "Balcony"]);
 
   return {
-    showWindows: serviceWindow || Boolean(extraWindowButton && isSelected(extraWindowButton)),
-    showBalcony: Boolean(extraBalconyButton && isSelected(extraBalconyButton))
+    showWindows: serviceWindow || extraWindow,
+    showBalcony: Boolean(balconyButton && isSelected(balconyButton))
   };
 }
 
@@ -186,13 +228,13 @@ function sync() {
 }
 
 function mount() {
-  if (window.location.pathname !== "/") return;
+  if (!isBookingPage()) return;
   if (document.querySelector("[data-iboren-addon-details='1']")) {
     sync();
     return;
   }
 
-  const extraButton = findButtonByText("Balkong") || findButtonByText("Fönsterputs");
+  const extraButton = findFirstButtonByTexts(["Balkong", "Balcony", "Fönsterputs", "Window cleaning"]);
   const extraGrid = extraButton?.parentElement;
   if (!extraGrid) return;
 
