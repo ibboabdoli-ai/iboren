@@ -1,3 +1,5 @@
+import { estimateBookingWorkload } from "./bookingWorkload";
+
 export type PricingService = "Hemstädning" | "Flyttstädning" | "Storstädning" | "Kontorsstädning" | "Fönsterputs";
 export type PricingFrequency = "Engång" | "Varje vecka" | "Varannan vecka" | "Var fjärde vecka";
 export type PricingAddOn = "Fönsterputs" | "Ugn" | "Kyl/frys" | "Balkong" | "Grovstädning" | "Skåp/lådor" | "Garage";
@@ -139,12 +141,51 @@ function riskLevel(input: PricingEstimateInput): PricingRiskLevel {
   return "Grön";
 }
 
+function workloadNotes(input: PricingEstimateInput, selectedAddOns: PricingAddOn[]) {
+  return [
+    `Skick: ${input.condition}`,
+    `Rooms: ${input.rooms}`,
+    `Bathrooms: ${input.bathrooms}`,
+    `Husdjur: ${input.pets}`,
+    `Våning: ${input.floor}`,
+    `Floor: ${input.floor}`,
+    `Hiss: ${input.elevator}`,
+    `Elevator: ${input.elevator === "Ja" ? "Yes" : "No"}`,
+    `Parkering: ${input.parking}`,
+    `Parking: ${input.parking === "Ja" ? "Yes" : "No"}`,
+    `Åtkomst: ${input.access}`,
+    `Access: ${input.access === "Svår åtkomst" ? "Difficult access" : "Normal"}`,
+    `Kort varsel: ${input.shortNotice}`,
+    `Short notice: ${input.shortNotice === "Ja" ? "Yes" : "No"}`,
+    `Helg/kväll: ${input.weekend}`,
+    `Weekend/evening: ${input.weekend === "Ja" ? "Yes" : "No"}`,
+    `Antal fönster: ${input.windows}`,
+    `Number of windows: ${input.windows}`,
+    `Fönsterputs: ${input.windowSide}`,
+    `Window cleaning: ${input.windowSide}`,
+    `Inglasad balkong: ${input.balconyGlass}`,
+    `Balcony glass: ${input.balconyGlass}`,
+    `Extra services: ${selectedAddOns.join(", ")}`,
+    `Tillval: ${selectedAddOns.join(", ")}`
+  ].join("\n");
+}
+
+function workloadHours(input: PricingEstimateInput, selectedAddOns: PricingAddOn[]) {
+  return estimateBookingWorkload({
+    size_sqm: input.sqm,
+    service: input.service,
+    frequency: input.frequency,
+    notes: workloadNotes(input, selectedAddOns)
+  }).estimated_hours;
+}
+
 export function estimatePrice(input: PricingEstimateInput): PricingEstimate {
   const selectedAddOns = input.service === "Kontorsstädning" ? [] : input.service === "Fönsterputs" ? input.selectedAddOns.filter((item) => item !== "Fönsterputs") : input.selectedAddOns;
   const addOnsBeforeRut = selectedAddOns.reduce((sum, item) => sum + addOnBeforeRutPrice(item), 0);
   const rutFactor = input.useRut ? 0.5 : 1;
   const complexity = conditionMultiplier(input.condition);
   const access = accessMultiplier(input);
+  const displayHours = workloadHours(input, selectedAddOns);
   const factors = [
     `Skick: ${input.condition}`,
     input.floor > 0 ? `Våning: ${input.floor}${input.elevator === "Ja" ? " med hiss" : " utan hiss"}` : "",
@@ -156,11 +197,11 @@ export function estimatePrice(input: PricingEstimateInput): PricingEstimate {
 
   if (input.service === "Hemstädning") {
     const petHours = input.pets === "Ja" ? 0.25 : 0;
-    const hours = Math.max(2, input.sqm / 38 + Math.max(0, input.bathrooms - 1) * 0.35 + Math.max(0, input.rooms - 3) * 0.08 + petHours) * complexity;
+    const priceHours = Math.max(2, input.sqm / 38 + Math.max(0, input.bathrooms - 1) * 0.35 + Math.max(0, input.rooms - 3) * 0.08 + petHours) * complexity;
     const hourlyBeforeRut = input.frequency === "Engång" ? 590 : 520;
-    const subtotal = hours * hourlyBeforeRut * (1 - frequencyDiscount(input.frequency)) + addOnsBeforeRut;
+    const subtotal = priceHours * hourlyBeforeRut * (1 - frequencyDiscount(input.frequency)) + addOnsBeforeRut;
     const beforeRut = Math.max(input.frequency === "Engång" ? 1180 : 1040, subtotal * access);
-    return { title: "Uppskattat pris för hemstädning", beforeRut, afterRut: beforeRut * rutFactor, hours, addOnsBeforeRut, riskLevel: riskLevel(input), factors, note: "Prisindikation baserad på yta, badrum, rum, skick, åtkomst, frekvens och tillval. Slutligt pris bekräftas innan förfrågan blir bindande." };
+    return { title: "Uppskattat pris för hemstädning", beforeRut, afterRut: beforeRut * rutFactor, hours: displayHours, addOnsBeforeRut, riskLevel: riskLevel(input), factors, note: "Prisindikation baserad på yta, badrum, rum, skick, åtkomst, frekvens och tillval. Slutligt pris bekräftas innan förfrågan blir bindande." };
   }
 
   if (input.service === "Flyttstädning") {
@@ -168,14 +209,14 @@ export function estimatePrice(input: PricingEstimateInput): PricingEstimate {
     const bathroomAddonBeforeRut = Math.max(0, input.bathrooms - 1) * 400;
     const furnishedFactor = input.furnished === "Möblerad" ? 1.2 : 1;
     const beforeRut = Math.max(2900, (input.sqm * perSqm + bathroomAddonBeforeRut + addOnsBeforeRut) * complexity * furnishedFactor * access);
-    return { title: "Uppskattat pris för flyttstädning", beforeRut, afterRut: beforeRut * rutFactor, addOnsBeforeRut, riskLevel: riskLevel(input), factors: [...factors, input.furnished], note: "Flyttstädning påverkas starkt av skick, om bostaden är tömd, fönster, balkong och åtkomst. Större eller mycket smutsiga objekt bör alltid kontrolleras manuellt." };
+    return { title: "Uppskattat pris för flyttstädning", beforeRut, afterRut: beforeRut * rutFactor, hours: displayHours, addOnsBeforeRut, riskLevel: riskLevel(input), factors: [...factors, input.furnished], note: "Flyttstädning påverkas starkt av skick, om bostaden är tömd, fönster, balkong och åtkomst. Större eller mycket smutsiga objekt bör alltid kontrolleras manuellt." };
   }
 
   if (input.service === "Storstädning") {
     const petHours = input.pets === "Ja" ? 0.35 : 0;
-    const hours = Math.max(3, input.sqm / 27 + Math.max(0, input.bathrooms - 1) * 0.45 + petHours) * complexity;
-    const beforeRut = Math.max(1770, (hours * 590 + addOnsBeforeRut) * access);
-    return { title: "Uppskattat pris för storstädning", beforeRut, afterRut: beforeRut * rutFactor, hours, addOnsBeforeRut, riskLevel: riskLevel(input), factors, note: "Storstädning räknas med högre tidsåtgång än återkommande hemstädning eftersom bostadens skick påverkar mer." };
+    const priceHours = Math.max(3, input.sqm / 27 + Math.max(0, input.bathrooms - 1) * 0.45 + petHours) * complexity;
+    const beforeRut = Math.max(1770, (priceHours * 590 + addOnsBeforeRut) * access);
+    return { title: "Uppskattat pris för storstädning", beforeRut, afterRut: beforeRut * rutFactor, hours: displayHours, addOnsBeforeRut, riskLevel: riskLevel(input), factors, note: "Storstädning räknas med högre tidsåtgång än återkommande hemstädning eftersom bostadens skick påverkar mer." };
   }
 
   if (input.service === "Kontorsstädning") {
@@ -191,5 +232,5 @@ export function estimatePrice(input: PricingEstimateInput): PricingEstimate {
   const balconyExtra = input.balconyGlass === "Stor" ? 1200 : input.balconyGlass === "Liten" ? 700 : 0;
   const windowBase = input.windows * 85 * sideFactor + balconyExtra;
   const beforeRut = Math.max(1390, (windowBase + addOnsBeforeRut) * access);
-  return { title: "Uppskattat pris för fönsterputs", beforeRut, afterRut: beforeRut * rutFactor, addOnsBeforeRut, riskLevel: riskLevel(input), factors: [...factors, `${input.windows} fönster`, input.windowSide, input.balconyGlass !== "Nej" ? `Inglasad balkong: ${input.balconyGlass}` : ""].filter(Boolean), note: "Fönsterputs beräknas främst på antal fönster, sida/sidor, balkongglas och åtkomst. Höga våningar eller svår åtkomst kräver manuell kontroll." };
+  return { title: "Uppskattat pris för fönsterputs", beforeRut, afterRut: beforeRut * rutFactor, hours: displayHours, addOnsBeforeRut, riskLevel: riskLevel(input), factors: [...factors, `${input.windows} fönster`, input.windowSide, input.balconyGlass !== "Nej" ? `Inglasad balkong: ${input.balconyGlass}` : ""].filter(Boolean), note: "Fönsterputs beräknas främst på antal fönster, sida/sidor, balkongglas och åtkomst. Höga våningar eller svår åtkomst kräver manuell kontroll." };
 }
