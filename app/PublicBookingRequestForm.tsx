@@ -170,6 +170,13 @@ function getSupabase() {
   return url && key ? createClient(url, key, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true } }) : null;
 }
 
+function normalizeAreaValue(value: string) {
+  const cleaned = value.trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z]/g, "");
+  if (cleaned === "sodertalje" || cleaned === "sodertalie") return "Södertälje";
+  if (cleaned === "stockholm") return "Stockholm";
+  return value;
+}
+
 function Field({ label, value, onChange, placeholder, type = "text", required = false }: { label: string; value: string; onChange: (value: string) => void; placeholder?: string; type?: string; required?: boolean }) {
   return <label className="block"><span className="mb-2 block text-sm font-bold text-ink/75">{label}{required ? " *" : ""}</span><input required={required} type={type} value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} className="w-full rounded-2xl border border-burgundy/10 bg-cream px-4 py-4 text-ink outline-none focus:border-burgundy" /></label>;
 }
@@ -207,6 +214,7 @@ export default function PublicBookingRequestForm({ language }: { language: Lang 
   function setField<K extends keyof Draft>(key: K, value: Draft[K]) {
     setDraft((current) => {
       let next: Draft = { ...current, [key]: value };
+      if (key === "area") next.area = normalizeAreaValue(String(value));
       if (key === "service") next = applyBookingServiceSideEffects(next, language);
       if (key === "customerType" && (next.customerType === "Företag" || next.customerType === "Company")) next.rutRequested = false;
       return next;
@@ -222,10 +230,11 @@ export default function PublicBookingRequestForm({ language }: { language: Lang 
     setStatus("loading");
     setMessage(t.sending);
     try {
+      const canonicalArea = normalizeAreaValue(draft.area);
       const response = await fetch("/api/public-booking-request", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ service: draft.service, area: draft.area, address: draft.address, size: draft.size, frequency: draft.frequency, date: draft.date, timeWindow: draft.timeWindow, name: draft.name, email: draft.email, phone: draft.phone, notes: summary, customerType: draft.customerType, rutRequested: draft.rutRequested, language, website: draft.website })
+        body: JSON.stringify({ service: draft.service, area: canonicalArea, address: draft.address, size: draft.size, frequency: draft.frequency, date: draft.date, timeWindow: draft.timeWindow, name: draft.name, email: draft.email, phone: draft.phone, notes: summary, customerType: draft.customerType, rutRequested: draft.rutRequested, language, website: draft.website })
       });
       const json = await response.json().catch(() => null) as { ok?: boolean; message?: string } | null;
       if (!response.ok || !json?.ok) throw new Error(json?.message || "Error");
