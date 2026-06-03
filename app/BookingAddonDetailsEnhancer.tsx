@@ -1,9 +1,25 @@
 "use client";
 
 import { useEffect } from "react";
+import {
+  estimatePrice,
+  formatSek,
+  normalizePricingAddOn,
+  normalizePricingFrequency,
+  normalizePricingService,
+  normalizePricingYesNo,
+  type PricingAccess,
+  type PricingBalconyGlass,
+  type PricingCondition,
+  type PricingFurnished,
+  type PricingWindowSide,
+  type PricingYesNo
+} from "./lib/pricingCalculator";
 
 const BLOCK_START = "--- Tilläggsdetaljer / Add-on details ---";
 const BLOCK_END = "--- Slut tilläggsdetaljer / End add-on details ---";
+const PRICE_START = "--- Prisindikation / Price estimate ---";
+const PRICE_END = "--- Slut prisindikation / End price estimate ---";
 
 type AddonState = {
   windowCount: string;
@@ -35,7 +51,7 @@ function copy() {
   const en = isEnglish();
   return {
     title: en ? "Details for selected add-ons" : "Detaljer för valda tillägg",
-    help: en ? "Add extra details for window cleaning or balcony. The information is saved automatically in customer notes." : "Fyll i extra information för fönsterputs eller balkong. Informationen sparas automatiskt i kundens önskemål.",
+    help: en ? "Add extra details for window cleaning or balcony. The price estimate updates automatically." : "Fyll i extra information för fönsterputs eller balkong. Prisindikationen uppdateras automatiskt.",
     windowCount: en ? "Number of windows" : "Antal fönster",
     windowCleaning: en ? "Window cleaning" : "Fönsterputs",
     access: en ? "Access" : "Åtkomst",
@@ -44,6 +60,11 @@ function copy() {
     balconyDetails: en ? "Balcony details" : "Balkongdetaljer",
     windowPlaceholder: en ? "e.g. 8" : "t.ex. 8",
     balconyPlaceholder: en ? "e.g. glazed, dirty, furniture" : "t.ex. inglasad, smutsig, möbler",
+    estimateTitle: en ? "Price estimate" : "Prisindikation",
+    beforeRut: en ? "Before RUT / total" : "Före RUT / totalpris",
+    afterRut: en ? "After RUT / customer price" : "Efter RUT / kundpris",
+    time: en ? "Estimated time" : "Uppskattad tid",
+    note: en ? "This is an estimate. Iboren confirms the final price before the request becomes binding." : "Detta är en prisindikation. Iboren bekräftar slutligt pris innan förfrågan blir bindande.",
     notFilled: en ? "Not filled" : "Ej ifyllt"
   };
 }
@@ -65,6 +86,10 @@ function findFirstButtonByTexts(texts: string[]) {
   return findButtonsByTexts(texts)[0] || null;
 }
 
+function selectedButtonText(options: string[]) {
+  return findButtonsByTexts(options).find(isSelected)?.textContent?.trim() || "";
+}
+
 function findTextarea() {
   return document.querySelector<HTMLTextAreaElement>("#booking textarea");
 }
@@ -76,20 +101,114 @@ function setNativeTextareaValue(textarea: HTMLTextAreaElement, value: string) {
   textarea.dispatchEvent(new Event("input", { bubbles: true }));
 }
 
-function stripAddonBlock(value: string) {
-  const legacyStarts = ["--- Tilläggsdetaljer ---", "--- Tilläggsdetaljer / Add-on details ---"];
-  const legacyEnds = ["--- Slut tilläggsdetaljer ---", "--- Slut tilläggsdetaljer / End add-on details ---"];
-
+function stripBlock(value: string, starts: string[], ends: string[]) {
   let cleaned = value.trim();
-  for (const startMarker of legacyStarts) {
+  for (const startMarker of starts) {
     const start = cleaned.indexOf(startMarker);
     if (start < 0) continue;
-    const endMarker = legacyEnds.find((marker) => cleaned.indexOf(marker, start) >= 0);
+    const endMarker = ends.find((marker) => cleaned.indexOf(marker, start) >= 0);
     if (!endMarker) continue;
     const end = cleaned.indexOf(endMarker, start);
     cleaned = `${cleaned.slice(0, start).trim()}\n${cleaned.slice(end + endMarker.length).trim()}`.trim();
   }
   return cleaned;
+}
+
+function stripGeneratedBlocks(value: string) {
+  const withoutAddon = stripBlock(value, ["--- Tilläggsdetaljer ---", BLOCK_START], ["--- Slut tilläggsdetaljer ---", BLOCK_END]);
+  return stripBlock(withoutAddon, ["--- Prisindikation ---", PRICE_START], ["--- Slut prisindikation ---", PRICE_END]);
+}
+
+function numeric(value: string, fallback: number) {
+  const parsed = Number(value.replace(/[^0-9]/g, ""));
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+}
+
+function parseSummary() {
+  const text = Array.from(document.querySelectorAll<HTMLElement>("#booking pre, #booking aside, #booking div"))
+    .map((node) => node.textContent || "")
+    .find((value) => value.includes("Storlek:") || value.includes("Size:")) || "";
+
+  function match(labels: string[]) {
+    for (const label of labels) {
+      const result = text.match(new RegExp(`${label}:\\s*([^\\n]+)`, "i"));
+      if (result?.[1]) return result[1].trim();
+    }
+    return "";
+  }
+
+  return {
+    service: selectedButtonText(["Hemstädning", "Flyttstädning", "Storstädning", "Kontorsstädning", "Fönsterputs", "Home cleaning", "Move-out cleaning", "Deep cleaning", "Office cleaning", "Window cleaning"]) || match(["Tjänst", "Service"]),
+    sqm: numeric(match(["Storlek", "Size"]), 75),
+    rooms: numeric(match(["Antal rum", "Rooms"]), 3),
+    bathrooms: numeric(match(["Antal badrum", "Bathrooms"]), 1),
+    pets: match(["Husdjur", "Pets"]),
+    floor: numeric(match(["Våning", "Floor"]), 0),
+    elevator: match(["Hiss", "Elevator"]),
+    parking: match(["Parkering", "Parking"]),
+    frequency: match(["Frekvens", "Frequency"])
+  };
+}
+
+function pricingAccess(): PricingAccess {
+  return state.windowAccess.includes("Svår") || state.windowAccess.includes("Difficult") ? "Svår åtkomst" : "Normal";
+}
+
+function pricingWindowSide(): PricingWindowSide {
+  if (state.windowSides.includes("Endast insida") || state.windowSides.includes("Inside only")) return "Endast insida";
+  if (state.windowSides.includes("Endast utsida") || state.windowSides.includes("Outside only")) return "Endast utsida";
+  return "Båda sidor";
+}
+
+function pricingBalconyGlass(): PricingBalconyGlass {
+  if (state.balconyGlass.includes("Ja") || state.balconyGlass.includes("Yes")) {
+    return state.balconyType.includes("Stor") || state.balconyType.includes("Terrace") || state.balconyType.includes("Large") ? "Stor" : "Liten";
+  }
+  return "Nej";
+}
+
+function selectedAddonsList(showWindows: boolean, showBalcony: boolean) {
+  const selected = Array.from(document.querySelectorAll<HTMLButtonElement>("#booking button"))
+    .filter(isSelected)
+    .map((button) => button.textContent?.trim() || "")
+    .map((item) => normalizePricingAddOn(item))
+    .filter(Boolean) as NonNullable<ReturnType<typeof normalizePricingAddOn>>[];
+  if (showWindows && !selected.includes("Fönsterputs")) selected.push("Fönsterputs");
+  if (showBalcony && !selected.includes("Balkong")) selected.push("Balkong");
+  return Array.from(new Set(selected));
+}
+
+function calculateEstimate(showWindows: boolean, showBalcony: boolean) {
+  const summary = parseSummary();
+  const service = normalizePricingService(summary.service || (showWindows && !showBalcony ? "Fönsterputs" : "Hemstädning"));
+  const selectedAddOns = selectedAddonsList(showWindows, showBalcony);
+  const windows = numeric(state.windowCount, showWindows ? 8 : 0);
+  const useRut = service !== "Kontorsstädning";
+
+  return estimatePrice({
+    service,
+    sqm: summary.sqm,
+    frequency: normalizePricingFrequency(summary.frequency || "Engång"),
+    bathrooms: summary.bathrooms,
+    rooms: summary.rooms,
+    windows,
+    officeVisits: 1,
+    officeToilets: 1,
+    condition: "Normal" as PricingCondition,
+    furnished: "Tom bostad" as PricingFurnished,
+    pets: normalizePricingYesNo(summary.pets),
+    floor: summary.floor,
+    elevator: normalizePricingYesNo(summary.elevator) as PricingYesNo,
+    parking: normalizePricingYesNo(summary.parking) as PricingYesNo,
+    access: pricingAccess(),
+    shortNotice: "Nej",
+    weekend: "Nej",
+    windowSide: pricingWindowSide(),
+    balconyGlass: pricingBalconyGlass(),
+    kitchen: "Ja",
+    selectedAddOns,
+    useRut
+  });
 }
 
 function buildAddonBlock(showWindows: boolean, showBalcony: boolean) {
@@ -115,12 +234,49 @@ function buildAddonBlock(showWindows: boolean, showBalcony: boolean) {
   return lines.join("\n");
 }
 
+function buildPriceBlock(showWindows: boolean, showBalcony: boolean) {
+  if (!showWindows && !showBalcony) return "";
+  const t = copy();
+  const estimate = calculateEstimate(showWindows, showBalcony);
+  const lines = [PRICE_START];
+  lines.push(`${t.estimateTitle}: ${estimate.title}`);
+  lines.push(`${t.beforeRut}: ${formatSek(estimate.beforeRut)}`);
+  lines.push(`${t.afterRut}: ${formatSek(estimate.afterRut)}`);
+  if (estimate.hours) lines.push(`${t.time}: ${estimate.hours.toFixed(1).replace(".", ",")} timmar / hours`);
+  lines.push(`Risk: ${estimate.riskLevel}`);
+  lines.push(t.note);
+  lines.push(PRICE_END);
+  return lines.join("\n");
+}
+
+function renderEstimate(panel: HTMLElement, showWindows: boolean, showBalcony: boolean) {
+  const box = panel.querySelector<HTMLElement>("[data-iboren-addon-estimate='1']");
+  if (!box) return;
+  if (!showWindows && !showBalcony) {
+    box.style.display = "none";
+    return;
+  }
+  const t = copy();
+  const estimate = calculateEstimate(showWindows, showBalcony);
+  box.style.display = "block";
+  box.innerHTML = `
+    <p class="text-xs font-black uppercase tracking-[.22em] text-gold">${t.estimateTitle}</p>
+    <div class="mt-3 grid gap-3 sm:grid-cols-3">
+      <div class="rounded-2xl bg-porcelain/10 p-3"><p class="text-xs text-porcelain/60">${t.beforeRut}</p><p class="mt-1 text-lg font-black text-gold">${formatSek(estimate.beforeRut)}</p></div>
+      <div class="rounded-2xl bg-porcelain/10 p-3"><p class="text-xs text-porcelain/60">${t.afterRut}</p><p class="mt-1 text-lg font-black text-gold">${formatSek(estimate.afterRut)}</p></div>
+      <div class="rounded-2xl bg-porcelain/10 p-3"><p class="text-xs text-porcelain/60">Risk</p><p class="mt-1 text-lg font-black text-gold">${estimate.riskLevel}</p></div>
+    </div>
+    <p class="mt-3 text-xs leading-5 text-porcelain/60">${t.note}</p>
+  `;
+}
+
 function updateNotes(showWindows: boolean, showBalcony: boolean) {
   const textarea = findTextarea();
   if (!textarea) return;
-  const base = stripAddonBlock(textarea.value || "");
+  const base = stripGeneratedBlocks(textarea.value || "");
   const addonBlock = showWindows || showBalcony ? buildAddonBlock(showWindows, showBalcony) : "";
-  const nextValue = [base, addonBlock].filter(Boolean).join("\n\n");
+  const priceBlock = buildPriceBlock(showWindows, showBalcony);
+  const nextValue = [base, addonBlock, priceBlock].filter(Boolean).join("\n\n");
   setNativeTextareaValue(textarea, nextValue);
 }
 
@@ -199,6 +355,11 @@ function createPanel() {
   balconyBox.appendChild(input(t.balconyDetails, state.balconyNotes, (value) => { state.balconyNotes = value; sync(); }, t.balconyPlaceholder));
   panel.appendChild(balconyBox);
 
+  const estimateBox = document.createElement("div");
+  estimateBox.dataset.iborenAddonEstimate = "1";
+  estimateBox.className = "mt-4 rounded-2xl border border-gold/20 bg-night/45 p-4";
+  panel.appendChild(estimateBox);
+
   return panel;
 }
 
@@ -224,6 +385,7 @@ function sync() {
   panel.classList.toggle("hidden", !showWindows && !showBalcony);
   if (windowBox) windowBox.style.display = showWindows ? "grid" : "none";
   if (balconyBox) balconyBox.style.display = showBalcony ? "grid" : "none";
+  renderEstimate(panel, showWindows, showBalcony);
   updateNotes(showWindows, showBalcony);
 }
 
@@ -246,14 +408,18 @@ function mount() {
 export default function BookingAddonDetailsEnhancer() {
   useEffect(() => {
     mount();
-    const clickHandler = () => window.setTimeout(sync, 80);
-    document.addEventListener("click", clickHandler);
+    const changeHandler = () => window.setTimeout(sync, 80);
+    document.addEventListener("click", changeHandler);
+    document.addEventListener("input", changeHandler);
+    document.addEventListener("change", changeHandler);
     const observer = new MutationObserver(mount);
     observer.observe(document.body, { childList: true, subtree: true });
     window.setTimeout(mount, 500);
     window.setTimeout(mount, 1500);
     return () => {
-      document.removeEventListener("click", clickHandler);
+      document.removeEventListener("click", changeHandler);
+      document.removeEventListener("input", changeHandler);
+      document.removeEventListener("change", changeHandler);
       observer.disconnect();
     };
   }, []);
