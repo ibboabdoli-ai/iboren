@@ -21,7 +21,7 @@ import {
 
 const services: Service[] = ["Hemstädning", "Flyttstädning", "Storstädning", "Kontorsstädning", "Fönsterputs"];
 const frequencies: Frequency[] = ["Engång", "Varje vecka", "Varannan vecka", "Var fjärde vecka"];
-const addOns: AddOn[] = ["Fönsterputs", "Ugn", "Kyl/frys", "Balkong", "Grovstädning", "Skåp/lådor"];
+const addOns: AddOn[] = ["Fönsterputs", "Ugn", "Kyl/frys", "Balkong", "Grovstädning", "Skåp/lådor", "Garage"];
 const customerTypes: CustomerType[] = ["Privatperson", "Företag"];
 const conditions: Condition[] = ["Normal", "Smutsigt", "Mycket smutsigt"];
 const yesNoOptions: YesNo[] = ["Ja", "Nej"];
