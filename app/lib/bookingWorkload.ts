@@ -37,24 +37,76 @@ export function frequencyFactor(frequency: string) {
   return 1;
 }
 
+function parseNumberAfter(text: string, labels: string[]) {
+  for (const label of labels) {
+    const escaped = label.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const match = text.match(new RegExp(`${escaped}\\s*:?\\s*(\\d+)`, "i"));
+    if (match) {
+      const value = Number(match[1]);
+      if (Number.isFinite(value) && value > 0) return value;
+    }
+  }
+  return null;
+}
+
+function addWindowHours(text: string) {
+  if (!textHas(text, ["fönsterputs", "window cleaning"])) return 0;
+  const windows = parseNumberAfter(text, ["antal fönster", "number of windows"]);
+  const bothSides = textHas(text, ["båda sidor", "both sides"]);
+  const oneSide = textHas(text, ["endast insida", "endast utsida", "inside only", "outside only"]);
+  if (!windows) return 1;
+  const perWindow = bothSides ? 0.1 : oneSide ? 0.065 : 0.085;
+  return Math.max(0.75, Math.min(4.5, windows * perWindow));
+}
+
+function addBalconyGlassHours(text: string) {
+  const hasBalconyGlass = textHas(text, ["inglasad balkong", "balcony glass"]);
+  if (!hasBalconyGlass) return 0;
+  if (textHas(text, ["stor", "large"])) return 1;
+  if (textHas(text, ["liten", "small"])) return 0.6;
+  return 0;
+}
+
+function addAccessHours(text: string) {
+  let hours = 0;
+  if (textHas(text, ["svår åtkomst", "difficult access"])) hours += 0.5;
+  if (textHas(text, ["parkering: nej", "parking: no", "parkering saknas", "no parking"])) hours += 0.25;
+
+  const floor = parseNumberAfter(text, ["våning", "floor"]);
+  const noElevator = textHas(text, ["hiss: nej", "elevator: no", "no elevator"]);
+  if (floor && noElevator && floor >= 3) hours += floor >= 6 ? 0.75 : 0.35;
+
+  return hours;
+}
+
+function addPlanningRiskHours(text: string) {
+  let hours = 0;
+  if (textHas(text, ["kort varsel: ja", "short notice: yes", "kort varsel"])) hours += 0.25;
+  if (textHas(text, ["helg/kväll: ja", "weekend/evening: yes", "weekend/evening", "helg/kväll"])) hours += 0.25;
+  return hours;
+}
+
 export function estimateBookingWorkload(input: BookingWorkloadInput | null): BookingWorkloadEstimate {
   const size = Number(input?.size_sqm || 0);
   const text = `${input?.service || ""}\n${input?.frequency || ""}\n${input?.notes || ""}`.toLowerCase();
   const service = String(input?.service || "").toLowerCase();
   const frequency = String(input?.frequency || "").toLowerCase();
 
-  let base = baseHoursBySize(size) * frequencyFactor(frequency);
+  const base = baseHoursBySize(size) * frequencyFactor(frequency);
   let extras = 0;
 
-  if (textHas(text, ["husdjur", "pet", "hund", "katt"])) extras += 0.25;
+  if (textHas(text, ["husdjur: ja", "pets: yes", "hund", "katt"])) extras += 0.25;
   if (textHas(text, ["första", "first", "förstagång"])) extras += 0.75;
   if (textHas(text, ["grovstädning", "deep cleaning", "heavy cleaning"])) extras += Math.max(1, baseHoursBySize(size) * 0.35);
-  if (textHas(text, ["fönsterputs", "window cleaning"])) extras += 1;
+  extras += addWindowHours(text);
   if (textHas(text, ["balkong", "balcony"])) extras += 0.5;
+  extras += addBalconyGlassHours(text);
   if (textHas(text, ["ugn", "oven"])) extras += 0.5;
   if (textHas(text, ["kyl", "frys", "fridge", "freezer"])) extras += 0.5;
   if (textHas(text, ["skåp", "lådor", "cabinet", "drawers"])) extras += 0.5;
-  if (textHas(text, ["hiss: nej", "no elevator"]) && textHas(text, ["våning: 3", "floor: 3", "våning: 4", "floor: 4", "våning: 5", "floor: 5"])) extras += 0.25;
+  if (textHas(text, ["garage"])) extras += 1;
+  extras += addAccessHours(text);
+  extras += addPlanningRiskHours(text);
 
   let hours = base + extras;
   if (service.includes("flytt") || service.includes("moving")) hours = Math.max(hours, size > 0 ? size / 18 : 4);
