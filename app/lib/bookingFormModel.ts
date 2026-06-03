@@ -218,7 +218,7 @@ export function bookingFormVisibility(draft: BookingFormDraft): BookingFormVisib
     showWindowFields: normalizedService === "Fönsterputs" || normalizedAddOns.includes("Fönsterputs"),
     showBalconyFields: normalizedAddOns.includes("Balkong"),
     showAddOns: !isOffice,
-    rutEligible: !isOffice && normalizedService !== "Kontorsstädning"
+    rutEligible: !isOffice
   };
 }
 
