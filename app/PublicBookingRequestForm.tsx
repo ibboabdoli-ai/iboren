@@ -4,42 +4,19 @@ import { FormEvent, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@supabase/supabase-js";
+import { formatSek } from "./lib/pricingCalculator";
 import {
-  estimatePrice,
-  formatSek,
-  normalizePricingAddOn,
-  normalizePricingFrequency,
-  normalizePricingService,
-  normalizePricingYesNo,
-  type PricingAddOn
-} from "./lib/pricingCalculator";
+  applyBookingServiceSideEffects,
+  bookingFormVisibility,
+  buildBookingSummary,
+  createBookingFormDraft,
+  formatBookingHours,
+  type BookingFormDraft,
+  type BookingFormLanguage
+} from "./lib/bookingFormModel";
 
-type Lang = "sv" | "en";
-
-type Draft = {
-  service: string;
-  customerType: string;
-  rutRequested: boolean;
-  area: string;
-  address: string;
-  size: string;
-  propertyType: string;
-  rooms: string;
-  bathrooms: string;
-  pets: string;
-  floor: string;
-  elevator: string;
-  parking: string;
-  extras: string[];
-  frequency: string;
-  date: string;
-  timeWindow: string;
-  name: string;
-  email: string;
-  phone: string;
-  notes: string;
-  website: string;
-};
+type Lang = BookingFormLanguage;
+type Draft = BookingFormDraft;
 
 const copy = {
   sv: {
@@ -61,6 +38,7 @@ const copy = {
     customerType: "Kundtyp",
     rut: "RUT-avdrag",
     area: "Område / stad",
+    postalCode: "Postnummer",
     address: "Adress",
     size: "Storlek kvm",
     propertyType: "Typ av objekt",
@@ -70,7 +48,14 @@ const copy = {
     floor: "Våning",
     elevator: "Hiss",
     parking: "Parkering",
+    condition: "Skick",
+    access: "Åtkomst",
+    shortNotice: "Kort varsel",
+    weekend: "Helg/kväll",
     extras: "Extra tjänster",
+    windows: "Antal fönster",
+    windowSide: "Fönsterputs",
+    balconyGlass: "Inglasad balkong",
     date: "Önskat datum",
     time: "Tid",
     frequency: "Frekvens",
@@ -88,7 +73,7 @@ const copy = {
     yes: "Ja",
     no: "Nej",
     unknown: "Vet ej",
-    placeholders: { area: "Södertälje", address: "Gatuadress och nummer", size: "75", rooms: "4", bathrooms: "1", floor: "0", name: "För- och efternamn", email: "namn@email.se", phone: "+46 ...", notes: "Särskilda önskemål..." }
+    placeholders: { area: "Södertälje", postalCode: "151 46", address: "Gatuadress och nummer", size: "75", rooms: "4", bathrooms: "1", floor: "0", windows: "8", name: "För- och efternamn", email: "namn@email.se", phone: "+46 ...", notes: "Särskilda önskemål..." }
   },
   en: {
     title: "Send a request without an account.",
@@ -109,6 +94,7 @@ const copy = {
     customerType: "Customer type",
     rut: "RUT deduction",
     area: "Area / city",
+    postalCode: "Postal code",
     address: "Address",
     size: "Size sqm",
     propertyType: "Property type",
@@ -118,7 +104,14 @@ const copy = {
     floor: "Floor",
     elevator: "Elevator",
     parking: "Parking",
+    condition: "Condition",
+    access: "Access",
+    shortNotice: "Short notice",
+    weekend: "Weekend/evening",
     extras: "Extra services",
+    windows: "Number of windows",
+    windowSide: "Window cleaning",
+    balconyGlass: "Balcony glass",
     date: "Preferred date",
     time: "Time window",
     frequency: "Frequency",
@@ -136,7 +129,7 @@ const copy = {
     yes: "Yes",
     no: "No",
     unknown: "Not sure",
-    placeholders: { area: "Södertälje", address: "Street address and number", size: "75", rooms: "4", bathrooms: "1", floor: "0", name: "First and last name", email: "name@email.se", phone: "+46 ...", notes: "Special requests..." }
+    placeholders: { area: "Södertälje", postalCode: "151 46", address: "Street address and number", size: "75", rooms: "4", bathrooms: "1", floor: "0", windows: "8", name: "First and last name", email: "name@email.se", phone: "+46 ...", notes: "Special requests..." }
   }
 };
 
@@ -147,7 +140,11 @@ const options = {
     freqs: ["Engång", "Varje vecka", "Varannan vecka", "Varje månad"],
     times: ["Morgon", "Förmiddag", "Eftermiddag", "Kväll", "Flexibel"],
     extras: ["Fönsterputs", "Ugn", "Kyl/frys", "Balkong", "Grovstädning", "Skåp/lådor", "Garage"],
-    customerTypes: ["Privatperson", "Företag"]
+    customerTypes: ["Privatperson", "Företag"],
+    conditions: ["Normal", "Smutsigt", "Mycket smutsigt"],
+    access: ["Normal", "Svår åtkomst"],
+    windowSides: ["Båda sidor", "Endast insida", "Endast utsida"],
+    balconyGlass: ["Nej", "Liten", "Stor"]
   },
   en: {
     services: ["Home cleaning", "Move-out cleaning", "Deep cleaning", "Office cleaning", "Window cleaning"],
@@ -155,88 +152,22 @@ const options = {
     freqs: ["One-time", "Every week", "Every other week", "Every month"],
     times: ["Morning", "Late morning", "Afternoon", "Evening", "Flexible"],
     extras: ["Window cleaning", "Oven", "Fridge/freezer", "Balcony", "Deep cleaning", "Cabinets/drawers", "Garage"],
-    customerTypes: ["Private customer", "Company"]
+    customerTypes: ["Private customer", "Company"],
+    conditions: ["Normal", "Dirty", "Very dirty"],
+    access: ["Normal", "Difficult access"],
+    windowSides: ["Both sides", "Inside only", "Outside only"],
+    balconyGlass: ["No", "Small", "Large"]
   }
 };
 
 function base(lang: Lang): Draft {
-  return {
-    service: lang === "sv" ? "Hemstädning" : "Home cleaning",
-    customerType: lang === "sv" ? "Privatperson" : "Private customer",
-    rutRequested: true,
-    area: "Södertälje",
-    address: "",
-    size: "",
-    propertyType: lang === "sv" ? "Lägenhet" : "Apartment",
-    rooms: "",
-    bathrooms: "",
-    pets: lang === "sv" ? "Nej" : "No",
-    floor: "0",
-    elevator: lang === "sv" ? "Ja" : "Yes",
-    parking: lang === "sv" ? "Ja" : "Yes",
-    extras: [],
-    frequency: lang === "sv" ? "Engång" : "One-time",
-    date: "",
-    timeWindow: lang === "sv" ? "Flexibel" : "Flexible",
-    name: "",
-    email: "",
-    phone: "",
-    notes: "",
-    website: ""
-  };
+  return createBookingFormDraft(lang);
 }
 
 function getSupabase() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   return url && key ? createClient(url, key, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true } }) : null;
-}
-
-function isOffice(d: Draft) {
-  return d.service === "Kontorsstädning" || d.service === "Office cleaning" || d.customerType === "Företag" || d.customerType === "Company";
-}
-
-function parseNumber(value: string, fallback: number) {
-  const parsed = Number.parseInt(value.replace(/[^0-9]/g, ""), 10);
-  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
-}
-
-function priceInput(draft: Draft) {
-  const selectedAddOns = draft.extras.map(normalizePricingAddOn).filter(Boolean) as PricingAddOn[];
-  const service = normalizePricingService(draft.service);
-  const useRut = draft.rutRequested && !isOffice(draft) && service !== "Kontorsstädning";
-  return {
-    service,
-    sqm: parseNumber(draft.size, 0),
-    frequency: normalizePricingFrequency(draft.frequency),
-    bathrooms: parseNumber(draft.bathrooms, 1),
-    rooms: parseNumber(draft.rooms, 3),
-    windows: Math.max(8, Math.round(parseNumber(draft.size, 75) / 10)),
-    officeVisits: 1,
-    officeToilets: parseNumber(draft.bathrooms, 1),
-    condition: "Normal" as const,
-    furnished: "Tom bostad" as const,
-    pets: normalizePricingYesNo(draft.pets),
-    floor: parseNumber(draft.floor, 0),
-    elevator: normalizePricingYesNo(draft.elevator),
-    parking: normalizePricingYesNo(draft.parking),
-    access: "Normal" as const,
-    shortNotice: "Nej" as const,
-    weekend: "Nej" as const,
-    windowSide: "Båda sidor" as const,
-    balconyGlass: "Nej" as const,
-    kitchen: "Nej" as const,
-    selectedAddOns,
-    useRut
-  };
-}
-
-function hoursText(hours: number | undefined, language: Lang, monthly?: boolean) {
-  if (!hours) return language === "sv" ? "Kontrolleras" : "Manual check";
-  const unit = language === "sv" ? "tim" : "h";
-  const rounded = Math.round(hours * 10) / 10;
-  if (monthly) return `${rounded} ${unit}/${language === "sv" ? "besök" : "visit"}`;
-  return `${rounded} ${unit}`;
 }
 
 function Field({ label, value, onChange, placeholder, type = "text", required = false }: { label: string; value: string; onChange: (value: string) => void; placeholder?: string; type?: string; required?: boolean }) {
@@ -255,8 +186,11 @@ export default function PublicBookingRequestForm({ language }: { language: Lang 
   const [draft, setDraft] = useState<Draft>(() => base(language));
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [message, setMessage] = useState("");
-  const estimate = useMemo(() => estimatePrice(priceInput(draft)), [draft]);
-  const timeEstimate = hoursText(estimate.hours, language, estimate.monthly);
+  const visibility = useMemo(() => bookingFormVisibility(draft), [draft]);
+  const summaryResult = useMemo(() => buildBookingSummary(draft, language), [draft, language]);
+  const estimate = summaryResult.estimate;
+  const summary = summaryResult.text;
+  const timeEstimate = formatBookingHours(estimate.hours, language, estimate.monthly);
 
   useEffect(() => {
     const supabase = getSupabase();
@@ -272,13 +206,9 @@ export default function PublicBookingRequestForm({ language }: { language: Lang 
 
   function setField<K extends keyof Draft>(key: K, value: Draft[K]) {
     setDraft((current) => {
-      const next = { ...current, [key]: value };
-      if (key === "service" && (value === "Kontorsstädning" || value === "Office cleaning")) {
-        next.customerType = language === "sv" ? "Företag" : "Company";
-        next.rutRequested = false;
-        next.propertyType = language === "sv" ? "Kontor" : "Office";
-      }
-      if (key === "customerType" && (value === "Företag" || value === "Company")) next.rutRequested = false;
+      let next: Draft = { ...current, [key]: value };
+      if (key === "service") next = applyBookingServiceSideEffects(next, language);
+      if (key === "customerType" && (next.customerType === "Företag" || next.customerType === "Company")) next.rutRequested = false;
       return next;
     });
   }
@@ -286,54 +216,6 @@ export default function PublicBookingRequestForm({ language }: { language: Lang 
   function toggleExtra(item: string) {
     setDraft((current) => ({ ...current, extras: current.extras.includes(item) ? current.extras.filter((extra) => extra !== item) : [...current.extras, item] }));
   }
-
-  const detailLines = useMemo(() => language === "sv" ? [
-    "--- Objekt & detaljer ---",
-    `Typ av objekt: ${draft.propertyType}`,
-    `Antal rum: ${draft.rooms || "Ej ifyllt"}`,
-    `Antal badrum: ${draft.bathrooms || "Ej ifyllt"}`,
-    `Husdjur: ${draft.pets}`,
-    `Våning: ${draft.floor || "Ej ifyllt"}`,
-    `Hiss: ${draft.elevator}`,
-    `Parkering: ${draft.parking}`,
-    `Extra tjänster: ${draft.extras.length ? draft.extras.join(", ") : "Inga valda"}`,
-    "",
-    "--- Prisindikation ---",
-    `Före RUT: ${formatSek(estimate.beforeRut)}`,
-    `Efter RUT: ${formatSek(estimate.afterRut)}`,
-    `Uppskattad tid: ${timeEstimate}`,
-    "",
-    "--- Kundens önskemål ---",
-    draft.notes || "-"
-  ] : [
-    "--- Property & details ---",
-    `Property type: ${draft.propertyType}`,
-    `Rooms: ${draft.rooms || "Not filled in"}`,
-    `Bathrooms: ${draft.bathrooms || "Not filled in"}`,
-    `Pets: ${draft.pets}`,
-    `Floor: ${draft.floor || "Not filled in"}`,
-    `Elevator: ${draft.elevator}`,
-    `Parking: ${draft.parking}`,
-    `Extra services: ${draft.extras.length ? draft.extras.join(", ") : "None selected"}`,
-    "",
-    "--- Price indication ---",
-    `Before RUT: ${formatSek(estimate.beforeRut)}`,
-    `After RUT: ${formatSek(estimate.afterRut)}`,
-    `Estimated time: ${timeEstimate}`,
-    "",
-    "--- Customer notes ---",
-    draft.notes || "-"
-  ], [draft, estimate, language, timeEstimate]);
-
-  const summary = useMemo(() => [
-    `${t.service}: ${draft.service}`,
-    `${t.customerType}: ${draft.customerType}`,
-    `${t.rut}: ${draft.rutRequested ? t.yes : t.no}`,
-    `${t.area}: ${draft.area || "-"}`,
-    `${t.address}: ${draft.address || "-"}`,
-    `${t.size}: ${draft.size || "-"}`,
-    ...detailLines
-  ].join("\n"), [draft, detailLines, t]);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -375,12 +257,16 @@ export default function PublicBookingRequestForm({ language }: { language: Lang 
             <div className="grid gap-4">
               <Select label={t.service} value={draft.service} options={o.services} onChange={(value) => setField("service", value)} />
               <div className="grid gap-4 sm:grid-cols-2"><Select label={t.customerType} value={draft.customerType} options={o.customerTypes} onChange={(value) => setField("customerType", value)} /><Select label={t.rut} value={draft.rutRequested ? t.yes : t.no} options={[t.yes, t.no]} onChange={(value) => setField("rutRequested", value === t.yes)} /></div>
-              <div className="grid gap-4 sm:grid-cols-2"><Field required label={t.area} value={draft.area} onChange={(value) => setField("area", value)} placeholder={t.placeholders.area} /><Field required label={t.size} value={draft.size} onChange={(value) => setField("size", value.replace(/[^0-9]/g, ""))} placeholder={t.placeholders.size} /></div>
+              <div className="grid gap-4 sm:grid-cols-3"><Field required label={t.area} value={draft.area} onChange={(value) => setField("area", value)} placeholder={t.placeholders.area} /><Field label={t.postalCode} value={draft.postalCode} onChange={(value) => setField("postalCode", value.slice(0, 12))} placeholder={t.placeholders.postalCode} /><Field required label={t.size} value={draft.size} onChange={(value) => setField("size", value.replace(/[^0-9]/g, ""))} placeholder={t.placeholders.size} /></div>
               <Field required label={t.address} value={draft.address} onChange={(value) => setField("address", value)} placeholder={t.placeholders.address} />
               <div className="grid gap-4 sm:grid-cols-2"><Select label={t.propertyType} value={draft.propertyType} options={o.types} onChange={(value) => setField("propertyType", value)} /><Field label={t.rooms} value={draft.rooms} onChange={(value) => setField("rooms", value.replace(/[^0-9]/g, ""))} placeholder={t.placeholders.rooms} /></div>
               <div className="grid gap-4 sm:grid-cols-2"><Field label={t.bathrooms} value={draft.bathrooms} onChange={(value) => setField("bathrooms", value.replace(/[^0-9]/g, ""))} placeholder={t.placeholders.bathrooms} /><Select label={t.pets} value={draft.pets} options={[t.yes, t.no, t.unknown]} onChange={(value) => setField("pets", value)} /></div>
               <div className="grid gap-4 sm:grid-cols-3"><Field label={t.floor} value={draft.floor} onChange={(value) => setField("floor", value.replace(/[^0-9]/g, ""))} placeholder={t.placeholders.floor} /><Select label={t.elevator} value={draft.elevator} options={[t.yes, t.no, t.unknown]} onChange={(value) => setField("elevator", value)} /><Select label={t.parking} value={draft.parking} options={[t.yes, t.no, t.unknown]} onChange={(value) => setField("parking", value)} /></div>
-              <div><p className="mb-2 text-sm font-bold text-ink/75">{t.extras}</p><div className="grid grid-cols-2 gap-2">{o.extras.map((extra) => <button type="button" key={extra} onClick={() => toggleExtra(extra)} className={`rounded-2xl border px-3 py-3 text-sm font-bold ${draft.extras.includes(extra) ? "border-burgundy bg-burgundy text-porcelain" : "border-burgundy/10 bg-cream text-ink/75"}`}>{extra}</button>)}</div></div>
+              <div className="grid gap-4 sm:grid-cols-2"><Select label={t.condition} value={draft.condition} options={o.conditions} onChange={(value) => setField("condition", value)} /><Select label={t.access} value={draft.access} options={o.access} onChange={(value) => setField("access", value)} /></div>
+              <div className="grid gap-4 sm:grid-cols-2"><Select label={t.shortNotice} value={draft.shortNotice} options={[t.yes, t.no]} onChange={(value) => setField("shortNotice", value)} /><Select label={t.weekend} value={draft.weekend} options={[t.yes, t.no]} onChange={(value) => setField("weekend", value)} /></div>
+              {visibility.showAddOns && <div><p className="mb-2 text-sm font-bold text-ink/75">{t.extras}</p><div className="grid grid-cols-2 gap-2">{o.extras.map((extra) => <button type="button" key={extra} onClick={() => toggleExtra(extra)} className={`rounded-2xl border px-3 py-3 text-sm font-bold ${draft.extras.includes(extra) ? "border-burgundy bg-burgundy text-porcelain" : "border-burgundy/10 bg-cream text-ink/75"}`}>{extra}</button>)}</div></div>}
+              {visibility.showWindowFields && <div className="grid gap-4 sm:grid-cols-2"><Field label={t.windows} value={draft.windows} onChange={(value) => setField("windows", value.replace(/[^0-9]/g, ""))} placeholder={t.placeholders.windows} /><Select label={t.windowSide} value={draft.windowSide} options={o.windowSides} onChange={(value) => setField("windowSide", value)} /></div>}
+              {visibility.showBalconyFields && <Select label={t.balconyGlass} value={draft.balconyGlass} options={o.balconyGlass} onChange={(value) => setField("balconyGlass", value)} />}
               <div className="grid gap-4 sm:grid-cols-2"><Field required type="date" label={t.date} value={draft.date} onChange={(value) => setField("date", value)} /><Select label={t.time} value={draft.timeWindow} options={o.times} onChange={(value) => setField("timeWindow", value)} /></div>
               <Select label={t.frequency} value={draft.frequency} options={o.freqs} onChange={(value) => setField("frequency", value)} />
               <div className="grid gap-4 sm:grid-cols-2"><Field required label={t.name} value={draft.name} onChange={(value) => setField("name", value)} placeholder={t.placeholders.name} /><Field required type="email" label={t.email} value={draft.email} onChange={(value) => setField("email", value)} placeholder={t.placeholders.email} /></div>
