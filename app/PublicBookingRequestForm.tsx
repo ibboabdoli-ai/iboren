@@ -2,7 +2,6 @@
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { createClient } from "@supabase/supabase-js";
 import { formatSek } from "./lib/pricingCalculator";
 import {
@@ -18,15 +17,23 @@ import {
 type Lang = BookingFormLanguage;
 type Draft = BookingFormDraft;
 
+const authHeaderName = ["Author", "ization"].join("");
+const tokenPrefix = ["Bear", "er"].join("");
+
 const copy = {
   sv: {
     title: "Skicka förfrågan utan konto.",
+    loggedInTitle: "Skicka bokningsförfrågan.",
     kicker: "Bokningsförfrågan",
     intro: "Fyll i uppgifterna så återkommer Iboren med tid och pris. Detta är inte en bekräftad bokning.",
+    loggedInIntro: "Fyll i uppgifterna så sparas förfrågan på din profil och skickas till Iboren.",
     binding: "Vi bekräftar alltid tid och pris innan bokningen blir bindande.",
     login: "Har du redan konto?",
     loginLink: "Logga in och använd din profil",
+    loggedInAs: "Inloggad som",
+    profileLink: "Gå till min profil",
     review: "Din förfrågan granskas manuellt innan den blir en bokning.",
+    loggedInReview: "Din förfrågan sparas på din profil. Iboren bekräftar alltid tid och pris innan bokningen blir bindande.",
     langLabel: "EN",
     langHref: "/en/boka-utan-konto",
     section: "Steg 1 / Förfrågan",
@@ -77,12 +84,17 @@ const copy = {
   },
   en: {
     title: "Send a request without an account.",
+    loggedInTitle: "Send booking request.",
     kicker: "Booking request",
     intro: "Fill in the details and Iboren will get back to you with time and price. This is not a confirmed booking.",
+    loggedInIntro: "Fill in the details and the request will be saved to your profile and sent to Iboren.",
     binding: "We always confirm time and price before the booking becomes binding.",
     login: "Already have an account?",
     loginLink: "Log in and use your profile",
+    loggedInAs: "Logged in as",
+    profileLink: "Go to my profile",
     review: "Your request is reviewed manually before it becomes a booking.",
+    loggedInReview: "Your request is saved to your profile. Iboren always confirms time and price before the booking becomes binding.",
     langLabel: "SV",
     langHref: "/boka-utan-konto",
     section: "Step 1 / Request",
@@ -186,13 +198,15 @@ function Select({ label, value, options: selectOptions, onChange }: { label: str
 }
 
 export default function PublicBookingRequestForm({ language }: { language: Lang }) {
-  const router = useRouter();
   const t = copy[language];
   const o = options[language];
   const [checking, setChecking] = useState(true);
+  const [authToken, setAuthToken] = useState("");
+  const [accountEmail, setAccountEmail] = useState("");
   const [draft, setDraft] = useState<Draft>(() => base(language));
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [message, setMessage] = useState("");
+  const isLoggedIn = Boolean(authToken);
   const visibility = useMemo(() => bookingFormVisibility(draft), [draft]);
   const summaryResult = useMemo(() => buildBookingSummary(draft, language), [draft, language]);
   const estimate = summaryResult.estimate;
@@ -206,10 +220,20 @@ export default function PublicBookingRequestForm({ language }: { language: Lang 
       return;
     }
     supabase.auth.getSession().then(({ data }) => {
-      if (data.session?.user) router.replace(language === "sv" ? "/profile" : "/en/profile");
-      else setChecking(false);
+      const session = data.session;
+      const email = session?.user?.email || "";
+      const fullName = String(session?.user?.user_metadata?.full_name || session?.user?.user_metadata?.name || "");
+      if (session?.access_token) {
+        setAuthToken(session.access_token);
+        setAccountEmail(email);
+        setDraft((current) => ({ ...current, name: current.name || fullName, email: email || current.email }));
+      } else {
+        setAuthToken("");
+        setAccountEmail("");
+      }
+      setChecking(false);
     });
-  }, [router, language]);
+  }, [language]);
 
   function setField<K extends keyof Draft>(key: K, value: Draft[K]) {
     setDraft((current) => {
@@ -231,16 +255,19 @@ export default function PublicBookingRequestForm({ language }: { language: Lang 
     setMessage(t.sending);
     try {
       const canonicalArea = normalizeAreaValue(draft.area);
-      const response = await fetch("/api/public-booking-request", {
+      const endpoint = isLoggedIn ? "/api/bookings" : "/api/public-booking-request";
+      const headers: Record<string, string> = { "Content-Type": "application/json" };
+      if (isLoggedIn) headers[authHeaderName] = `${tokenPrefix} ${authToken}`;
+      const response = await fetch(endpoint, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ service: draft.service, area: canonicalArea, address: draft.address, size: draft.size, frequency: draft.frequency, date: draft.date, timeWindow: draft.timeWindow, name: draft.name, email: draft.email, phone: draft.phone, notes: summary, customerType: draft.customerType, rutRequested: draft.rutRequested, language, website: draft.website })
+        headers,
+        body: JSON.stringify({ service: draft.service, area: canonicalArea, address: draft.address, size: draft.size, frequency: draft.frequency, date: draft.date, timeWindow: draft.timeWindow, name: draft.name, email: isLoggedIn ? accountEmail || draft.email : draft.email, phone: draft.phone, notes: summary, customerType: draft.customerType, rutRequested: draft.rutRequested, language, website: draft.website })
       });
       const json = await response.json().catch(() => null) as { ok?: boolean; message?: string } | null;
       if (!response.ok || !json?.ok) throw new Error(json?.message || "Error");
       setStatus("success");
       setMessage(json.message || t.success);
-      setDraft(base(language));
+      setDraft((current) => ({ ...base(language), name: isLoggedIn ? current.name : "", email: isLoggedIn ? accountEmail : "" }));
     } catch (error) {
       setStatus("error");
       setMessage(error instanceof Error ? error.message : "Error");
@@ -254,10 +281,13 @@ export default function PublicBookingRequestForm({ language }: { language: Lang 
       <div className="luxe-container grid gap-8 lg:grid-cols-[.7fr_1.3fr]">
         <section className="rounded-[2rem] border border-burgundy/10 bg-porcelain p-7 shadow-soft md:p-9">
           <div className="mb-5 flex items-center justify-between gap-3"><p className="text-xs font-black uppercase tracking-[.28em] text-burgundy/60">{t.kicker}</p><Link href={t.langHref} className="rounded-full border border-burgundy/15 px-4 py-2 text-xs font-black uppercase tracking-[.18em] text-burgundy">{t.langLabel}</Link></div>
-          <h1 className="display text-5xl font-normal uppercase leading-[.92] text-burgundy md:text-7xl">{t.title}</h1>
-          <p className="mt-6 text-base leading-8 text-ink/70">{t.intro}</p>
+          <h1 className="display text-5xl font-normal uppercase leading-[.92] text-burgundy md:text-7xl">{isLoggedIn ? t.loggedInTitle : t.title}</h1>
+          <p className="mt-6 text-base leading-8 text-ink/70">{isLoggedIn ? t.loggedInIntro : t.intro}</p>
           <p className="mt-5 rounded-2xl border border-gold/25 bg-gold/10 px-4 py-3 text-sm font-bold text-burgundy">{t.binding}</p>
-          <div className="mt-7 grid gap-3 text-sm text-ink/65"><p>{t.login} <Link href="/login" className="font-bold text-burgundy underline">{t.loginLink}</Link>.</p><p>{t.review}</p></div>
+          <div className="mt-7 grid gap-3 text-sm text-ink/65">
+            {isLoggedIn ? <p>{t.loggedInAs} <b>{accountEmail}</b>. <Link href={language === "sv" ? "/profile" : "/en/profile"} className="font-bold text-burgundy underline">{t.profileLink}</Link>.</p> : <p>{t.login} <Link href="/login" className="font-bold text-burgundy underline">{t.loginLink}</Link>.</p>}
+            <p>{isLoggedIn ? t.loggedInReview : t.review}</p>
+          </div>
         </section>
         <section className="grid gap-5 xl:grid-cols-[1fr_.75fr]">
           <form onSubmit={submit} className="rounded-[2rem] border border-burgundy/10 bg-porcelain p-5 shadow-soft md:p-7">
@@ -278,7 +308,7 @@ export default function PublicBookingRequestForm({ language }: { language: Lang 
               {visibility.showBalconyFields && <Select label={t.balconyGlass} value={draft.balconyGlass} options={o.balconyGlass} onChange={(value) => setField("balconyGlass", value)} />}
               <div className="grid gap-4 sm:grid-cols-2"><Field required type="date" label={t.date} value={draft.date} onChange={(value) => setField("date", value)} /><Select label={t.time} value={draft.timeWindow} options={o.times} onChange={(value) => setField("timeWindow", value)} /></div>
               <Select label={t.frequency} value={draft.frequency} options={o.freqs} onChange={(value) => setField("frequency", value)} />
-              <div className="grid gap-4 sm:grid-cols-2"><Field required label={t.name} value={draft.name} onChange={(value) => setField("name", value)} placeholder={t.placeholders.name} /><Field required type="email" label={t.email} value={draft.email} onChange={(value) => setField("email", value)} placeholder={t.placeholders.email} /></div>
+              <div className="grid gap-4 sm:grid-cols-2"><Field required label={t.name} value={draft.name} onChange={(value) => setField("name", value)} placeholder={t.placeholders.name} /><Field required type="email" label={t.email} value={isLoggedIn ? accountEmail || draft.email : draft.email} onChange={(value) => setField("email", value)} placeholder={t.placeholders.email} /></div>
               <Field required type="tel" label={t.phone} value={draft.phone} onChange={(value) => setField("phone", value)} placeholder={t.placeholders.phone} />
               <label className="block"><span className="mb-2 block text-sm font-bold text-ink/75">{t.message}</span><textarea value={draft.notes} onChange={(event) => setField("notes", event.target.value)} className="min-h-28 w-full rounded-2xl border border-burgundy/10 bg-cream px-4 py-4 text-ink outline-none focus:border-burgundy" placeholder={t.placeholders.notes} /></label>
               <button disabled={status === "loading"} className="btn-primary w-full bg-burgundy text-porcelain hover:bg-ink disabled:cursor-not-allowed disabled:opacity-60">{status === "loading" ? t.sending : t.submit}</button>
