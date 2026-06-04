@@ -49,8 +49,26 @@ function parseNumberAfter(text: string, labels: string[]) {
   return null;
 }
 
-function addWindowHours(text: string) {
-  if (!textHas(text, ["fönsterputs", "window cleaning"])) return 0;
+function addOnLineContains(text: string, values: string[]) {
+  const lines = text.split(/\r?\n/);
+  return lines.some((line) => {
+    const lower = line.toLowerCase();
+    const isAddOnLine = lower.includes("extra services:") || lower.includes("extra tjänster:") || lower.includes("selected add-ons:") || lower.includes("tillval:");
+    return isAddOnLine && values.some((value) => lower.includes(value));
+  });
+}
+
+function yesField(text: string, labels: string[]) {
+  return labels.some((label) => {
+    const escaped = label.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    return new RegExp(`${escaped}\\s*:?\\s*(ja|yes)`, "i").test(text);
+  });
+}
+
+function addWindowHours(text: string, service: string) {
+  const isWindowService = service.includes("fönster") || service.includes("window");
+  const isWindowAddOn = addOnLineContains(text, ["fönsterputs", "window cleaning"]);
+  if (!isWindowService && !isWindowAddOn) return 0;
   const windows = parseNumberAfter(text, ["antal fönster", "number of windows"]);
   const bothSides = textHas(text, ["båda sidor", "both sides"]);
   const oneSide = textHas(text, ["endast insida", "endast utsida", "inside only", "outside only"]);
@@ -60,20 +78,20 @@ function addWindowHours(text: string) {
 }
 
 function addBalconyGlassHours(text: string) {
-  const hasBalconyGlass = textHas(text, ["inglasad balkong", "balcony glass"]);
-  if (!hasBalconyGlass) return 0;
-  if (textHas(text, ["stor", "large"])) return 1;
-  if (textHas(text, ["liten", "small"])) return 0.6;
+  const large = /(?:inglasad balkong|balcony glass)\s*:?\s*(stor|large)/i.test(text);
+  const small = /(?:inglasad balkong|balcony glass)\s*:?\s*(liten|small)/i.test(text);
+  if (large) return 1;
+  if (small) return 0.6;
   return 0;
 }
 
 function addAccessHours(text: string) {
   let hours = 0;
-  if (textHas(text, ["svår åtkomst", "difficult access"])) hours += 0.5;
-  if (textHas(text, ["parkering: nej", "parking: no", "parkering saknas", "no parking"])) hours += 0.25;
+  if (yesField(text, ["svår åtkomst", "difficult access"]) || /(?:åtkomst|access)\s*:?\s*(svår åtkomst|difficult access)/i.test(text)) hours += 0.5;
+  if (yesField(text, ["parkering saknas", "no parking"]) || /(?:parkering|parking)\s*:?\s*(nej|no)/i.test(text)) hours += 0.25;
 
   const floor = parseNumberAfter(text, ["våning", "floor"]);
-  const noElevator = textHas(text, ["hiss: nej", "elevator: no", "no elevator"]);
+  const noElevator = /(?:hiss|elevator)\s*:?\s*(nej|no)/i.test(text) || text.includes("no elevator");
   if (floor && noElevator && floor >= 3) hours += floor >= 6 ? 0.75 : 0.35;
 
   return hours;
@@ -81,8 +99,8 @@ function addAccessHours(text: string) {
 
 function addPlanningRiskHours(text: string) {
   let hours = 0;
-  if (textHas(text, ["kort varsel: ja", "short notice: yes", "kort varsel"])) hours += 0.25;
-  if (textHas(text, ["helg/kväll: ja", "weekend/evening: yes", "weekend/evening", "helg/kväll"])) hours += 0.25;
+  if (yesField(text, ["kort varsel", "short notice"])) hours += 0.25;
+  if (yesField(text, ["helg/kväll", "weekend/evening"])) hours += 0.25;
   return hours;
 }
 
@@ -95,16 +113,16 @@ export function estimateBookingWorkload(input: BookingWorkloadInput | null): Boo
   const base = baseHoursBySize(size) * frequencyFactor(frequency);
   let extras = 0;
 
-  if (textHas(text, ["husdjur: ja", "pets: yes", "hund", "katt"])) extras += 0.25;
+  if (yesField(text, ["husdjur", "pets"]) || textHas(text, ["hund", "katt"])) extras += 0.25;
   if (textHas(text, ["första", "first", "förstagång"])) extras += 0.75;
-  if (textHas(text, ["grovstädning", "deep cleaning", "heavy cleaning"])) extras += Math.max(1, baseHoursBySize(size) * 0.35);
-  extras += addWindowHours(text);
-  if (textHas(text, ["balkong", "balcony"])) extras += 0.5;
+  if (addOnLineContains(text, ["grovstädning", "deep cleaning", "heavy cleaning"])) extras += Math.max(1, baseHoursBySize(size) * 0.35);
+  extras += addWindowHours(text, service);
+  if (addOnLineContains(text, ["balkong", "balcony"])) extras += 0.5;
   extras += addBalconyGlassHours(text);
-  if (textHas(text, ["ugn", "oven"])) extras += 0.5;
-  if (textHas(text, ["kyl", "frys", "fridge", "freezer"])) extras += 0.5;
-  if (textHas(text, ["skåp", "lådor", "cabinet", "drawers"])) extras += 0.5;
-  if (textHas(text, ["garage"])) extras += 1;
+  if (addOnLineContains(text, ["ugn", "oven"])) extras += 0.5;
+  if (addOnLineContains(text, ["kyl/frys", "kyl", "frys", "fridge/freezer", "fridge", "freezer"])) extras += 0.5;
+  if (addOnLineContains(text, ["skåp/lådor", "skåp", "lådor", "cabinet", "drawers"])) extras += 0.5;
+  if (addOnLineContains(text, ["garage"])) extras += 1;
   extras += addAccessHours(text);
   extras += addPlanningRiskHours(text);
 
