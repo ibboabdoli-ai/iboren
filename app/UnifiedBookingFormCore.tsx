@@ -85,6 +85,7 @@ const copy = {
     afterRut: "Efter RUT",
     timeEstimate: "Uppskattad tid",
     moms: "Alla priser visas inklusive moms för privatpersoner.",
+    companyMoms: "Priser för företag visas inklusive moms. RUT gäller inte företag.",
     priceNote: "Samma prislogik som huvudkalkylatorn används. Slutligt pris bekräftas efter förfrågan.",
     searchAddress: "Sök adress",
     searchAddressHint: "Skriv eller välj adress i adressfältet.",
@@ -151,6 +152,7 @@ const copy = {
     afterRut: "After RUT",
     timeEstimate: "Estimated time",
     moms: "Prices are shown including VAT for private customers.",
+    companyMoms: "Prices for companies are shown including VAT. RUT does not apply to companies.",
     priceNote: "The same price logic as the main calculator is used. Final price is confirmed after the request.",
     searchAddress: "Search address",
     searchAddressHint: "Type or choose the address in the address field.",
@@ -345,7 +347,7 @@ export default function UnifiedBookingFormCore({ language, variant = "page" }: U
           <aside className={variant === "embedded" ? "w-full min-w-0 rounded-[2rem] border border-white/10 bg-[#252420] p-5 shadow-luxe md:p-7" : "w-full min-w-0 rounded-[2rem] border border-white/10 bg-[#252420] p-5 shadow-luxe md:p-7 xl:sticky xl:top-6 xl:self-start"}>
             <p className="text-xs font-black uppercase tracking-[.32em] text-gold">{t.summary}</p>
             <h2 className="display mt-2 text-3xl font-normal uppercase text-gold">{t.estimate}</h2>
-            <div className="mt-5 grid gap-3 rounded-[1.5rem] border border-gold/15 bg-[#181917] p-5 text-sm text-porcelain/80"><p><b>{t.beforeRut}:</b> {formatSek(estimate.beforeRut)}</p><p><b>{t.afterRut}:</b> {formatSek(estimate.afterRut)}</p><p><b>{t.timeEstimate}:</b> {timeEstimate}</p><p className="text-porcelain/55">{t.moms}</p><p className="text-porcelain/55">{t.priceNote}</p></div>
+            <div className="mt-5 grid gap-3 rounded-[1.5rem] border border-gold/15 bg-[#181917] p-5 text-sm text-porcelain/80"><p><b>{t.beforeRut}:</b> {formatSek(estimate.beforeRut)}</p><p><b>{t.afterRut}:</b> {formatSek(estimate.afterRut)}</p><p><b>{t.timeEstimate}:</b> {timeEstimate}</p><p className="text-porcelain/55">{draft.customerType === "Företag" || draft.customerType === "Company" ? t.companyMoms : t.moms}</p><p className="text-porcelain/55">{t.priceNote}</p></div>
             <pre className="mt-5 max-h-[520px] overflow-auto whitespace-pre-wrap rounded-[1.5rem] border border-gold/15 bg-[#181917] p-5 text-sm leading-7 text-porcelain/70">{summary}</pre>
           </aside>
         </section>
