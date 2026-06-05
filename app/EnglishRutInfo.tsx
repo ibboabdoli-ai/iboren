@@ -21,7 +21,7 @@ export default function EnglishRutInfo() {
         <div className="rounded-[2rem] border border-burgundy/10 bg-porcelain p-6 shadow-soft md:p-8">
           <div className="mb-6 flex items-start gap-3 rounded-2xl bg-cream p-4 text-sm leading-7 text-ink/72">
             <Info className="mt-1 h-5 w-5 shrink-0 text-burgundy" />
-            <p>RUT is a tax reduction on labour cost. The deduction may be applied when Skatteverket's conditions are fulfilled and the final handling is made during invoicing.</p>
+          <p>RUT is a tax reduction on labour cost. The deduction may be applied when the requirements from Skatteverket are fulfilled and the final handling is made during invoicing.</p>
           </div>
           <div className="grid gap-3">
             {rutPoints.map((point) => (
