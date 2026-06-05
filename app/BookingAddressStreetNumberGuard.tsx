@@ -13,8 +13,8 @@ function addressHasStreetNumber(address: string) {
 
 function message() {
   return isEnglishPage()
-    ? "Add the street number to the address before sending the request."
-    : "Lägg till gatunummer i adressen innan du skickar förfrågan.";
+    ? "Please check that the address is complete and includes the street number. Example: Lundbygatan 26, 151 46 Södertälje."
+    : "Kontrollera att adressen är komplett och att gatunummer finns med. Exempel: Lundbygatan 26, 151 46 Södertälje.";
 }
 
 function fieldContainer(input: HTMLInputElement) {
