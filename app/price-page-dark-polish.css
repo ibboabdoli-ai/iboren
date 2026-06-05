@@ -1,0 +1,158 @@
+.price-page-dark {
+  background: #1f1f1d;
+  color: #f4efe5;
+}
+
+.price-page-dark .price-page-hero {
+  background:
+    radial-gradient(circle at 72% 18%, rgba(216, 164, 111, .16), transparent 32%),
+    radial-gradient(circle at 16% 72%, rgba(107, 39, 55, .18), transparent 34%),
+    linear-gradient(180deg, #252420 0%, #1f1f1d 100%);
+}
+
+.price-page-dark .price-back-link,
+.price-page-dark .price-page-eyebrow {
+  color: #d8a46f;
+}
+
+.price-page-dark .price-page-title {
+  color: #d8a46f;
+}
+
+.price-page-dark .price-page-lead {
+  color: rgba(244, 239, 229, .78);
+}
+
+.price-page-dark .price-info-card {
+  border-color: rgba(216, 164, 111, .18);
+  background: rgba(24, 25, 23, .84);
+  color: rgba(244, 239, 229, .74);
+}
+
+.price-page-dark .price-info-card svg,
+.price-page-dark .price-check-list svg {
+  color: #d8a46f;
+}
+
+.price-page-dark .price-check-list p {
+  color: rgba(244, 239, 229, .72);
+}
+
+.price-page-dark .price-service-section {
+  background: #181917;
+}
+
+.price-page-dark .price-service-card {
+  border: 1px solid rgba(216, 164, 111, .16);
+  background: #252420;
+  color: #d8a46f;
+  box-shadow: 0 28px 90px rgba(0, 0, 0, .28);
+}
+
+.price-page-dark .price-service-card:hover {
+  border-color: rgba(216, 164, 111, .42);
+  background: #2b2a28;
+}
+
+.price-page-dark #pris-kalkylator,
+.price-page-dark #price-calculator {
+  border-color: rgba(255, 255, 255, .10) !important;
+  background: #252420 !important;
+  color: #f4efe5 !important;
+  box-shadow: 0 28px 90px rgba(0, 0, 0, .30) !important;
+}
+
+.price-page-dark #pris-kalkylator h2,
+.price-page-dark #price-calculator h2,
+.price-page-dark #pris-kalkylator > div:first-child p,
+.price-page-dark #price-calculator > div:first-child p {
+  color: #d8a46f !important;
+}
+
+.price-page-dark #pris-kalkylator > div:first-child > div:first-child > p:last-child,
+.price-page-dark #price-calculator > div:first-child > div:first-child > p:last-child {
+  color: rgba(244, 239, 229, .70) !important;
+}
+
+.price-page-dark #pris-kalkylator label > span,
+.price-page-dark #price-calculator label > span,
+.price-page-dark #pris-kalkylator div > p.mb-2,
+.price-page-dark #price-calculator div > p.mb-2 {
+  color: rgba(244, 239, 229, .76) !important;
+}
+
+.price-page-dark #pris-kalkylator input,
+.price-page-dark #price-calculator input,
+.price-page-dark #pris-kalkylator select,
+.price-page-dark #price-calculator select {
+  border-color: rgba(255, 255, 255, .12) !important;
+  background: #f7f4ed !important;
+  color: #181917 !important;
+  font-weight: 800;
+  outline: none;
+}
+
+.price-page-dark #pris-kalkylator button[class*="bg-burgundy"],
+.price-page-dark #price-calculator button[class*="bg-burgundy"] {
+  border-color: #d8a46f !important;
+  background: #d8a46f !important;
+  color: #181917 !important;
+}
+
+.price-page-dark #pris-kalkylator button[class*="bg-cream"],
+.price-page-dark #price-calculator button[class*="bg-cream"] {
+  border-color: rgba(216, 164, 111, .24) !important;
+  background: transparent !important;
+  color: rgba(244, 239, 229, .82) !important;
+}
+
+.price-page-dark #pris-kalkylator label[class*="bg-cream"],
+.price-page-dark #price-calculator label[class*="bg-cream"],
+.price-page-dark #pris-kalkylator p[class*="bg-cream"],
+.price-page-dark #price-calculator p[class*="bg-cream"] {
+  border: 1px solid rgba(216, 164, 111, .16) !important;
+  background: #181917 !important;
+  color: rgba(244, 239, 229, .78) !important;
+}
+
+.price-page-dark #pris-kalkylator label[class*="bg-cream"] span,
+.price-page-dark #price-calculator label[class*="bg-cream"] span {
+  color: rgba(244, 239, 229, .78) !important;
+}
+
+.price-page-dark #pris-kalkylator div[class*="bg-burgundy"],
+.price-page-dark #price-calculator div[class*="bg-burgundy"] {
+  border: 1px solid rgba(216, 164, 111, .16) !important;
+  background: #181917 !important;
+}
+
+.price-page-dark #pris-kalkylator div[class*="bg-burgundy"] p[class*="text-gold"],
+.price-page-dark #price-calculator div[class*="bg-burgundy"] p[class*="text-gold"],
+.price-page-dark #pris-kalkylator div[class*="bg-burgundy"] p[class*="text-4xl"],
+.price-page-dark #price-calculator div[class*="bg-burgundy"] p[class*="text-4xl"] {
+  color: #d8a46f !important;
+}
+
+.price-page-dark #pris-kalkylator span[class*="bg-porcelain/10"],
+.price-page-dark #price-calculator span[class*="bg-porcelain/10"],
+.price-page-dark #pris-kalkylator p[class*="bg-porcelain/10"],
+.price-page-dark #price-calculator p[class*="bg-porcelain/10"] {
+  background: rgba(244, 239, 229, .08) !important;
+}
+
+.price-page-dark #pris-kalkylator > div:last-child,
+.price-page-dark #price-calculator > div:last-child {
+  color: rgba(244, 239, 229, .72) !important;
+}
+
+.price-page-dark #pris-kalkylator > div:last-child p,
+.price-page-dark #price-calculator > div:last-child p {
+  border: 1px solid rgba(216, 164, 111, .14) !important;
+  background: #181917 !important;
+  color: rgba(244, 239, 229, .72) !important;
+}
+
+.price-page-dark #pris-kalkylator > div:last-child svg,
+.price-page-dark #price-calculator > div:last-child svg {
+  color: #d8a46f !important;
+}
