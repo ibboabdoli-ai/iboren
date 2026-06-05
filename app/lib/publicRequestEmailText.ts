@@ -84,7 +84,7 @@ function requestReferenceLines(id: string, language: Language, bookingNumber?: s
 
 export function buildPublicRequestAdminEmail(payload: PublicEmailPayload, id: string, language: Language, saved: boolean, bookingNumber?: string | null) {
   const area = displayArea(payload.area);
-  const snapshot = publicRequestSnapshotLines(payload, language);
+  const snapshot = publicRequestSnapshotLines(payload, language, { includeWarnings: true });
 
   if (language === "en") {
     return [
@@ -145,7 +145,7 @@ export function buildPublicRequestAdminEmail(payload: PublicEmailPayload, id: st
 
 export function buildPublicRequestCustomerEmail(payload: PublicEmailPayload, id: string, language: Language, bookingNumber?: string | null) {
   const area = displayArea(payload.area);
-  const snapshot = publicRequestSnapshotLines(payload, language);
+  const snapshot = publicRequestSnapshotLines(payload, language, { includeWarnings: false });
 
   if (language === "en") {
     return [
