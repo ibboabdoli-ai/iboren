@@ -4,6 +4,8 @@ import { createClient } from "@supabase/supabase-js";
 export const runtime = "nodejs";
 
 const allowedStatuses = ["new", "confirmed", "completed", "cancelled"];
+const DEFAULT_LIMIT = 200;
+const MAX_LIMIT = 500;
 
 type AdminBooking = {
   id: string;
@@ -46,25 +48,25 @@ function getAdminClient() {
 async function verifyAdmin(request: Request) {
   const supabase = getAdminClient();
   if (!supabase) {
-    return { ok: false as const, status: 500, message: "Missing Supabase admin environment variables." };
+    return { ok: false as const, status: 500, message: "Adminmiljön är inte korrekt konfigurerad." };
   }
 
   const authHeader = request.headers.get("authorization") || "";
   const token = authHeader.replace(/^Bearer\s+/i, "").trim();
 
   if (!token) {
-    return { ok: false as const, status: 401, message: "Missing access token." };
+    return { ok: false as const, status: 401, message: "Du behöver logga in igen." };
   }
 
   const { data, error } = await supabase.auth.getUser(token);
   const email = data.user?.email?.toLowerCase();
 
   if (error || !email) {
-    return { ok: false as const, status: 401, message: "Invalid session." };
+    return { ok: false as const, status: 401, message: "Sessionen är inte giltig." };
   }
 
   if (!getAdminEmails().includes(email)) {
-    return { ok: false as const, status: 403, message: "Admin access required." };
+    return { ok: false as const, status: 403, message: "Adminåtkomst krävs." };
   }
 
   return { ok: true as const, supabase, user: data.user };
@@ -113,19 +115,39 @@ function collapseDuplicateBookings(bookings: AdminBooking[]) {
   return { bookings: Array.from(kept.values()), duplicateCount };
 }
 
+function numberParam(url: URL, name: string, fallback: number) {
+  const value = Number.parseInt(url.searchParams.get(name) || "", 10);
+  return Number.isFinite(value) && value >= 0 ? value : fallback;
+}
+
 export async function GET(request: Request) {
   const admin = await verifyAdmin(request);
   if (!admin.ok) {
     return NextResponse.json({ ok: false, message: admin.message }, { status: admin.status });
   }
 
-  const { data, error } = await admin.supabase
+  const url = new URL(request.url);
+  const page = Math.max(1, numberParam(url, "page", 1));
+  const limit = Math.min(MAX_LIMIT, Math.max(1, numberParam(url, "limit", DEFAULT_LIMIT)));
+  const status = url.searchParams.get("status") || "";
+  const from = (page - 1) * limit;
+  const to = from + limit - 1;
+
+  let query = admin.supabase
     .from("bookings")
-    .select("id, booking_number, user_id, service, area, address, size_sqm, frequency, preferred_date, time_window, customer_name, customer_email, customer_phone, notes, admin_notes, status, created_at")
-    .order("created_at", { ascending: false });
+    .select("id, booking_number, user_id, service, area, address, size_sqm, frequency, preferred_date, time_window, customer_name, customer_email, customer_phone, notes, admin_notes, status, created_at", { count: "exact" })
+    .order("created_at", { ascending: false })
+    .range(from, to);
+
+  if (allowedStatuses.includes(status)) {
+    query = query.eq("status", status);
+  }
+
+  const { data, error, count } = await query;
 
   if (error) {
-    return NextResponse.json({ ok: false, message: error.message }, { status: 500 });
+    console.warn("IBOREN_ADMIN_BOOKINGS_FETCH_FAILED", { code: error.code });
+    return NextResponse.json({ ok: false, message: "Kunde inte hämta bokningar just nu." }, { status: 500 });
   }
 
   const rawBookings = (data ?? []) as AdminBooking[];
@@ -134,8 +156,14 @@ export async function GET(request: Request) {
   return NextResponse.json({
     ok: true,
     bookings: collapsed.bookings,
-    rawCount: rawBookings.length,
+    rawCount: count ?? rawBookings.length,
     duplicateCount: collapsed.duplicateCount,
-    statuses: allowedStatuses
+    statuses: allowedStatuses,
+    pagination: {
+      page,
+      limit,
+      total: count ?? rawBookings.length,
+      hasMore: typeof count === "number" ? to + 1 < count : rawBookings.length === limit
+    }
   });
 }
