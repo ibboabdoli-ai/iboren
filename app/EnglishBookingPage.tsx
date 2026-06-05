@@ -2,7 +2,7 @@
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { Building2, Copy, Home, LocateFixed, Loader2, Mail, Menu, Send, ShieldCheck, Truck, UserRound, X } from "lucide-react";
+import { Building2, Home, LocateFixed, Mail, Menu, ShieldCheck, Truck, UserRound, X } from "lucide-react";
 import { createClient, type User } from "@supabase/supabase-js";
 
 type Option = { value: string; label: string };
@@ -103,6 +103,8 @@ const services = [
   { icon: Truck, title: "Move-out cleaning", href: "/en/move-out-cleaning", price: "custom quote", body: "For moving, handover and a clear checklist." },
   { icon: Building2, title: "Office cleaning", href: "/en/office-cleaning", price: "custom quote", body: "For companies, premises and recurring service." }
 ];
+
+const trustBadges = ["RUT deduction", "Online price estimate", "Non-binding request"];
 
 const displayMap = new Map<string, string>([
   ...serviceOptions.map((option) => [option.value, option.label] as const),
@@ -228,7 +230,7 @@ export default function EnglishBookingPage() {
           setDraft((current) => ({ ...current, address: result.address || current.address, area: result.area || current.area }));
           setMessage(result.address ? "Address was filled automatically. Please check that it is correct before sending." : "Position found, but the address could not be interpreted. Enter the address manually.");
         } catch {
-          setMessage("Position found, but the address could not be fetched automatically. Enter the address manually.");
+          setMessage("Could not fetch the address. Enter it manually.");
         } finally {
           setLocating(false);
         }
@@ -326,13 +328,13 @@ export default function EnglishBookingPage() {
           <div className="hidden items-center gap-6 text-sm font-semibold text-porcelain/68 md:flex">
             <a href="#services" className="hover:text-gold">Services</a>
             <Link href="/en/prices" className="hover:text-gold">Prices</Link>
-            <a href="#booking" className="hover:text-gold">Request</a>
+            <Link href="/en/boka-utan-konto" className="hover:text-gold">Request</Link>
             <Link href="/en/jobs" className="hover:text-gold">Work with us</Link>
             <Link href="/en/about" className="hover:text-gold">About us</Link>
             <Link href="/" className="hover:text-gold">SV</Link>
             <Link href="/en" className="text-gold">EN</Link>
             <Link href={user ? "/profile" : "/login"} className="inline-flex items-center gap-2 hover:text-gold"><UserRound size={17} /> {user ? "My profile" : "Log in"}</Link>
-            <a href="#booking" className="rounded-full border border-gold/40 bg-gold px-5 py-3 text-night">Send request</a>
+            <Link href="/en/boka-utan-konto" className="rounded-full border border-gold/40 bg-gold px-5 py-3 text-night">Send request</Link>
           </div>
           <button type="button" aria-label="Toggle menu" aria-expanded={menuOpen} onClick={() => setMenuOpen(!menuOpen)} className="grid h-11 w-11 place-items-center rounded-full border border-gold/25 bg-porcelain/5 text-gold md:hidden">{menuOpen ? <X size={19} /> : <Menu size={19} />}</button>
         </nav>
@@ -340,12 +342,13 @@ export default function EnglishBookingPage() {
           <div className="border-t border-gold/10 bg-night/95 px-4 pb-6 md:hidden">
             <div className="mx-auto grid max-w-sm gap-2 pt-2 text-porcelain">
               <a href="#services" onClick={() => setMenuOpen(false)} className="rounded-2xl px-4 py-3 font-semibold">Services</a>
-              <a href="#booking" onClick={() => setMenuOpen(false)} className="rounded-2xl px-4 py-3 font-semibold">Request</a>
+              <Link href="/en/boka-utan-konto" onClick={() => setMenuOpen(false)} className="rounded-2xl px-4 py-3 font-semibold">Request</Link>
               <Link href="/en/prices" onClick={() => setMenuOpen(false)} className="rounded-2xl px-4 py-3 font-semibold">Prices</Link>
               <Link href="/en/jobs" onClick={() => setMenuOpen(false)} className="rounded-2xl px-4 py-3 font-semibold">Work with us</Link>
               <Link href="/en/about" onClick={() => setMenuOpen(false)} className="rounded-2xl px-4 py-3 font-semibold">About us</Link>
               <Link href="/" onClick={() => setMenuOpen(false)} className="rounded-2xl px-4 py-3 font-semibold">Svenska</Link>
               <Link href={user ? "/profile" : "/login"} className="rounded-2xl px-4 py-3 font-semibold">{user ? "My profile" : "Log in"}</Link>
+              <Link href="/en/boka-utan-konto" onClick={() => setMenuOpen(false)} className="mt-2 rounded-full bg-gold px-5 py-4 text-center text-sm font-bold text-night">Send request</Link>
             </div>
           </div>
         )}
@@ -355,11 +358,13 @@ export default function EnglishBookingPage() {
         <img src="/cinematic/03-home-after.webp" alt="Clean home" className="absolute inset-0 h-full w-full object-cover" />
         <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(2,5,4,.58),rgba(2,5,4,.16)_48%,rgba(2,5,4,.62)),radial-gradient(circle_at_center,transparent_0_38%,rgba(0,0,0,.34)_100%)]" />
         <div className="relative z-10 mx-auto max-w-6xl">
-          <p className="text-[11px] font-bold uppercase tracking-[0.44em] text-gold/90">Södertälje · Stockholm · RUT deduction</p>
-          <h1 className="display mt-6 text-[clamp(3.8rem,10vw,9rem)] font-normal uppercase leading-[.86] tracking-[.01em] text-porcelain">Cleaning in Södertälje and Stockholm</h1>
-          <p className="mx-auto mt-7 max-w-3xl text-lg leading-8 text-porcelain/86 md:text-2xl">Get help with home cleaning, move-out cleaning, office cleaning and window cleaning. Send a clear booking request online.</p>
+          <p className="text-[11px] font-bold uppercase tracking-[0.36em] text-gold/90 md:tracking-[0.44em]">Södertälje · Stockholm · RUT deduction</p>
+          <h1 className="display mt-5 text-[clamp(3rem,12vw,8.5rem)] font-normal uppercase leading-[.9] tracking-[.01em] text-porcelain md:mt-6 md:leading-[.86]">Cleaning in Södertälje & Stockholm</h1>
+          <p className="mx-auto mt-6 max-w-3xl text-base font-semibold leading-7 text-porcelain/88 md:mt-7 md:text-2xl md:leading-8">Home cleaning, move-out cleaning, office cleaning and window cleaning. Get a price estimate online and send a non-binding request.</p>
           {user && <p className="mt-5 inline-flex rounded-full border border-gold/25 bg-night/50 px-4 py-2 text-sm font-bold text-gold">Logged in as {user.email}</p>}
-          <div className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row"><Link href="/en/prices" className="btn-primary">Calculate price</Link><a href="#booking" className="btn-secondary">Send request</a></div>
+          <div className="mt-7 flex flex-wrap items-center justify-center gap-2 md:mt-8">{trustBadges.map((badge) => <span key={badge} className="rounded-full border border-gold/25 bg-night/45 px-3 py-2 text-[10px] font-bold uppercase tracking-[.16em] text-gold md:px-4 md:text-xs md:tracking-[.18em]">{badge}</span>)}</div>
+          <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row md:mt-10"><Link href="/en/prices" className="btn-primary">Calculate price</Link><Link href="/en/boka-utan-konto" className="btn-secondary">Send request</Link></div>
+          <p className="mx-auto mt-5 max-w-xl text-sm font-bold leading-6 text-porcelain/75">We always confirm final time and price before the request becomes binding.</p>
         </div>
       </section>
 
