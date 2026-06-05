@@ -196,6 +196,18 @@ function normalizeAreaValue(value: string) {
   return value;
 }
 
+function extractPostalCodeFromAddress(value: string) {
+  const match = value.match(/\b(\d{3})\s?(\d{2})\b/);
+  return match ? `${match[1]} ${match[2]}` : "";
+}
+
+function extractAreaFromAddress(value: string) {
+  const cleaned = value.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  if (cleaned.includes("sodertalje")) return "Södertälje";
+  if (cleaned.includes("stockholm")) return "Stockholm";
+  return "";
+}
+
 function Field({ id, label, value, onChange, placeholder, type = "text", required = false }: { id?: string; label: string; value: string; onChange: (value: string) => void; placeholder?: string; type?: string; required?: boolean }) {
   return <label className="block"><span className="mb-2 block text-sm font-black text-porcelain/75">{label}{required ? " *" : ""}</span><input id={id} required={required} type={type} value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} className="w-full rounded-2xl border border-white/10 bg-porcelain px-4 py-4 text-base font-bold text-ink outline-none placeholder:text-ink/35 focus:border-gold focus:ring-2 focus:ring-gold/25" /></label>;
 }
@@ -246,6 +258,13 @@ export default function PublicBookingRequestForm({ language }: { language: Lang 
     setDraft((current) => {
       let next: Draft = { ...current, [key]: value };
       if (key === "area") next.area = normalizeAreaValue(String(value));
+      if (key === "address") {
+        const address = String(value);
+        const postalCode = extractPostalCodeFromAddress(address);
+        const area = extractAreaFromAddress(address);
+        if (postalCode) next.postalCode = postalCode;
+        if (area) next.area = area;
+      }
       if (key === "service") next = applyBookingServiceSideEffects(next, language);
       if (key === "customerType" && (next.customerType === "Företag" || next.customerType === "Company")) next.rutRequested = false;
       return next;
