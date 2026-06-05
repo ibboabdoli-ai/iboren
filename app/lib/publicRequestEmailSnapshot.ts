@@ -6,6 +6,10 @@ type SnapshotPayload = {
   area: string;
 };
 
+type SnapshotOptions = {
+  includeWarnings?: boolean;
+};
+
 function isSectionLine(line: string) {
   return /^---\s*.+\s*---$/.test(line.trim());
 }
@@ -20,9 +24,15 @@ function extractSection(notes: string, headings: string[]) {
   for (const line of lines.slice(startIndex + 1)) {
     if (isSectionLine(line)) break;
     const clean = line.trim();
-    if (clean && clean !== "-") sectionLines.push(clean);
+    if (clean && clean !== "-") sectionLines.push(normalizeDetailLine(clean));
   }
   return sectionLines;
+}
+
+function normalizeDetailLine(line: string) {
+  const match = line.match(/^(Våning|Floor):\s*0+(\d+)$/i);
+  if (!match) return line;
+  return `${match[1]}: ${Number.parseInt(match[2], 10)}`;
 }
 
 function valueAfterColon(lines: string[], labels: string[]) {
@@ -77,11 +87,11 @@ export function displayAddress(address: string, language: Language) {
   return normalizedCity;
 }
 
-export function publicRequestSnapshotLines(payload: SnapshotPayload, language: Language) {
+export function publicRequestSnapshotLines(payload: SnapshotPayload, language: Language, options: SnapshotOptions = {}) {
   const details = extractSection(payload.notes, language === "en" ? ["Property & details", "Objekt & detaljer"] : ["Objekt & detaljer", "Property & details"]);
   const price = extractSection(payload.notes, language === "en" ? ["Price indication", "Prisindikation"] : ["Prisindikation", "Price indication"]);
   const customerNotes = extractSection(payload.notes, language === "en" ? ["Customer notes", "Kundens önskemål"] : ["Kundens önskemål", "Customer notes"]);
-  const warnings = highRiskWarnings(details, payload, language);
+  const warnings = options.includeWarnings === false ? [] : highRiskWarnings(details, payload, language);
 
   const labels = language === "en" ? {
     details: "Property & details:",
