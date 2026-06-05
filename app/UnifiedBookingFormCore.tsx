@@ -89,6 +89,7 @@ const copy = {
     priceNote: "Samma prislogik som huvudkalkylatorn används. Slutligt pris bekräftas efter förfrågan.",
     searchAddress: "Sök adress",
     searchAddressHint: "Skriv eller välj adress i adressfältet.",
+    importedEstimate: "Din prisindikation har fyllts i. Komplettera adress, datum och kontaktuppgifter innan du skickar.",
     yes: "Ja",
     no: "Nej",
     unknown: "Vet ej",
@@ -156,6 +157,7 @@ const copy = {
     priceNote: "The same price logic as the main calculator is used. Final price is confirmed after the request.",
     searchAddress: "Search address",
     searchAddressHint: "Type or choose the address in the address field.",
+    importedEstimate: "Your estimate details have been added. Complete the address, date and contact details before sending.",
     yes: "Yes",
     no: "No",
     unknown: "Not sure",
@@ -219,6 +221,81 @@ function extractAreaFromAddress(value: string) {
   return "";
 }
 
+function translateEstimateValue(value: string, language: Lang) {
+  if (language === "sv") return value;
+  const map: Record<string, string> = {
+    Hemstädning: "Home cleaning",
+    Flyttstädning: "Move-out cleaning",
+    Storstädning: "Deep cleaning",
+    Kontorsstädning: "Office cleaning",
+    Fönsterputs: "Window cleaning",
+    Privatperson: "Private customer",
+    Företag: "Company",
+    Engång: "One-time",
+    "Varje vecka": "Every week",
+    "Varannan vecka": "Every other week",
+    "Varje månad": "Every month",
+    Ja: "Yes",
+    Nej: "No",
+    Smutsigt: "Dirty",
+    "Mycket smutsigt": "Very dirty",
+    "Svår åtkomst": "Difficult access",
+    "Båda sidor": "Both sides",
+    "Endast insida": "Inside only",
+    "Endast utsida": "Outside only",
+    Liten: "Small",
+    Stor: "Large",
+    Ugn: "Oven",
+    "Kyl/frys": "Fridge/freezer",
+    Balkong: "Balcony",
+    Grovstädning: "Deep cleaning",
+    "Skåp/lådor": "Cabinets/drawers"
+  };
+  return map[value] || value;
+}
+
+function splitEstimateExtras(value: string, language: Lang) {
+  return value.split("|").map((item) => translateEstimateValue(item.trim(), language)).filter(Boolean);
+}
+
+function applyEstimateQueryToDraft(current: Draft, language: Lang): Draft {
+  if (typeof window === "undefined") return current;
+  const params = new URLSearchParams(window.location.search);
+  if (params.get("estimate") !== "1") return current;
+
+  const value = (key: string) => params.get(key)?.trim() || "";
+  let next: Draft = { ...current };
+
+  const service = translateEstimateValue(value("service"), language);
+  const customerType = translateEstimateValue(value("customerType"), language);
+  const frequency = translateEstimateValue(value("frequency"), language);
+
+  if (service) next.service = service;
+  if (customerType) next.customerType = customerType;
+  if (frequency) next.frequency = frequency;
+  if (value("postalCode")) next.postalCode = value("postalCode");
+  if (value("size")) next.size = value("size").replace(/[^0-9]/g, "");
+  if (value("rooms")) next.rooms = value("rooms").replace(/[^0-9]/g, "");
+  if (value("bathrooms")) next.bathrooms = value("bathrooms").replace(/[^0-9]/g, "");
+  if (value("windows")) next.windows = value("windows").replace(/[^0-9]/g, "");
+  if (value("floor")) next.floor = value("floor").replace(/[^0-9]/g, "");
+  if (value("condition")) next.condition = translateEstimateValue(value("condition"), language);
+  if (value("pets")) next.pets = translateEstimateValue(value("pets"), language);
+  if (value("elevator")) next.elevator = translateEstimateValue(value("elevator"), language);
+  if (value("parking")) next.parking = translateEstimateValue(value("parking"), language);
+  if (value("access")) next.access = translateEstimateValue(value("access"), language);
+  if (value("shortNotice")) next.shortNotice = translateEstimateValue(value("shortNotice"), language);
+  if (value("weekend")) next.weekend = translateEstimateValue(value("weekend"), language);
+  if (value("windowSide")) next.windowSide = translateEstimateValue(value("windowSide"), language);
+  if (value("balconyGlass")) next.balconyGlass = translateEstimateValue(value("balconyGlass"), language);
+  if (value("extras")) next.extras = splitEstimateExtras(value("extras"), language);
+  if (value("rut")) next.rutRequested = ["Ja", "Yes", "true", "1"].includes(translateEstimateValue(value("rut"), language));
+
+  next = applyBookingServiceSideEffects(next, language);
+  if (next.customerType === "Företag" || next.customerType === "Company") next.rutRequested = false;
+  return next;
+}
+
 function Field({ id, label, value, onChange, placeholder, type = "text", required = false }: { id?: string; label: string; value: string; onChange: (value: string) => void; placeholder?: string; type?: string; required?: boolean }) {
   return <label className="block"><span className="mb-2 block text-sm font-black text-porcelain/75">{label}{required ? " *" : ""}</span><input id={id} required={required} type={type} value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} className="w-full rounded-2xl border border-white/10 bg-porcelain px-4 py-4 text-base font-bold text-ink outline-none placeholder:text-ink/35 focus:border-gold focus:ring-2 focus:ring-gold/25" /></label>;
 }
@@ -231,6 +308,7 @@ export default function UnifiedBookingFormCore({ language, variant = "page" }: U
   const t = copy[language];
   const o = options[language];
   const [checking, setChecking] = useState(true);
+  const [estimateApplied, setEstimateApplied] = useState(false);
   const [authToken, setAuthToken] = useState("");
   const [accountEmail, setAccountEmail] = useState("");
   const [draft, setDraft] = useState<Draft>(() => base(language));
@@ -264,6 +342,19 @@ export default function UnifiedBookingFormCore({ language, variant = "page" }: U
       setChecking(false);
     });
   }, [language]);
+
+  useEffect(() => {
+    if (checking || estimateApplied || typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("estimate") !== "1") {
+      setEstimateApplied(true);
+      return;
+    }
+    setDraft((current) => applyEstimateQueryToDraft(current, language));
+    setStatus("idle");
+    setMessage(t.importedEstimate);
+    setEstimateApplied(true);
+  }, [checking, estimateApplied, language, t.importedEstimate]);
 
   function setField<K extends keyof Draft>(key: K, value: Draft[K]) {
     setDraft((current) => {
@@ -362,7 +453,7 @@ export default function UnifiedBookingFormCore({ language, variant = "page" }: U
             <div className="mb-7 flex items-start justify-between gap-4"><div><p className="text-xs font-black uppercase tracking-[.32em] text-gold">{t.section}</p><h2 className="display mt-2 text-3xl font-normal uppercase text-gold md:text-4xl">{t.formTitle}</h2></div><span className="rounded-full border border-gold/30 px-4 py-2 text-xs font-black uppercase tracking-[.18em] text-gold">{t.draftBadge}</span></div>
             <div className="grid gap-5">
               <Select label={t.service} value={draft.service} options={o.services} onChange={(value) => setField("service", value)} />
-              <div className="grid gap-4 sm:grid-cols-2"><Select label={t.customerType} value={draft.customerType} options={o.customerTypes} onChange={(value) => setField("customerType", value)} /><Select label={t.rut} value={draft.rutRequested ? t.yes : t.no} options={[t.yes, t.no]} onChange={(value) => setField("rutRequested", value === t.yes)} /></div>
+              <div className="grid gap-4 sm:grid-cols-2"><Select label={t.customerType} value={draft.customerType} options={o.customerTypes} onChange={(value) => setField("customerType", value)}/><Select label={t.rut} value={draft.rutRequested ? t.yes : t.no} options={[t.yes, t.no]} onChange={(value) => setField("rutRequested", value === t.yes)} /></div>
               <div className="grid gap-4 sm:grid-cols-3"><Field required label={t.area} value={draft.area} onChange={(value) => setField("area", value)} placeholder={t.placeholders.area} /><Field label={t.postalCode} value={draft.postalCode} onChange={(value) => setField("postalCode", value.slice(0, 12))} placeholder={t.placeholders.postalCode} /><Field required label={t.size} value={draft.size} onChange={(value) => setField("size", value.replace(/[^0-9]/g, ""))} placeholder={t.placeholders.size} /></div>
               <div className="grid grid-cols-[minmax(0,1fr)_4.5rem] items-end gap-3"><Field id="booking-address" required label={t.address} value={draft.address} onChange={(value) => setField("address", value)} placeholder={t.placeholders.address} /><button type="button" onClick={useCurrentLocationAddress} aria-label={t.searchAddress} title={t.searchAddress} className="grid h-[58px] place-items-center rounded-2xl border border-gold/35 bg-transparent text-gold transition hover:bg-gold hover:text-ink"><LocateFixed className="h-5 w-5" /></button></div>
               <div className="rounded-[1.75rem] border border-gold/15 bg-[#181917] p-5"><p className="mb-5 text-xs font-black uppercase tracking-[.32em] text-gold">{t.objectDetails}</p><div className="grid gap-4"><div className="grid gap-4 sm:grid-cols-2"><Select label={t.propertyType} value={draft.propertyType} options={o.types} onChange={(value) => setField("propertyType", value)} /><Field label={t.rooms} value={draft.rooms} onChange={(value) => setField("rooms", value.replace(/[^0-9]/g, ""))} placeholder={t.placeholders.rooms} /></div>
