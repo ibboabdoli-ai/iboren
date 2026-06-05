@@ -16,6 +16,7 @@ import BookingNumberUiEnhancer from "./BookingNumberUiEnhancer";
 import "./globals.css";
 import "./premium-hover.css";
 import "./booking-date-mobile-fix.css";
+import "./booking-page-mobile-safe.css";
 import "./header-mobile-polish.css";
 import "./footer-trust-polish.css";
 import "./profile-dashboard-polish.css";
