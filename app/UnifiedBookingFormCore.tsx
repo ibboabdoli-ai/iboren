@@ -225,7 +225,7 @@ function Select({ label, value, options: selectOptions, onChange }: { label: str
   return <label className="block"><span className="mb-2 block text-sm font-black text-porcelain/75">{label}</span><select value={value} onChange={(e) => onChange(e.target.value)} className="w-full rounded-2xl border border-white/10 bg-porcelain px-4 py-4 text-base font-bold text-ink outline-none focus:border-gold focus:ring-2 focus:ring-gold/25">{selectOptions.map((option) => <option key={option} value={option}>{option}</option>)}</select></label>;
 }
 
-export default function UnifiedBookingFormCore({ language }: UnifiedBookingFormCoreProps) {
+export default function UnifiedBookingFormCore({ language, variant = "page" }: UnifiedBookingFormCoreProps) {
   const t = copy[language];
   const o = options[language];
   const [checking, setChecking] = useState(true);
@@ -315,22 +315,7 @@ export default function UnifiedBookingFormCore({ language }: UnifiedBookingFormC
     }
   }
 
-  if (checking) return <main className="min-h-screen bg-ink px-5 py-20 text-porcelain"><div className="luxe-container rounded-[2rem] bg-[#242321] p-8 shadow-soft"><h1 className="display text-4xl uppercase text-gold">Iboren</h1></div></main>;
-
-  return (
-    <main className="min-h-screen bg-[#1f1f1d] px-5 py-10 text-porcelain md:py-16">
-      <div className="luxe-container grid gap-8">
-        <section className="rounded-[2rem] border border-white/10 bg-gradient-to-b from-[#2b2a28] to-[#1c1c1a] p-7 shadow-luxe md:p-9">
-          <div className="mb-4 flex items-center justify-between gap-3"><p className="text-xs font-black uppercase tracking-[.32em] text-gold">{t.kicker}</p><Link href={t.langHref} className="rounded-full border border-gold/35 px-4 py-2 text-xs font-black uppercase tracking-[.18em] text-gold">{t.langLabel}</Link></div>
-          <h1 className="display text-4xl font-normal uppercase leading-[.95] text-gold md:text-6xl">{isLoggedIn ? t.loggedInTitle : t.title}</h1>
-          <p className="mt-5 max-w-3xl text-base leading-8 text-porcelain/70">{isLoggedIn ? t.loggedInIntro : t.intro}</p>
-          <p className="mt-5 max-w-3xl rounded-2xl border border-gold/25 bg-gold/10 px-4 py-3 text-sm font-bold text-gold">{t.binding}</p>
-          <div className="mt-5 grid gap-2 text-sm text-porcelain/65">
-            {isLoggedIn ? <p>{t.loggedInAs} <b className="text-porcelain">{accountEmail}</b>. <Link href={language === "sv" ? "/profile" : "/en/profile"} className="font-bold text-gold underline">{t.profileLink}</Link>.</p> : <p>{t.login} <Link href="/login" className="font-bold text-gold underline">{t.loginLink}</Link>.</p>}
-            <p>{isLoggedIn ? t.loggedInReview : t.review}</p>
-          </div>
-        </section>
-
+  const formAndSummary = (
         <section className="grid gap-5 xl:grid-cols-[1fr_.75fr]">
           <form onSubmit={submit} className="rounded-[2rem] border border-white/10 bg-[#252420] p-5 shadow-luxe md:p-7">
             <input value={draft.website} onChange={(event) => setField("website", event.target.value)} name="website" tabIndex={-1} autoComplete="off" aria-hidden="true" className="hidden" />
@@ -364,6 +349,30 @@ export default function UnifiedBookingFormCore({ language }: UnifiedBookingFormC
             <pre className="mt-5 max-h-[520px] overflow-auto whitespace-pre-wrap rounded-[1.5rem] border border-gold/15 bg-[#181917] p-5 text-sm leading-7 text-porcelain/70">{summary}</pre>
           </aside>
         </section>
+  );
+
+  if (checking) {
+    const loadingCard = <div className="luxe-container rounded-[2rem] bg-[#242321] p-8 shadow-soft"><h1 className="display text-4xl uppercase text-gold">Iboren</h1></div>;
+    return variant === "embedded" ? loadingCard : <main className="min-h-screen bg-ink px-5 py-20 text-porcelain">{loadingCard}</main>;
+  }
+
+  if (variant === "embedded") return formAndSummary;
+
+  return (
+    <main className="min-h-screen bg-[#1f1f1d] px-5 py-10 text-porcelain md:py-16">
+      <div className="luxe-container grid gap-8">
+        <section className="rounded-[2rem] border border-white/10 bg-gradient-to-b from-[#2b2a28] to-[#1c1c1a] p-7 shadow-luxe md:p-9">
+          <div className="mb-4 flex items-center justify-between gap-3"><p className="text-xs font-black uppercase tracking-[.32em] text-gold">{t.kicker}</p><Link href={t.langHref} className="rounded-full border border-gold/35 px-4 py-2 text-xs font-black uppercase tracking-[.18em] text-gold">{t.langLabel}</Link></div>
+          <h1 className="display text-4xl font-normal uppercase leading-[.95] text-gold md:text-6xl">{isLoggedIn ? t.loggedInTitle : t.title}</h1>
+          <p className="mt-5 max-w-3xl text-base leading-8 text-porcelain/70">{isLoggedIn ? t.loggedInIntro : t.intro}</p>
+          <p className="mt-5 max-w-3xl rounded-2xl border border-gold/25 bg-gold/10 px-4 py-3 text-sm font-bold text-gold">{t.binding}</p>
+          <div className="mt-5 grid gap-2 text-sm text-porcelain/65">
+            {isLoggedIn ? <p>{t.loggedInAs} <b className="text-porcelain">{accountEmail}</b>. <Link href={language === "sv" ? "/profile" : "/en/profile"} className="font-bold text-gold underline">{t.profileLink}</Link>.</p> : <p>{t.login} <Link href="/login" className="font-bold text-gold underline">{t.loginLink}</Link>.</p>}
+            <p>{isLoggedIn ? t.loggedInReview : t.review}</p>
+          </div>
+        </section>
+
+        {formAndSummary}
       </div>
     </main>
   );
