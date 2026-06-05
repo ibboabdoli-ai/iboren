@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useEffect, useMemo, useState, type ReactNode } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { createClient } from "@supabase/supabase-js";
 import { formatSek } from "./lib/pricingCalculator";
@@ -22,18 +22,18 @@ const tokenPrefix = ["Bear", "er"].join("");
 
 const copy = {
   sv: {
-    title: "Skicka förfrågan utan konto.",
-    loggedInTitle: "Skicka bokningsförfrågan.",
+    title: "Skapa en tydlig bokningsförfrågan.",
+    loggedInTitle: "Skapa en tydlig bokningsförfrågan.",
     kicker: "Bokningsförfrågan",
-    intro: "Fyll i uppgifterna så återkommer Iboren med tid och pris. Detta är inte en bekräftad bokning.",
-    loggedInIntro: "Fyll i uppgifterna så sparas förfrågan på din profil och skickas till Iboren.",
-    binding: "Vi bekräftar alltid tid och pris innan bokningen blir bindande.",
+    intro: "Formuläret samlar rätt information direkt: tjänst, plats, storlek, rum, datum, kontakt och särskilda önskemål.",
+    loggedInIntro: "Din förfrågan sparas även på din profil och skickas till Iboren.",
+    binding: "Vi bekräftar alltid tid och pris innan förfrågan blir bindande.",
     login: "Har du redan konto?",
     loginLink: "Logga in och använd din profil",
     loggedInAs: "Inloggad som",
     profileLink: "Gå till min profil",
     review: "Din förfrågan granskas manuellt innan den blir en bokning.",
-    loggedInReview: "Din förfrågan sparas på din profil. Iboren bekräftar alltid tid och pris innan bokningen blir bindande.",
+    loggedInReview: "Din förfrågan sparas på din profil. Iboren bekräftar alltid tid och pris innan förfrågan blir bindande.",
     langLabel: "EN",
     langHref: "/en/boka-utan-konto",
     section: "Steg 1 / Förfrågan",
@@ -84,18 +84,18 @@ const copy = {
     placeholders: { area: "Södertälje", postalCode: "151 46", address: "Gatuadress och nummer", size: "75", rooms: "4", bathrooms: "1", floor: "0", windows: "8", name: "För- och efternamn", email: "namn@email.se", phone: "+46 ...", notes: "Särskilda önskemål..." }
   },
   en: {
-    title: "Send a request without an account.",
-    loggedInTitle: "Send booking request.",
+    title: "Create a clear booking request.",
+    loggedInTitle: "Create a clear booking request.",
     kicker: "Booking request",
-    intro: "Fill in the details and Iboren will get back to you with time and price. This is not a confirmed booking.",
-    loggedInIntro: "Fill in the details and the request will be saved to your profile and sent to Iboren.",
-    binding: "We always confirm time and price before the booking becomes binding.",
+    intro: "The form collects the right information directly: service, location, size, rooms, date, contact and special requests.",
+    loggedInIntro: "Your request is also saved to your profile and sent to Iboren.",
+    binding: "We always confirm time and price before the request becomes binding.",
     login: "Already have an account?",
     loginLink: "Log in and use your profile",
     loggedInAs: "Logged in as",
     profileLink: "Go to my profile",
     review: "Your request is reviewed manually before it becomes a booking.",
-    loggedInReview: "Your request is saved to your profile. Iboren always confirms time and price before the booking becomes binding.",
+    loggedInReview: "Your request is saved to your profile. Iboren always confirms time and price before the request becomes binding.",
     langLabel: "SV",
     langHref: "/boka-utan-konto",
     section: "Step 1 / Request",
@@ -192,19 +192,11 @@ function normalizeAreaValue(value: string) {
 }
 
 function Field({ label, value, onChange, placeholder, type = "text", required = false }: { label: string; value: string; onChange: (value: string) => void; placeholder?: string; type?: string; required?: boolean }) {
-  return <label className="block"><span className="mb-2 block text-xs font-black uppercase tracking-[.14em] text-burgundy/55">{label}{required ? " *" : ""}</span><input required={required} type={type} value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} className="w-full rounded-2xl border border-burgundy/10 bg-white px-4 py-4 text-[15px] font-semibold text-ink shadow-[0_10px_30px_rgba(43,15,24,.04)] outline-none transition focus:border-burgundy focus:bg-porcelain" /></label>;
+  return <label className="block"><span className="mb-2 block text-sm font-bold text-ink/75">{label}{required ? " *" : ""}</span><input required={required} type={type} value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} className="w-full rounded-2xl border border-burgundy/10 bg-cream px-4 py-4 text-ink outline-none focus:border-burgundy" /></label>;
 }
 
 function Select({ label, value, options: selectOptions, onChange }: { label: string; value: string; options: string[]; onChange: (value: string) => void }) {
-  return <label className="block"><span className="mb-2 block text-xs font-black uppercase tracking-[.14em] text-burgundy/55">{label}</span><select value={value} onChange={(e) => onChange(e.target.value)} className="w-full rounded-2xl border border-burgundy/10 bg-white px-4 py-4 text-[15px] font-semibold text-ink shadow-[0_10px_30px_rgba(43,15,24,.04)] outline-none transition focus:border-burgundy focus:bg-porcelain">{selectOptions.map((option) => <option key={option} value={option}>{option}</option>)}</select></label>;
-}
-
-function FormSection({ step, title, children }: { step: string; title: string; children: ReactNode }) {
-  return <section className="rounded-[1.75rem] border border-burgundy/10 bg-porcelain p-5 shadow-soft"><div className="mb-5 flex items-center gap-3"><span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-burgundy text-xs font-black text-porcelain">{step}</span><h3 className="display text-2xl font-normal uppercase text-burgundy">{title}</h3></div><div className="grid gap-4">{children}</div></section>;
-}
-
-function EstimateCard({ label, value, muted = false }: { label: string; value: string; muted?: boolean }) {
-  return <div className={`rounded-2xl border px-4 py-4 ${muted ? "border-burgundy/10 bg-cream" : "border-gold/30 bg-gold/10"}`}><p className="text-[10px] font-black uppercase tracking-[.18em] text-burgundy/55">{label}</p><p className="mt-1 text-2xl font-black text-burgundy">{value}</p></div>;
+  return <label className="block"><span className="mb-2 block text-sm font-bold text-ink/75">{label}</span><select value={value} onChange={(e) => onChange(e.target.value)} className="w-full rounded-2xl border border-burgundy/10 bg-cream px-4 py-4 text-ink outline-none focus:border-burgundy">{selectOptions.map((option) => <option key={option} value={option}>{option}</option>)}</select></label>;
 }
 
 export default function PublicBookingRequestForm({ language }: { language: Lang }) {
@@ -287,74 +279,50 @@ export default function PublicBookingRequestForm({ language }: { language: Lang 
   if (checking) return <main className="min-h-screen bg-cream px-5 py-20 text-ink"><div className="luxe-container rounded-[2rem] bg-porcelain p-8 shadow-soft"><h1 className="display text-4xl uppercase text-burgundy">Iboren</h1></div></main>;
 
   return (
-    <main className="min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(181,139,74,.20),transparent_34%),linear-gradient(180deg,#f5efe6,#efe5d8)] px-4 py-8 text-ink md:px-5 md:py-12">
-      <div className="luxe-container grid gap-6">
-        <section className="overflow-hidden rounded-[2.5rem] border border-burgundy/10 bg-porcelain shadow-luxe">
-          <div className="grid gap-0 lg:grid-cols-[.88fr_1.12fr]">
-            <div className="bg-burgundy p-7 text-porcelain md:p-10">
-              <div className="flex items-center justify-between gap-3"><p className="text-xs font-black uppercase tracking-[.28em] text-gold">{t.kicker}</p><Link href={t.langHref} className="rounded-full border border-gold/35 px-4 py-2 text-xs font-black uppercase tracking-[.18em] text-gold">{t.langLabel}</Link></div>
-              <h1 className="display mt-7 text-5xl font-normal uppercase leading-[.92] md:text-7xl">{isLoggedIn ? t.loggedInTitle : t.title}</h1>
-              <p className="mt-6 max-w-xl text-base leading-8 text-porcelain/78">{isLoggedIn ? t.loggedInIntro : t.intro}</p>
-              <div className="mt-7 grid gap-3 text-sm text-porcelain/78">
-                <p className="rounded-2xl border border-gold/25 bg-gold/10 px-4 py-3 font-bold text-gold">{t.binding}</p>
-                {isLoggedIn ? <p className="rounded-2xl bg-porcelain/10 px-4 py-3">{t.loggedInAs} <b>{accountEmail}</b>. <Link href={language === "sv" ? "/profile" : "/en/profile"} className="font-bold text-gold underline">{t.profileLink}</Link>.</p> : <p>{t.login} <Link href="/login" className="font-bold text-gold underline">{t.loginLink}</Link>.</p>}
-                <p>{isLoggedIn ? t.loggedInReview : t.review}</p>
-              </div>
-            </div>
-            <div className="grid gap-4 p-7 md:p-10 sm:grid-cols-3">
-              <EstimateCard label={t.beforeRut} value={formatSek(estimate.beforeRut)} />
-              <EstimateCard label={t.afterRut} value={formatSek(estimate.afterRut)} />
-              <EstimateCard label={t.timeEstimate} value={timeEstimate} muted />
-              <p className="sm:col-span-3 rounded-2xl bg-cream px-4 py-3 text-sm leading-6 text-ink/65">{t.priceNote}</p>
-            </div>
+    <main className="min-h-screen bg-cream px-5 py-12 text-ink md:py-20">
+      <div className="luxe-container grid gap-8">
+        <section className="rounded-[2rem] border border-burgundy/10 bg-porcelain p-7 shadow-soft md:p-9">
+          <div className="mb-5 flex items-center justify-between gap-3"><p className="text-xs font-black uppercase tracking-[.28em] text-burgundy/60">{t.kicker}</p><Link href={t.langHref} className="rounded-full border border-burgundy/15 px-4 py-2 text-xs font-black uppercase tracking-[.18em] text-burgundy">{t.langLabel}</Link></div>
+          <h1 className="display text-5xl font-normal uppercase leading-[.92] text-burgundy md:text-7xl">{isLoggedIn ? t.loggedInTitle : t.title}</h1>
+          <p className="mt-6 max-w-3xl text-base leading-8 text-ink/70">{isLoggedIn ? t.loggedInIntro : t.intro}</p>
+          <p className="mt-5 max-w-3xl rounded-2xl border border-gold/25 bg-gold/10 px-4 py-3 text-sm font-bold text-burgundy">{t.binding}</p>
+          <div className="mt-6 grid gap-3 text-sm text-ink/65">
+            {isLoggedIn ? <p>{t.loggedInAs} <b>{accountEmail}</b>. <Link href={language === "sv" ? "/profile" : "/en/profile"} className="font-bold text-burgundy underline">{t.profileLink}</Link>.</p> : <p>{t.login} <Link href="/login" className="font-bold text-burgundy underline">{t.loginLink}</Link>.</p>}
+            <p>{isLoggedIn ? t.loggedInReview : t.review}</p>
           </div>
         </section>
 
-        <section className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_420px]">
-          <form onSubmit={submit} className="grid gap-5">
+        <section className="grid gap-5 xl:grid-cols-[1fr_.75fr]">
+          <form onSubmit={submit} className="rounded-[2rem] border border-burgundy/10 bg-porcelain p-5 shadow-soft md:p-7">
             <input value={draft.website} onChange={(event) => setField("website", event.target.value)} name="website" tabIndex={-1} autoComplete="off" aria-hidden="true" className="hidden" />
-
-            <FormSection step="01" title={language === "sv" ? "Tjänst & pris" : "Service & price"}>
+            <div className="mb-6"><p className="text-xs font-black uppercase tracking-[.28em] text-burgundy/60">{t.section}</p><h2 className="display mt-2 text-3xl font-normal uppercase text-burgundy">{t.formTitle}</h2></div>
+            <div className="grid gap-4">
               <Select label={t.service} value={draft.service} options={o.services} onChange={(value) => setField("service", value)} />
               <div className="grid gap-4 sm:grid-cols-2"><Select label={t.customerType} value={draft.customerType} options={o.customerTypes} onChange={(value) => setField("customerType", value)} /><Select label={t.rut} value={draft.rutRequested ? t.yes : t.no} options={[t.yes, t.no]} onChange={(value) => setField("rutRequested", value === t.yes)} /></div>
-            </FormSection>
-
-            <FormSection step="02" title={language === "sv" ? "Plats" : "Location"}>
               <div className="grid gap-4 sm:grid-cols-3"><Field required label={t.area} value={draft.area} onChange={(value) => setField("area", value)} placeholder={t.placeholders.area} /><Field label={t.postalCode} value={draft.postalCode} onChange={(value) => setField("postalCode", value.slice(0, 12))} placeholder={t.placeholders.postalCode} /><Field required label={t.size} value={draft.size} onChange={(value) => setField("size", value.replace(/[^0-9]/g, ""))} placeholder={t.placeholders.size} /></div>
               <Field required label={t.address} value={draft.address} onChange={(value) => setField("address", value)} placeholder={t.placeholders.address} />
-            </FormSection>
-
-            <FormSection step="03" title={language === "sv" ? "Objekt & detaljer" : "Property details"}>
               <div className="grid gap-4 sm:grid-cols-2"><Select label={t.propertyType} value={draft.propertyType} options={o.types} onChange={(value) => setField("propertyType", value)} /><Field label={t.rooms} value={draft.rooms} onChange={(value) => setField("rooms", value.replace(/[^0-9]/g, ""))} placeholder={t.placeholders.rooms} /></div>
               <div className="grid gap-4 sm:grid-cols-2"><Field label={t.bathrooms} value={draft.bathrooms} onChange={(value) => setField("bathrooms", value.replace(/[^0-9]/g, ""))} placeholder={t.placeholders.bathrooms} /><Select label={t.pets} value={draft.pets} options={[t.yes, t.no, t.unknown]} onChange={(value) => setField("pets", value)} /></div>
               <div className="grid gap-4 sm:grid-cols-3"><Field label={t.floor} value={draft.floor} onChange={(value) => setField("floor", value.replace(/[^0-9]/g, ""))} placeholder={t.placeholders.floor} /><Select label={t.elevator} value={draft.elevator} options={[t.yes, t.no, t.unknown]} onChange={(value) => setField("elevator", value)} /><Select label={t.parking} value={draft.parking} options={[t.yes, t.no, t.unknown]} onChange={(value) => setField("parking", value)} /></div>
               <div className="grid gap-4 sm:grid-cols-2"><Select label={t.condition} value={draft.condition} options={o.conditions} onChange={(value) => setField("condition", value)} /><Select label={t.access} value={draft.access} options={o.access} onChange={(value) => setField("access", value)} /></div>
               <div className="grid gap-4 sm:grid-cols-2"><Select label={t.shortNotice} value={draft.shortNotice} options={[t.yes, t.no]} onChange={(value) => setField("shortNotice", value)} /><Select label={t.weekend} value={draft.weekend} options={[t.yes, t.no]} onChange={(value) => setField("weekend", value)} /></div>
-            </FormSection>
-
-            {visibility.showAddOns && <FormSection step="04" title={language === "sv" ? "Tillval" : "Add-ons"}>
-              <div><p className="mb-3 text-xs font-black uppercase tracking-[.14em] text-burgundy/55">{t.extras}</p><div className="grid grid-cols-2 gap-2 md:grid-cols-3">{o.extras.map((extra) => <button type="button" key={extra} onClick={() => toggleExtra(extra)} className={`rounded-2xl border px-3 py-3 text-sm font-black transition ${draft.extras.includes(extra) ? "border-burgundy bg-burgundy text-porcelain shadow-soft" : "border-burgundy/10 bg-white text-ink/75 hover:border-burgundy/30"}`}>{extra}</button>)}</div></div>
+              {visibility.showAddOns && <div><p className="mb-2 text-sm font-bold text-ink/75">{t.extras}</p><div className="grid grid-cols-2 gap-2 md:grid-cols-3">{o.extras.map((extra) => <button type="button" key={extra} onClick={() => toggleExtra(extra)} className={`rounded-2xl border px-3 py-3 text-sm font-bold ${draft.extras.includes(extra) ? "border-burgundy bg-burgundy text-porcelain" : "border-burgundy/10 bg-cream text-ink/75"}`}>{extra}</button>)}</div></div>}
               {visibility.showWindowFields && <div className="grid gap-4 sm:grid-cols-2"><Field label={t.windows} value={draft.windows} onChange={(value) => setField("windows", value.replace(/[^0-9]/g, ""))} placeholder={t.placeholders.windows} /><Select label={t.windowSide} value={draft.windowSide} options={o.windowSides} onChange={(value) => setField("windowSide", value)} /></div>}
               {visibility.showBalconyFields && <Select label={t.balconyGlass} value={draft.balconyGlass} options={o.balconyGlass} onChange={(value) => setField("balconyGlass", value)} />}
-            </FormSection>}
-
-            <FormSection step="05" title={language === "sv" ? "Tid & kontakt" : "Date & contact"}>
               <div className="grid gap-4 sm:grid-cols-2"><Field required type="date" label={t.date} value={draft.date} onChange={(value) => setField("date", value)} /><Select label={t.time} value={draft.timeWindow} options={o.times} onChange={(value) => setField("timeWindow", value)} /></div>
               <Select label={t.frequency} value={draft.frequency} options={o.freqs} onChange={(value) => setField("frequency", value)} />
               <div className="grid gap-4 sm:grid-cols-2"><Field required label={t.name} value={draft.name} onChange={(value) => setField("name", value)} placeholder={t.placeholders.name} /><Field required type="email" label={t.email} value={isLoggedIn ? accountEmail || draft.email : draft.email} onChange={(value) => setField("email", value)} placeholder={t.placeholders.email} /></div>
               <Field required type="tel" label={t.phone} value={draft.phone} onChange={(value) => setField("phone", value)} placeholder={t.placeholders.phone} />
-              <label className="block"><span className="mb-2 block text-xs font-black uppercase tracking-[.14em] text-burgundy/55">{t.message}</span><textarea value={draft.notes} onChange={(event) => setField("notes", event.target.value)} className="min-h-28 w-full rounded-2xl border border-burgundy/10 bg-white px-4 py-4 text-ink shadow-[0_10px_30px_rgba(43,15,24,.04)] outline-none transition focus:border-burgundy focus:bg-porcelain" placeholder={t.placeholders.notes} /></label>
+              <label className="block"><span className="mb-2 block text-sm font-bold text-ink/75">{t.message}</span><textarea value={draft.notes} onChange={(event) => setField("notes", event.target.value)} className="min-h-28 w-full rounded-2xl border border-burgundy/10 bg-cream px-4 py-4 text-ink outline-none focus:border-burgundy" placeholder={t.placeholders.notes} /></label>
               <button disabled={status === "loading"} className="btn-primary w-full justify-center bg-burgundy text-porcelain hover:bg-ink disabled:cursor-not-allowed disabled:opacity-60">{status === "loading" ? t.sending : isLoggedIn ? t.submitLoggedIn : t.submit}</button>
               {message && <p className={`rounded-2xl px-4 py-3 text-sm ${status === "success" ? "bg-green-100 text-green-800" : status === "error" ? "bg-red-100 text-red-800" : "bg-burgundy/5 text-ink/70"}`}>{message}</p>}
-            </FormSection>
+            </div>
           </form>
-
-          <aside className="xl:sticky xl:top-6 xl:self-start rounded-[2rem] border border-burgundy/10 bg-porcelain p-5 shadow-luxe md:p-7">
+          <aside className="rounded-[2rem] border border-burgundy/10 bg-porcelain p-5 shadow-soft md:p-7 xl:sticky xl:top-6 xl:self-start">
             <p className="text-xs font-black uppercase tracking-[.28em] text-burgundy/60">{t.summary}</p>
             <h2 className="display mt-2 text-3xl font-normal uppercase text-burgundy">{t.estimate}</h2>
-            <div className="mt-5 grid gap-3"><EstimateCard label={t.beforeRut} value={formatSek(estimate.beforeRut)} /><EstimateCard label={t.afterRut} value={formatSek(estimate.afterRut)} /><EstimateCard label={t.timeEstimate} value={timeEstimate} muted /></div>
-            <p className="mt-4 rounded-2xl bg-cream px-4 py-3 text-sm leading-6 text-ink/60">{t.moms}<br />{t.priceNote}</p>
-            <pre className="mt-5 max-h-[560px] overflow-auto whitespace-pre-wrap rounded-[1.5rem] border border-burgundy/10 bg-cream p-5 text-sm leading-7 text-ink/70">{summary}</pre>
+            <div className="mt-5 grid gap-3 rounded-[1.5rem] border border-burgundy/10 bg-cream p-5 text-sm"><p><b>{t.beforeRut}:</b> {formatSek(estimate.beforeRut)}</p><p><b>{t.afterRut}:</b> {formatSek(estimate.afterRut)}</p><p><b>{t.timeEstimate}:</b> {timeEstimate}</p><p className="text-ink/60">{t.moms}</p><p className="text-ink/60">{t.priceNote}</p></div>
+            <pre className="mt-5 max-h-[520px] overflow-auto whitespace-pre-wrap rounded-[1.5rem] border border-burgundy/10 bg-cream p-5 text-sm leading-7 text-ink/70">{summary}</pre>
           </aside>
         </section>
       </div>
