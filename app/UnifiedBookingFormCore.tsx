@@ -316,8 +316,8 @@ export default function UnifiedBookingFormCore({ language, variant = "page" }: U
   }
 
   const formAndSummary = (
-        <section className="grid gap-5 xl:grid-cols-[1fr_.75fr]">
-          <form onSubmit={submit} className="rounded-[2rem] border border-white/10 bg-[#252420] p-5 shadow-luxe md:p-7">
+        <section className={variant === "embedded" ? "grid w-full min-w-0 gap-5" : "grid gap-5 xl:grid-cols-[1fr_.75fr]"}>
+          <form onSubmit={submit} className="w-full min-w-0 rounded-[2rem] border border-white/10 bg-[#252420] p-5 shadow-luxe md:p-7">
             <input value={draft.website} onChange={(event) => setField("website", event.target.value)} name="website" tabIndex={-1} autoComplete="off" aria-hidden="true" className="hidden" />
             <div className="mb-7 flex items-start justify-between gap-4"><div><p className="text-xs font-black uppercase tracking-[.32em] text-gold">{t.section}</p><h2 className="display mt-2 text-3xl font-normal uppercase text-gold md:text-4xl">{t.formTitle}</h2></div><span className="rounded-full border border-gold/30 px-4 py-2 text-xs font-black uppercase tracking-[.18em] text-gold">{t.draftBadge}</span></div>
             <div className="grid gap-5">
@@ -342,7 +342,7 @@ export default function UnifiedBookingFormCore({ language, variant = "page" }: U
               {message && <p className={`rounded-2xl px-4 py-3 text-sm ${status === "success" ? "bg-green-100 text-green-800" : status === "error" ? "bg-red-100 text-red-800" : "bg-gold/10 text-gold"}`}>{message}</p>}
             </div>
           </form>
-          <aside className="rounded-[2rem] border border-white/10 bg-[#252420] p-5 shadow-luxe md:p-7 xl:sticky xl:top-6 xl:self-start">
+          <aside className={variant === "embedded" ? "w-full min-w-0 rounded-[2rem] border border-white/10 bg-[#252420] p-5 shadow-luxe md:p-7" : "w-full min-w-0 rounded-[2rem] border border-white/10 bg-[#252420] p-5 shadow-luxe md:p-7 xl:sticky xl:top-6 xl:self-start"}>
             <p className="text-xs font-black uppercase tracking-[.32em] text-gold">{t.summary}</p>
             <h2 className="display mt-2 text-3xl font-normal uppercase text-gold">{t.estimate}</h2>
             <div className="mt-5 grid gap-3 rounded-[1.5rem] border border-gold/15 bg-[#181917] p-5 text-sm text-porcelain/80"><p><b>{t.beforeRut}:</b> {formatSek(estimate.beforeRut)}</p><p><b>{t.afterRut}:</b> {formatSek(estimate.afterRut)}</p><p><b>{t.timeEstimate}:</b> {timeEstimate}</p><p className="text-porcelain/55">{t.moms}</p><p className="text-porcelain/55">{t.priceNote}</p></div>
