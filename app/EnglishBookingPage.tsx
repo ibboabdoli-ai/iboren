@@ -399,32 +399,15 @@ export default function EnglishBookingPage() {
             </div>
           </div>
 
-          <div className="grid gap-5 xl:grid-cols-[1fr_.88fr]">
-            <form onSubmit={submit} className="rounded-[2rem] border border-porcelain/10 bg-porcelain/8 p-5 shadow-2xl backdrop-blur-xl md:p-7">
-              <div className="mb-6 flex items-center justify-between"><div><p className="text-xs uppercase tracking-[.28em] text-gold">Step 1 / Request</p><h3 className="display mt-2 text-3xl font-normal uppercase">Request details</h3></div><span className="rounded-full border border-gold/30 px-3 py-1 text-[10px] font-bold uppercase tracking-[.22em] text-gold">Draft</span></div>
-              <div className="grid gap-4">
-                <div><label className="mb-2 block text-sm font-bold text-porcelain/80">Service</label><div className="grid grid-cols-2 gap-2">{serviceOptions.map((service) => <button type="button" key={service.value} onClick={() => setField("service", service.value)} className={`rounded-2xl border px-3 py-3 text-sm font-bold transition ${draft.service === service.value ? "border-gold bg-gold text-ink" : "border-porcelain/10 bg-porcelain/6 text-porcelain/80"}`}>{service.label}</button>)}</div></div>
-                <div className="grid gap-4 sm:grid-cols-2"><Field label="Area / city" value={draft.area} onChange={(value) => setField("area", value)} placeholder="Stockholm, Södertälje..." /><Field label="Size (sqm)" value={draft.size} onChange={(value) => setField("size", value.replace(/[^0-9]/g, ""))} placeholder="75" /></div>
-                <div><label className="mb-2 block text-sm font-bold text-porcelain/80">Address</label><div className="flex gap-2"><input value={draft.address} onChange={(event) => setField("address", event.target.value)} className="min-w-0 flex-1 rounded-2xl border border-porcelain/10 bg-porcelain px-4 py-4 text-ink placeholder:text-ink/45 outline-none" placeholder="Street address" /><button type="button" aria-label="Use my location" onClick={useLocation} className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl border border-gold/30 text-gold">{locating ? <Loader2 className="h-5 w-5 animate-spin" /> : <LocateFixed className="h-5 w-5" />}</button></div></div>
-                <div className="rounded-[1.5rem] border border-gold/15 bg-night/30 p-4"><p className="mb-4 text-xs font-bold uppercase tracking-[.28em] text-gold">Property & details</p><div className="grid gap-4 sm:grid-cols-2"><Select label="Property type" value={draft.propertyType} options={propertyTypes} onChange={(value) => setField("propertyType", value)} /><Field label="Number of rooms" value={draft.rooms} onChange={(value) => setField("rooms", value.replace(/[^0-9]/g, ""))} placeholder="3" /><Field label="Number of bathrooms" value={draft.bathrooms} onChange={(value) => setField("bathrooms", value.replace(/[^0-9]/g, ""))} placeholder="1" /><Select label="Pets" value={draft.pets} options={yesNoOptions} onChange={(value) => setField("pets", value)} /><Field label="Floor" value={draft.floor} onChange={(value) => setField("floor", value)} placeholder="3" /><Select label="Elevator" value={draft.elevator} options={yesNoOptions} onChange={(value) => setField("elevator", value)} /><Select label="Parking" value={draft.parking} options={yesNoOptions} onChange={(value) => setField("parking", value)} /></div></div>
-                <div><label className="mb-2 block text-sm font-bold text-porcelain/80">Extra services</label><div className="grid grid-cols-2 gap-2 sm:grid-cols-3">{extraOptions.map((extra) => <button type="button" key={extra.value} onClick={() => toggleExtra(extra.value)} className={`rounded-2xl border px-3 py-3 text-sm font-bold transition ${draft.extras.includes(extra.value) ? "border-gold bg-gold text-ink" : "border-porcelain/10 bg-porcelain/6 text-porcelain/80"}`}>{extra.label}</button>)}</div></div>
-                <div className="grid gap-4 sm:grid-cols-2"><Field label="Preferred date" type="date" value={draft.date} onChange={(value) => setField("date", value)} /><Select label="Time window" value={draft.timeWindow} options={timeOptions} onChange={(value) => setField("timeWindow", value)} /></div>
-                <Select label="Frequency" value={draft.frequency} options={frequencyOptions} onChange={(value) => setField("frequency", value)} />
-                <div className="grid gap-4 sm:grid-cols-2"><Field label="Name" value={draft.name} onChange={(value) => setField("name", value)} placeholder="Full name" /><Field label="Email" value={draft.email} onChange={(value) => setField("email", value)} placeholder="name@email.se" type="email" /></div>
-                <Field label="Phone" value={draft.phone} onChange={(value) => setField("phone", value)} placeholder="+46 ..." type="tel" />
-                <textarea value={draft.notes} onChange={(event) => setField("notes", event.target.value)} className="min-h-28 w-full rounded-2xl border border-porcelain/10 bg-porcelain px-4 py-4 text-ink placeholder:text-ink/45 outline-none" placeholder="Special requests..." />
-                <button disabled={status === "loading" || !user} className="btn-primary w-full bg-gold text-ink hover:bg-porcelain disabled:cursor-not-allowed disabled:opacity-55">{status === "loading" ? <Loader2 className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5" />} Send booking request</button>
-                {message && <p className={`rounded-2xl px-4 py-3 text-sm ${status === "success" ? "bg-gold/20 text-gold" : status === "error" ? "bg-red-500/10 text-red-200" : "bg-porcelain/10 text-porcelain/70"}`}>{message}</p>}
-                {status === "success" && (
-                  <div className="grid gap-3 pt-1">
-                    <Link href="/profile" className="rounded-full bg-gold px-5 py-4 text-center text-sm font-black uppercase tracking-[.22em] text-night">Go to my profile</Link>
-                    <button type="button" onClick={startNewBooking} className="rounded-full border border-gold/35 px-5 py-4 text-center text-sm font-black text-gold">New booking</button>
-                  </div>
-                )}
+          <div className="w-full">
+            <div className="mx-auto max-w-3xl rounded-2xl border border-gold/15 bg-night/70 p-8 shadow-lg">
+              <h3 className="text-2xl font-bold text-porcelain">Send a booking request</h3>
+              <p className="mt-3 text-porcelain/80">Fill in the form on our booking page. You get a clear summary and price indication before sending.</p>
+              <div className="mt-6 flex flex-wrap items-center gap-3">
+                <Link href="/en/boka-utan-konto" className="btn-primary">Open booking form</Link>
+                <Link href="/en/prices" className="btn-secondary">See prices first</Link>
               </div>
-            </form>
-
-            <aside className="rounded-[2rem] border border-porcelain/10 bg-cream p-5 text-ink shadow-2xl md:p-7"><div className="mb-6 flex items-center justify-between"><div><p className="text-xs font-bold uppercase tracking-[.28em] text-burgundy/60">Summary</p><h3 className="display mt-2 text-3xl font-normal uppercase text-burgundy">Request draft</h3></div><button type="button" aria-label="Copy summary" onClick={() => navigator.clipboard.writeText(summary)} className="grid h-11 w-11 place-items-center rounded-full border border-burgundy/15 bg-porcelain text-burgundy"><Copy className="h-4 w-4" /></button></div><pre className="max-h-[520px] overflow-auto whitespace-pre-wrap rounded-[1.5rem] border border-burgundy/10 bg-porcelain/70 p-5 text-sm leading-7 text-ink/70">{summary}</pre></aside>
+            </div>
           </div>
         </div>
       </section>
