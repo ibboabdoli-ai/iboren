@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { ArrowUpRight, Building2, CheckCircle2, Home, Mail, Menu, ShieldCheck, Truck, UserRound, X } from "lucide-react";
 import { createClient, User } from "@supabase/supabase-js";
-import UnifiedBookingFormCore from "./UnifiedBookingFormCore";
+// UnifiedBookingFormCore removed from this page to avoid rendering the embedded form on the Swedish homepage
 
 const frames = [
   { counter: "01 / 06", kicker: "HEM · FÖRE", title: "Före städningen", body: "Ett hem innan återställningen: rörigt, tungt och svårt att slappna av i.", image: "/cinematic/01-home-before.webp" },
@@ -135,7 +135,30 @@ export default function HomePage() {
 
       <section id="process" className="bg-porcelain py-24 text-ink md:py-32"><div className="luxe-container"><p className="eyebrow">II / Så fungerar det</p><h2 className="display mt-4 max-w-4xl text-5xl font-normal uppercase leading-[.9] text-burgundy md:text-7xl">Fyra steg. En tydlig bokning.</h2><div className="mt-12 grid gap-4 md:grid-cols-4">{["Välj tjänst", "Fyll i plats", "Se sammanfattning", "Skicka förfrågan"].map((item, i) => <article key={item} className="rounded-[2rem] border border-burgundy/10 bg-cream p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-soft"><div className="mb-10 flex items-center justify-between"><span className="display text-4xl text-burgundy/55">0{i + 1}</span><CheckCircle2 className="text-burgundy" /></div><h3 className="display text-3xl font-normal uppercase">{item}</h3><p className="mt-4 text-sm leading-7 text-ink/60">Ett enkelt steg som gör bokningsunderlaget tydligare och lättare att följa upp.</p></article>)}</div></div></section>
 
-      <section id="booking" className="bg-ink py-24 text-porcelain md:py-32"><div className="luxe-container grid gap-10"><div className="max-w-4xl"><p className="mb-4 text-[11px] font-bold uppercase tracking-[.38em] text-gold">Bokning</p><h2 className="display text-5xl font-normal uppercase leading-[.9] md:text-7xl">Skapa en tydlig bokningsförfrågan.</h2><p className="mt-6 max-w-xl text-lg leading-8 text-porcelain/70">Formuläret samlar rätt information direkt: tjänst, plats, storlek, rum, datum, kontakt och särskilda önskemål.</p><div className="mt-8 grid gap-3 text-sm text-porcelain/70"><p className="flex items-center gap-3"><ShieldCheck className="h-5 w-5 text-gold" /> Plats delas bara efter aktivt val.</p><p className="flex items-center gap-3"><Mail className="h-5 w-5 text-gold" /> {user ? "Din förfrågan sparas även på din profil." : "Logga in för att boka och spara förfrågan på din profil."}</p></div></div><div className="w-full"><UnifiedBookingFormCore language="sv" variant="embedded" /></div></div></section>
+      <section id="booking" className="bg-ink py-24 text-porcelain md:py-32">
+        <div className="luxe-container grid gap-10">
+          <div className="max-w-4xl">
+            <p className="mb-4 text-[11px] font-bold uppercase tracking-[.38em] text-gold">Bokning</p>
+            <h2 className="display text-5xl font-normal uppercase leading-[.9] md:text-7xl">Skapa en tydlig bokningsförfrågan.</h2>
+            <p className="mt-6 max-w-xl text-lg leading-8 text-porcelain/70">Formuläret samlar rätt information direkt: tjänst, plats, storlek, rum, datum, kontakt och särskilda önskemål.</p>
+            <div className="mt-8 grid gap-3 text-sm text-porcelain/70">
+              <p className="flex items-center gap-3"><ShieldCheck className="h-5 w-5 text-gold" /> Plats delas bara efter aktivt val.</p>
+              <p className="flex items-center gap-3"><Mail className="h-5 w-5 text-gold" /> {user ? "Din förfrågan sparas även på din profil." : "Logga in för att boka och spara förfrågan på din profil."}</p>
+            </div>
+          </div>
+
+          <div className="w-full">
+            <div className="mx-auto max-w-3xl rounded-2xl border border-gold/15 bg-night/70 p-8 shadow-lg">
+              <h3 className="text-2xl font-bold text-porcelain">Skicka en bokningsförfrågan</h3>
+              <p className="mt-3 text-porcelain/80">Fyll i formuläret på vår bokningssida. Du får en tydlig sammanfattning och prisindikation innan du skickar.</p>
+              <div className="mt-6 flex flex-wrap items-center gap-3">
+                <Link href="/boka-utan-konto" className="btn-primary">Öppna bokningsformulär</Link>
+                <Link href="/priser" className="btn-secondary">Se priser först</Link>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
 
       <footer className="border-t border-gold/10 bg-night py-10"><div className="luxe-container grid gap-8 md:grid-cols-[1.1fr_1fr_1fr]"><div><p className="display text-4xl font-normal uppercase text-gold">Iboren</p><p className="mt-2 max-w-sm text-sm leading-7 text-porcelain/65">Städning i Södertälje och Stockholm med tydlig prisbild, RUT-avdrag och enkel bokning.</p></div><div><p className="mb-3 text-xs font-black uppercase tracking-[.22em] text-gold">Tjänster</p><div className="grid gap-2 text-sm font-semibold text-porcelain/70"><Link href="/hemstadning" className="hover:text-gold">Hemstädning</Link><Link href="/flyttstadning" className="hover:text-gold">Flyttstädning</Link><Link href="/kontorsstadning" className="hover:text-gold">Kontorsstädning</Link><Link href="/fonsterputs" className="hover:text-gold">Fönsterputs</Link></div></div><div><p className="mb-3 text-xs font-black uppercase tracking-[.22em] text-gold">Iboren</p><div className="grid gap-2 text-sm font-semibold text-porcelain/70"><Link href="/priser" className="hover:text-gold">Priser</Link><Link href="/jobb" className="hover:text-gold">Jobba hos oss</Link><Link href="/om-iboren" className="hover:text-gold">Om oss</Link><Link href="/privacy" className="hover:text-gold">Privacy</Link><Link href="/terms" className="hover:text-gold">Terms</Link><a href="mailto:hej@iboren.se" className="hover:text-gold">hej@iboren.se</a></div></div></div></footer>
     </main>
