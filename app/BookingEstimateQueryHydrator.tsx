@@ -56,17 +56,24 @@ function findControl(form: HTMLFormElement, labels: string[]) {
   return label?.querySelector<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>("input, select, textarea") || null;
 }
 
+function fireFormEvents(control: HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement) {
+  control.dispatchEvent(new Event("input", { bubbles: true }));
+  control.dispatchEvent(new Event("change", { bubbles: true }));
+}
+
 function setInputValue(input: HTMLInputElement | HTMLTextAreaElement, value: string) {
   const prototype = input instanceof HTMLTextAreaElement ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype;
   const descriptor = Object.getOwnPropertyDescriptor(prototype, "value");
   descriptor?.set?.call(input, value);
-  input.dispatchEvent(new Event("input", { bubbles: true }));
+  fireFormEvents(input);
 }
 
 function setSelectValue(select: HTMLSelectElement, value: string) {
+  const exists = Array.from(select.options).some((option) => option.value === value || option.textContent === value);
+  if (!exists) return;
   const descriptor = Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, "value");
   descriptor?.set?.call(select, value);
-  select.dispatchEvent(new Event("change", { bubbles: true }));
+  fireFormEvents(select);
 }
 
 function setControl(form: HTMLFormElement, labels: string[], value: string) {
@@ -121,14 +128,21 @@ function applyEstimate(form: HTMLFormElement, params: URLSearchParams, language:
   setControl(form, ["Frekvens", "Frequency"], translate(params.get("frequency") || "", language));
 
   const extras = (params.get("extras") || "").split("|").map((item) => item.trim()).filter(Boolean);
-  setTimeout(() => {
+  window.setTimeout(() => {
     selectExtras(form, extras, language);
-    setControl(form, ["Antal fönster", "Number of windows"], params.get("windows") || "");
-    setControl(form, ["Fönsterputs", "Window cleaning"], translate(params.get("windowSide") || "", language));
-    setControl(form, ["Inglasad balkong", "Balcony glass"], translate(params.get("balconyGlass") || "", language));
-  }, 100);
+    window.setTimeout(() => {
+      setControl(form, ["Antal fönster", "Number of windows"], params.get("windows") || "");
+      setControl(form, ["Fönsterputs", "Window cleaning"], translate(params.get("windowSide") || "", language));
+      setControl(form, ["Inglasad balkong", "Balcony glass"], translate(params.get("balconyGlass") || "", language));
+    }, 150);
+  }, 150);
 
   showImportedNotice(form, language);
+}
+
+function findBookingForm() {
+  const addressField = document.getElementById("booking-address");
+  return addressField?.closest("form") as HTMLFormElement | null;
 }
 
 export default function BookingEstimateQueryHydrator() {
@@ -139,9 +153,9 @@ export default function BookingEstimateQueryHydrator() {
     const language = pageLanguage();
     let attempts = 0;
     const timer = window.setInterval(() => {
-      const form = document.querySelector<HTMLFormElement>('form:has(#booking-address)');
+      const form = findBookingForm();
       attempts += 1;
-      if (!form && attempts < 30) return;
+      if (!form && attempts < 40) return;
       window.clearInterval(timer);
       if (!form) return;
       applyEstimate(form, params, language);
