@@ -286,10 +286,48 @@ export default function UnifiedBookingFormCore({ language, variant = "page" }: U
     setDraft((current) => ({ ...current, extras: current.extras.includes(item) ? current.extras.filter((extra) => extra !== item) : [...current.extras, item] }));
   }
 
-  function focusAddressField() {
-    document.getElementById("booking-address")?.focus();
+  async function useCurrentLocationAddress() {
+    const addressField = document.getElementById("booking-address");
+    if (!navigator.geolocation) {
+      addressField?.focus();
+      setStatus("idle");
+      setMessage(t.searchAddressHint);
+      return;
+    }
+
     setStatus("idle");
-    setMessage(t.searchAddressHint);
+    setMessage(language === "sv" ? "Hämtar din position..." : "Getting your location...");
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        try {
+          const lat = position.coords.latitude;
+          const lon = position.coords.longitude;
+          const res = await fetch(`/api/reverse-geocode?lat=${encodeURIComponent(lat)}&lon=${encodeURIComponent(lon)}`);
+          const json = await res.json().catch(() => null) as { ok?: boolean; address?: string; area?: string } | null;
+          if (res.ok && json?.address) {
+            setField("address", json.address as Draft["address"]);
+            if (json.area) setField("area", json.area as Draft["area"]);
+            setStatus("idle");
+            setMessage(language === "sv" ? "Adressen har fyllts i från din position." : "The address has been filled from your location.");
+            return;
+          }
+          setStatus("error");
+          setMessage(language === "sv" ? "Kunde inte hämta adressen. Skriv adressen manuellt." : "Could not get the address. Please enter it manually.");
+          addressField?.focus();
+        } catch {
+          setStatus("error");
+          setMessage(language === "sv" ? "Kunde inte hämta adressen. Skriv adressen manuellt." : "Could not get the address. Please enter it manually.");
+          addressField?.focus();
+        }
+      },
+      () => {
+        setStatus("error");
+        setMessage(language === "sv" ? "Kunde inte hämta adressen. Skriv adressen manuellt." : "Could not get the address. Please enter it manually.");
+        addressField?.focus();
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 30000 }
+    );
   }
 
   async function submit(event: FormEvent<HTMLFormElement>) {
@@ -326,7 +364,7 @@ export default function UnifiedBookingFormCore({ language, variant = "page" }: U
               <Select label={t.service} value={draft.service} options={o.services} onChange={(value) => setField("service", value)} />
               <div className="grid gap-4 sm:grid-cols-2"><Select label={t.customerType} value={draft.customerType} options={o.customerTypes} onChange={(value) => setField("customerType", value)} /><Select label={t.rut} value={draft.rutRequested ? t.yes : t.no} options={[t.yes, t.no]} onChange={(value) => setField("rutRequested", value === t.yes)} /></div>
               <div className="grid gap-4 sm:grid-cols-3"><Field required label={t.area} value={draft.area} onChange={(value) => setField("area", value)} placeholder={t.placeholders.area} /><Field label={t.postalCode} value={draft.postalCode} onChange={(value) => setField("postalCode", value.slice(0, 12))} placeholder={t.placeholders.postalCode} /><Field required label={t.size} value={draft.size} onChange={(value) => setField("size", value.replace(/[^0-9]/g, ""))} placeholder={t.placeholders.size} /></div>
-              <div className="grid grid-cols-[minmax(0,1fr)_4.5rem] items-end gap-3"><Field id="booking-address" required label={t.address} value={draft.address} onChange={(value) => setField("address", value)} placeholder={t.placeholders.address} /><button type="button" onClick={focusAddressField} aria-label={t.searchAddress} title={t.searchAddress} className="grid h-[58px] place-items-center rounded-2xl border border-gold/35 bg-transparent text-gold transition hover:bg-gold hover:text-ink"><LocateFixed className="h-5 w-5" /></button></div>
+              <div className="grid grid-cols-[minmax(0,1fr)_4.5rem] items-end gap-3"><Field id="booking-address" required label={t.address} value={draft.address} onChange={(value) => setField("address", value)} placeholder={t.placeholders.address} /><button type="button" onClick={useCurrentLocationAddress} aria-label={t.searchAddress} title={t.searchAddress} className="grid h-[58px] place-items-center rounded-2xl border border-gold/35 bg-transparent text-gold transition hover:bg-gold hover:text-ink"><LocateFixed className="h-5 w-5" /></button></div>
               <div className="rounded-[1.75rem] border border-gold/15 bg-[#181917] p-5"><p className="mb-5 text-xs font-black uppercase tracking-[.32em] text-gold">{t.objectDetails}</p><div className="grid gap-4"><div className="grid gap-4 sm:grid-cols-2"><Select label={t.propertyType} value={draft.propertyType} options={o.types} onChange={(value) => setField("propertyType", value)} /><Field label={t.rooms} value={draft.rooms} onChange={(value) => setField("rooms", value.replace(/[^0-9]/g, ""))} placeholder={t.placeholders.rooms} /></div>
               <div className="grid gap-4 sm:grid-cols-2"><Field label={t.bathrooms} value={draft.bathrooms} onChange={(value) => setField("bathrooms", value.replace(/[^0-9]/g, ""))} placeholder={t.placeholders.bathrooms} /><Select label={t.pets} value={draft.pets} options={[t.yes, t.no, t.unknown]} onChange={(value) => setField("pets", value)} /></div>
               <div className="grid gap-4 sm:grid-cols-3"><Field label={t.floor} value={draft.floor} onChange={(value) => setField("floor", value.replace(/[^0-9]/g, ""))} placeholder={t.placeholders.floor} /><Select label={t.elevator} value={draft.elevator} options={[t.yes, t.no, t.unknown]} onChange={(value) => setField("elevator", value)} /><Select label={t.parking} value={draft.parking} options={[t.yes, t.no, t.unknown]} onChange={(value) => setField("parking", value)} /></div>
