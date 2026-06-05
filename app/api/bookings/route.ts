@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient, User } from "@supabase/supabase-js";
 import { generateBookingNumber } from "../../lib/bookingNumber";
+import { publicRequestSnapshotLines } from "../../lib/publicRequestEmailSnapshot";
 
 export const runtime = "nodejs";
 
@@ -35,7 +36,7 @@ type BookingPayload = {
   customer_phone?: string;
   notes?: string;
   customerType?: string;
-  rutRequested?: boolean;
+  rutRequested?: boolean | string;
   language?: string;
 };
 
@@ -116,7 +117,17 @@ function firstFilled(...values: unknown[]) {
   return "";
 }
 
-function english(value: string) { return englishLabels[value] || value; }
+function english(value: string) {
+  return englishLabels[value] || value;
+}
+
+function message(language: Language, sv: string, en: string) {
+  return language === "en" ? en : sv;
+}
+
+function compactLines(lines: Array<string | false | null | undefined>) {
+  return lines.filter((line): line is string => line !== false && line !== null && line !== undefined).join("\n");
+}
 
 function getRequestLanguage(request: Request, json: BookingPayload): Language {
   const explicit = sanitize(json.language).toLowerCase();
@@ -133,7 +144,7 @@ function normalizeCustomerType(value: unknown) {
 }
 
 function normalizeRutRequested(value: unknown, customerType: string, service: string) {
-  if (customerType !== "Privatperson" || service === "Kontorsstädning") return false;
+  if (customerType !== "Privatperson" || service === "Kontorsstädning" || service === "Office cleaning") return false;
   return value === true || value === "true" || value === "Ja" || value === "ja" || value === "Yes" || value === "yes";
 }
 
@@ -148,7 +159,9 @@ function parseDate(dateValue: string) {
   return Number.isNaN(date.getTime()) ? null : date;
 }
 
-function formatDate(date: Date) { return date.toISOString().slice(0, 10); }
+function formatDate(date: Date) {
+  return date.toISOString().slice(0, 10);
+}
 
 function addMonths(date: Date, months: number) {
   const next = new Date(date);
@@ -172,7 +185,10 @@ function detailNumber(notes: string, labels: string[]) {
   return null;
 }
 
-function message(language: Language, sv: string, en: string) { return language === "en" ? en : sv; }
+function addressHasStreetNumber(address: string) {
+  const streetPart = address.split(",")[0] || address;
+  return /\b\d+[A-Za-zÅÄÖåäö]?\b/.test(streetPart);
+}
 
 function validateBookingPayload(payload: NormalizedBookingPayload, language: Language) {
   const size = numberFromText(payload.size);
@@ -190,7 +206,7 @@ function validateBookingPayload(payload: NormalizedBookingPayload, language: Lan
   const phoneDigits = payload.phone.replace(/\D/g, "");
   if (phoneDigits.length < 7 || phoneDigits.length > 15) throw new BookingValidationError(message(language, "Telefonnummer verkar fel. Kontrollera numret.", "Phone number looks incorrect. Please check it."));
 
-  if (payload.address.length < 5 || !/[0-9]/.test(payload.address)) throw new BookingValidationError(message(language, "Adress måste innehålla gata och nummer.", "Address must include street and number."));
+  if (payload.address.length < 5 || !addressHasStreetNumber(payload.address)) throw new BookingValidationError(message(language, "Kontrollera att adressen är komplett och att gatunummer finns med.", "Please check that the address is complete and includes the street number."));
 
   const bookingDate = parseDate(payload.date);
   if (!bookingDate) throw new BookingValidationError(message(language, "Datum är inte giltigt.", "Date is not valid."));
@@ -254,23 +270,23 @@ async function getAuthContext(request: Request): Promise<AuthContext | null> {
 function buildAdminRutText(payload: NormalizedBookingPayload, language: Language) {
   if (language === "en") {
     if (payload.customerType !== "Privatperson") return "RUT: Not applicable for company bookings.";
-    if (payload.service === "Kontorsstädning") return "RUT: No. Office cleaning is handled as a business price or quote.";
+    if (payload.service === "Kontorsstädning" || payload.service === "Office cleaning") return "RUT: No. Office cleaning is handled as a business price or quote.";
     return payload.rutRequested ? "RUT: Yes. The customer has requested RUT deduction according to Skatteverket rules. If RUT is not approved, the remaining amount may be invoiced." : "RUT: No. The customer has not requested RUT deduction.";
   }
   if (payload.customerType !== "Privatperson") return "RUT: Gäller inte för företagsbokningar.";
-  if (payload.service === "Kontorsstädning") return "RUT: Nej. Kontorsstädning hanteras som företagspris/offert.";
+  if (payload.service === "Kontorsstädning" || payload.service === "Office cleaning") return "RUT: Nej. Kontorsstädning hanteras som företagspris/offert.";
   return payload.rutRequested ? "RUT: Ja. Kunden har valt RUT och intygar att villkoren hos Skatteverket uppfylls. Om RUT inte godkänns kan resterande belopp faktureras." : "RUT: Nej. Kunden har inte valt RUT-avdrag.";
 }
 
 function buildCustomerRutText(payload: NormalizedBookingPayload, language: Language) {
   if (language === "en") {
     if (payload.customerType !== "Privatperson") return "RUT: Not applicable for company bookings.";
-    if (payload.service === "Kontorsstädning") return "RUT: No. Office cleaning is handled as a business price or quote.";
+    if (payload.service === "Kontorsstädning" || payload.service === "Office cleaning") return "RUT: No. Office cleaning is handled as a business price or quote.";
     return payload.rutRequested ? "RUT: Yes. You have requested RUT deduction according to Skatteverket rules. If RUT is not approved, the remaining amount may be invoiced." : "RUT: No. You have not requested RUT deduction.";
   }
   if (payload.customerType !== "Privatperson") return "RUT: Gäller inte för företagsbokningar.";
-  if (payload.service === "Kontorsstädning") return "RUT: Nej. Kontorsstädning hanteras som företagspris/offert.";
-  return payload.rutRequested ? "RUT: Ja. Du har valt RUT och intygar att villkoren hos Skatteverket uppfylls. Om RUT inte godkänns kan resterande belopp faktureras." : "RUT: Nej. Du har inte valt RUT-avdrag.";
+  if (payload.service === "Kontorsstädning" || payload.service === "Office cleaning") return "RUT: Nej. Kontorsstädning hanteras som företagspris/offert.";
+  return payload.rutRequested ? "RUT: Ja. Du har valt RUT enligt Skatteverkets regler. Om RUT inte godkänns kan resterande belopp faktureras." : "RUT: Nej. Du har inte valt RUT-avdrag.";
 }
 
 function bookingReference(booking: Pick<SaveBookingResult, "id" | "bookingNumber">, language: Language) {
@@ -279,27 +295,41 @@ function bookingReference(booking: Pick<SaveBookingResult, "id" | "bookingNumber
   return language === "en" ? `Booking ID: ${shortId}` : `Boknings-ID: ${shortId}`;
 }
 
+function snapshotLines(payload: NormalizedBookingPayload, language: Language, includeWarnings: boolean) {
+  return publicRequestSnapshotLines({ notes: payload.notes, name: payload.name, area: payload.area }, language, { includeWarnings });
+}
+
 function buildAdminTextEn(payload: NormalizedBookingPayload, user: User, booking: SaveBookingResult, language: Language, recurring?: { total: number; dates: string[] }) {
-  return ["New Iboren booking request", "", bookingReference(booking, "en"), recurring && recurring.total > 1 ? `Recurring visits created: ${recurring.total}` : "Recurring visits created: 1", recurring && recurring.total > 1 ? `Visit dates: ${recurring.dates.join(", ")}` : "", `Authenticated user: ${user.email || user.id}`, `Customer language: ${language}`, "", `Customer type: ${english(payload.customerType)}`, buildAdminRutText(payload, "en"), "", `Service: ${english(payload.service)}`, `Area: ${payload.area}`, `Address: ${payload.address || "Not provided"}`, `Size: ${payload.size} sqm`, `Frequency: ${english(payload.frequency)}`, `Date: ${payload.date}`, `Time window: ${english(payload.timeWindow)}`, "", `Name: ${payload.name}`, `Email: ${payload.email}`, `Phone: ${payload.phone || "Not provided"}`, "", `Notes: ${payload.notes || "-"}`].filter(Boolean).join("\n");
+  return compactLines(["New Iboren booking request", "", bookingReference(booking, "en"), recurring && recurring.total > 1 ? `Recurring visits created: ${recurring.total}` : "Recurring visits created: 1", recurring && recurring.total > 1 ? `Visit dates: ${recurring.dates.join(", ")}` : "", `Authenticated user: ${user.email || user.id}`, `Customer language: ${language}`, "", `Customer type: ${english(payload.customerType)}`, buildAdminRutText(payload, "en"), "", `Service: ${english(payload.service)}`, `Area: ${payload.area}`, `Address: ${payload.address || "Not provided"}`, `Size: ${payload.size} sqm`, `Frequency: ${english(payload.frequency)}`, `Date: ${payload.date}`, `Time window: ${english(payload.timeWindow)}`, "", `Name: ${payload.name}`, `Email: ${payload.email}`, `Phone: ${payload.phone || "Not provided"}`, ...snapshotLines(payload, "en", true)]);
 }
 
 function buildAdminTextSv(payload: NormalizedBookingPayload, user: User, booking: SaveBookingResult, language: Language, recurring?: { total: number; dates: string[] }) {
-  return ["Ny bokningsförfrågan till Iboren", "", bookingReference(booking, "sv"), recurring && recurring.total > 1 ? `Återkommande besök skapade: ${recurring.total}` : "Återkommande besök skapade: 1", recurring && recurring.total > 1 ? `Besöksdatum: ${recurring.dates.join(", ")}` : "", `Inloggad användare: ${user.email || user.id}`, `Kundspråk: ${language}`, "", `Kundtyp: ${payload.customerType}`, buildAdminRutText(payload, "sv"), "", `Tjänst: ${payload.service}`, `Område: ${payload.area}`, `Adress: ${payload.address || "Ej angivet"}`, `Storlek: ${payload.size} kvm`, `Frekvens: ${payload.frequency}`, `Datum: ${payload.date}`, `Tid: ${payload.timeWindow}`, "", `Namn: ${payload.name}`, `E-post: ${payload.email}`, `Telefon: ${payload.phone || "Ej angivet"}`, "", `Anteckningar: ${payload.notes || "-"}`].filter(Boolean).join("\n");
+  return compactLines(["Ny bokningsförfrågan till Iboren", "", bookingReference(booking, "sv"), recurring && recurring.total > 1 ? `Återkommande besök skapade: ${recurring.total}` : "Återkommande besök skapade: 1", recurring && recurring.total > 1 ? `Besöksdatum: ${recurring.dates.join(", ")}` : "", `Inloggad användare: ${user.email || user.id}`, `Kundspråk: ${language}`, "", `Kundtyp: ${payload.customerType}`, buildAdminRutText(payload, "sv"), "", `Tjänst: ${payload.service}`, `Område: ${payload.area}`, `Adress: ${payload.address || "Ej angivet"}`, `Storlek: ${payload.size} kvm`, `Frekvens: ${payload.frequency}`, `Datum: ${payload.date}`, `Tid: ${payload.timeWindow}`, "", `Namn: ${payload.name}`, `E-post: ${payload.email}`, `Telefon: ${payload.phone || "Ej angivet"}`, ...snapshotLines(payload, "sv", true)]);
 }
 
-function buildAdminText(payload: NormalizedBookingPayload, user: User, booking: SaveBookingResult, language: Language, recurring?: { total: number; dates: string[] }) { return language === "sv" ? buildAdminTextSv(payload, user, booking, language, recurring) : buildAdminTextEn(payload, user, booking, language, recurring); }
-function buildAdminSubject(payload: NormalizedBookingPayload, language: Language) { return language === "sv" ? `Ny Iboren-bokning: ${payload.service} · ${payload.area}` : `New Iboren booking: ${english(payload.service)} · ${payload.area}`; }
+function buildAdminText(payload: NormalizedBookingPayload, user: User, booking: SaveBookingResult, language: Language, recurring?: { total: number; dates: string[] }) {
+  return language === "sv" ? buildAdminTextSv(payload, user, booking, language, recurring) : buildAdminTextEn(payload, user, booking, language, recurring);
+}
+
+function buildAdminSubject(payload: NormalizedBookingPayload, language: Language) {
+  return language === "sv" ? `Ny Iboren-bokning: ${payload.service} · ${payload.area}` : `New Iboren booking: ${english(payload.service)} · ${payload.area}`;
+}
 
 function buildCustomerTextSv(payload: NormalizedBookingPayload, booking: SaveBookingResult, recurring?: { total: number; dates: string[] }) {
-  return [`Hej ${payload.name},`, "", "Tack för din bokningsförfrågan till Iboren. Vi har tagit emot den och återkommer så snart som möjligt.", recurring && recurring.total > 1 ? `Vi har skapat ${recurring.total} kommande besök utifrån din valda frekvens.` : "", recurring && recurring.total > 1 ? `Datum: ${recurring.dates.join(", ")}` : "", "", "Din sammanfattning:", bookingReference(booking, "sv"), `Tjänst: ${payload.service}`, `Område: ${payload.area}`, `Adress: ${payload.address}`, `Storlek: ${payload.size} kvm`, `Frekvens: ${payload.frequency}`, `Startdatum: ${payload.date}`, `Tid: ${payload.timeWindow}`, `Kundtyp: ${payload.customerType}`, buildCustomerRutText(payload, "sv"), "", "Om något inte stämmer kan du svara på det här mejlet eller kontakta oss på hej@iboren.se.", "", "Vänliga hälsningar,", "Iboren"].filter(Boolean).join("\n");
+  return compactLines([`Hej ${payload.name},`, "", "Tack. Iboren har tagit emot din städförfrågan.", "Vi bekräftar alltid tid och pris innan bokningen blir bindande.", recurring && recurring.total > 1 ? `Vi har skapat ${recurring.total} kommande besök utifrån din valda frekvens.` : "", recurring && recurring.total > 1 ? `Datum: ${recurring.dates.join(", ")}` : "", "", "Din sammanfattning:", bookingReference(booking, "sv"), "Status: Förfrågan mottagen", `Tjänst: ${payload.service}`, `Område: ${payload.area}`, `Adress: ${payload.address}`, `Storlek: ${payload.size} kvm`, `Frekvens: ${payload.frequency}`, `Datum: ${payload.date}`, `Tid: ${payload.timeWindow}`, `Kundtyp: ${payload.customerType}`, buildCustomerRutText(payload, "sv"), ...snapshotLines(payload, "sv", false), "", "OBS: Priset är en uppskattning. Iboren bekräftar alltid slutligt pris och tid innan bokningen blir bindande.", "", "Om något inte stämmer kan du svara på det här mejlet eller kontakta oss på hej@iboren.se.", "", "Vänliga hälsningar,", "Iboren"]);
 }
 
 function buildCustomerTextEn(payload: NormalizedBookingPayload, booking: SaveBookingResult, recurring?: { total: number; dates: string[] }) {
-  return [`Hi ${payload.name},`, "", "Thank you for your booking request to Iboren. We have received it and will get back to you as soon as possible.", recurring && recurring.total > 1 ? `We have created ${recurring.total} upcoming visits based on your selected frequency.` : "", recurring && recurring.total > 1 ? `Dates: ${recurring.dates.join(", ")}` : "", "", "Your summary:", bookingReference(booking, "en"), `Service: ${english(payload.service)}`, `Area: ${payload.area}`, `Address: ${payload.address}`, `Size: ${payload.size} sqm`, `Frequency: ${english(payload.frequency)}`, `Start date: ${payload.date}`, `Time: ${english(payload.timeWindow)}`, `Customer type: ${english(payload.customerType)}`, buildCustomerRutText(payload, "en"), "", "If anything is incorrect, you can reply to this email or contact us at hej@iboren.se.", "", "Best regards,", "Iboren"].filter(Boolean).join("\n");
+  return compactLines([`Hi ${payload.name},`, "", "Thank you. Iboren has received your cleaning request.", "We always confirm time and price before the booking becomes binding.", recurring && recurring.total > 1 ? `We have created ${recurring.total} upcoming visits based on your selected frequency.` : "", recurring && recurring.total > 1 ? `Dates: ${recurring.dates.join(", ")}` : "", "", "Your summary:", bookingReference(booking, "en"), "Status: Request received", `Service: ${english(payload.service)}`, `Area: ${payload.area}`, `Address: ${payload.address}`, `Size: ${payload.size} sqm`, `Frequency: ${english(payload.frequency)}`, `Date: ${payload.date}`, `Time: ${english(payload.timeWindow)}`, `Customer type: ${english(payload.customerType)}`, buildCustomerRutText(payload, "en"), ...snapshotLines(payload, "en", false), "", "Note: The price is an estimate. Iboren always confirms final price and time before the booking becomes binding.", "", "If anything is incorrect, you can reply to this email or contact us at hej@iboren.se.", "", "Best regards,", "Iboren"]);
 }
 
-function buildCustomerText(payload: NormalizedBookingPayload, booking: SaveBookingResult, language: Language, recurring?: { total: number; dates: string[] }) { return language === "en" ? buildCustomerTextEn(payload, booking, recurring) : buildCustomerTextSv(payload, booking, recurring); }
-function buildCustomerSubject(payload: NormalizedBookingPayload, language: Language) { return language === "en" ? `Iboren has received your booking request · ${english(payload.service)}` : `Iboren har tagit emot din bokning · ${payload.service}`; }
+function buildCustomerText(payload: NormalizedBookingPayload, booking: SaveBookingResult, language: Language, recurring?: { total: number; dates: string[] }) {
+  return language === "en" ? buildCustomerTextEn(payload, booking, recurring) : buildCustomerTextSv(payload, booking, recurring);
+}
+
+function buildCustomerSubject(payload: NormalizedBookingPayload, language: Language) {
+  return language === "en" ? `Iboren has received your booking request · ${english(payload.service)}` : `Iboren har tagit emot din bokningsförfrågan · ${payload.service}`;
+}
 
 async function createBookingNumber(payload: NormalizedBookingPayload) {
   const adminClient = getAdminClient();
