@@ -5,6 +5,7 @@ import BookingMobilePolish from "./BookingMobilePolish";
 import GoogleAddressEnhancer from "./GoogleAddressEnhancer";
 import BookingFormValidationEnhancer from "./BookingFormValidationEnhancer";
 import BookingAddressStreetNumberGuard from "./BookingAddressStreetNumberGuard";
+import BookingEstimateQueryHydrator from "./BookingEstimateQueryHydrator";
 import BookingAddonDetailsEnhancer from "./BookingAddonDetailsEnhancer";
 import MobileMenuPolish from "./MobileMenuPolish";
 import PwaManifestSwitcher from "./PwaManifestSwitcher";
@@ -86,6 +87,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <GoogleAddressEnhancer />
         <BookingFormValidationEnhancer />
         <BookingAddressStreetNumberGuard />
+        <BookingEstimateQueryHydrator />
         <BookingAddonDetailsEnhancer />
         <PwaManifestSwitcher />
         <MobileMenuPolish />
