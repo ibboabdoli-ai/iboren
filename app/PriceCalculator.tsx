@@ -112,6 +112,54 @@ function englishFactor(factor: string) {
   return value;
 }
 
+function buildRequestHref(values: {
+  locale: BookingPricingLocale;
+  service: Service;
+  customerType: CustomerType;
+  sqm: string;
+  rooms: string;
+  bathrooms: string;
+  windows: string;
+  postalCode: string;
+  frequency: Frequency;
+  condition: Condition;
+  pets: YesNo;
+  floor: string;
+  elevator: YesNo;
+  parking: YesNo;
+  access: Access;
+  shortNotice: YesNo;
+  weekend: YesNo;
+  windowSide: WindowSide;
+  balconyGlass: BalconyGlass;
+  rutRequested: boolean;
+  selectedAddOns: AddOn[];
+}) {
+  const params = new URLSearchParams();
+  params.set("estimate", "1");
+  params.set("service", values.service);
+  params.set("customerType", values.customerType);
+  params.set("size", values.sqm);
+  params.set("rooms", values.rooms);
+  params.set("bathrooms", values.bathrooms);
+  params.set("windows", values.windows);
+  params.set("postalCode", values.postalCode);
+  params.set("frequency", values.frequency);
+  params.set("condition", values.condition);
+  params.set("pets", values.pets);
+  params.set("floor", values.floor);
+  params.set("elevator", values.elevator);
+  params.set("parking", values.parking);
+  params.set("access", values.access);
+  params.set("shortNotice", values.shortNotice);
+  params.set("weekend", values.weekend);
+  params.set("windowSide", values.windowSide);
+  params.set("balconyGlass", values.balconyGlass);
+  params.set("rut", values.rutRequested ? "Ja" : "Nej");
+  if (values.selectedAddOns.length) params.set("extras", values.selectedAddOns.join("|"));
+  return `${values.locale === "en" ? "/en/boka-utan-konto" : "/boka-utan-konto"}?${params.toString()}`;
+}
+
 const ui = {
   sv: {
     id: "pris-kalkylator",
@@ -157,7 +205,6 @@ const ui = {
     postalLine: "Postnummer",
     estimateNote: "Detta är en prisindikation, inte fast pris.",
     cta: "Starta bokning med denna prisindikation",
-    ctaHref: "/#booking",
     bullets: [
       "RUT-avdrag visas bara för privatpersoner och tjänster där RUT normalt kan användas.",
       "Slutpris bekräftas innan bokningen blir bindande.",
@@ -208,7 +255,6 @@ const ui = {
     postalLine: "Postal code",
     estimateNote: "This is an estimate, not a fixed price.",
     cta: "Continue to request with this estimate",
-    ctaHref: "/en#booking",
     bullets: [
       "RUT deduction is shown only for private customers and eligible services.",
       "Final price is confirmed before the request becomes binding.",
@@ -276,6 +322,7 @@ export default function PriceCalculator({ locale = "sv" }: { locale?: BookingPri
   const factors = locale === "en" ? result.factors.map(englishFactor) : result.factors;
   const customerTypeLabel = optionLabel(customerTypeOptions.find((item) => item.value === customerType) || customerTypeOptions[0], locale);
   const hoursValue = result.hours ? locale === "en" ? result.hours.toFixed(1) : result.hours.toFixed(1).replace(".", ",") : "";
+  const requestHref = buildRequestHref({ locale, service, customerType, sqm, rooms, bathrooms, windows, postalCode, frequency, condition, pets, floor, elevator, parking, access, shortNotice, weekend, windowSide, balconyGlass, rutRequested: useRut, selectedAddOns });
 
   return (
     <section className="rounded-[2rem] border border-burgundy/10 bg-porcelain p-6 shadow-luxe md:p-8" id={t.id}>
@@ -294,7 +341,7 @@ export default function PriceCalculator({ locale = "sv" }: { locale?: BookingPri
         {showAddOns && <div><p className="mb-2 text-sm font-bold">{t.addOns}</p><div className="grid gap-2 sm:grid-cols-2">{visibleAddOns.map((item) => <button type="button" key={item.value} onClick={() => toggleAddOn(item.value)} className={`rounded-2xl border px-4 py-3 text-left text-sm font-bold transition ${selectedAddOns.includes(item.value) ? "border-burgundy bg-burgundy text-porcelain" : "border-burgundy/10 bg-cream text-ink"}`}>{optionLabel(item, locale)}</button>)}</div></div>}
         {rutEligible ? <label className="flex items-start gap-3 rounded-2xl bg-cream p-4 text-sm font-bold"><input type="checkbox" checked={rutRequested} onChange={(event) => setRutRequested(event.target.checked)} className="mt-1 h-5 w-5" /><span>{t.showRut}<br /><span className="font-normal text-ink/65">{t.rutHelp}</span></span></label> : <p className="rounded-2xl bg-cream p-4 text-sm font-bold text-ink/70">{t.noRut}</p>}
       </div>
-      <div className="mt-7 rounded-[2rem] bg-burgundy p-6 text-porcelain"><div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"><p className="text-xs font-black uppercase tracking-[.28em] text-gold">{title}</p><span className={riskBadgeClass(result.riskLevel)}>{riskText(result.riskLevel, locale)}</span></div><div className="mt-4 grid gap-4 sm:grid-cols-2"><div><p className="text-sm text-porcelain/75">{t.beforeRut}</p><p className="display mt-1 text-4xl font-bold">{formatSek(result.beforeRut)}</p></div><div><p className="text-sm text-porcelain/75">{result.monthly ? t.monthly : useRut ? t.afterRut : t.noRutPrice}</p><p className="display mt-1 text-4xl font-bold text-gold">{formatSek(result.afterRut)}{result.monthly ? locale === "en" ? "/month" : "/mån" : ""}</p></div></div>{result.hours && <p className="mt-4 inline-flex rounded-full bg-porcelain/10 px-4 py-2 text-sm font-bold text-gold">{t.time} {hoursValue} {t.timeSuffix}{result.monthly ? ` ${t.perVisit}` : ""}</p>}<div className="mt-5 flex flex-wrap gap-2">{factors.map((factor) => <span key={factor} className="rounded-full bg-porcelain/10 px-3 py-1 text-xs font-bold text-porcelain/80">{factor}</span>)}</div><p className="mt-5 text-sm leading-7 text-porcelain/75">{note}</p><p className="mt-3 text-xs leading-6 text-porcelain/60">{t.customerLine}: {customerTypeLabel}. {t.rut}: {useRut ? locale === "en" ? "Yes" : "Ja" : locale === "en" ? "No" : "Nej"}. {t.addOnsBeforeRut}: {formatSek(result.addOnsBeforeRut)}. {t.postalLine}: {postalCode || (locale === "en" ? "not entered" : "ej angivet")}. {t.estimateNote}</p><div className="mt-6"><Link href={t.ctaHref} className="inline-flex w-full items-center justify-center rounded-full bg-gold px-5 py-3 text-center text-sm font-black uppercase tracking-[.12em] text-ink sm:w-auto">{t.cta} <ArrowRight className="ml-2 h-4 w-4" /></Link></div></div>
+      <div className="mt-7 rounded-[2rem] bg-burgundy p-6 text-porcelain"><div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"><p className="text-xs font-black uppercase tracking-[.28em] text-gold">{title}</p><span className={riskBadgeClass(result.riskLevel)}>{riskText(result.riskLevel, locale)}</span></div><div className="mt-4 grid gap-4 sm:grid-cols-2"><div><p className="text-sm text-porcelain/75">{t.beforeRut}</p><p className="display mt-1 text-4xl font-bold">{formatSek(result.beforeRut)}</p></div><div><p className="text-sm text-porcelain/75">{result.monthly ? t.monthly : useRut ? t.afterRut : t.noRutPrice}</p><p className="display mt-1 text-4xl font-bold text-gold">{formatSek(result.afterRut)}{result.monthly ? locale === "en" ? "/month" : "/mån" : ""}</p></div></div>{result.hours && <p className="mt-4 inline-flex rounded-full bg-porcelain/10 px-4 py-2 text-sm font-bold text-gold">{t.time} {hoursValue} {t.timeSuffix}{result.monthly ? ` ${t.perVisit}` : ""}</p>}<div className="mt-5 flex flex-wrap gap-2">{factors.map((factor) => <span key={factor} className="rounded-full bg-porcelain/10 px-3 py-1 text-xs font-bold text-porcelain/80">{factor}</span>)}</div><p className="mt-5 text-sm leading-7 text-porcelain/75">{note}</p><p className="mt-3 text-xs leading-6 text-porcelain/60">{t.customerLine}: {customerTypeLabel}. {t.rut}: {useRut ? locale === "en" ? "Yes" : "Ja" : locale === "en" ? "No" : "Nej"}. {t.addOnsBeforeRut}: {formatSek(result.addOnsBeforeRut)}. {t.postalLine}: {postalCode || (locale === "en" ? "not entered" : "ej angivet")}. {t.estimateNote}</p><div className="mt-6"><Link href={requestHref} className="inline-flex w-full items-center justify-center rounded-full bg-gold px-5 py-3 text-center text-sm font-black uppercase tracking-[.12em] text-ink sm:w-auto">{t.cta} <ArrowRight className="ml-2 h-4 w-4" /></Link></div></div>
       <div className="mt-5 grid gap-3 text-sm text-ink/70 md:grid-cols-3">{t.bullets.map((item) => <p key={item} className="flex gap-2 rounded-2xl bg-cream p-4"><CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-burgundy" /> {item}</p>)}</div>
     </section>
   );
