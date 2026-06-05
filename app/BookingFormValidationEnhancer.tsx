@@ -75,7 +75,7 @@ const rules: FieldRule[] = [
     required: true,
     validate: (value, language) => {
       if (!value.trim()) return requiredMessage(language, text(language, "Adress", "Address"));
-      if (value.trim().length < 5 || !/[0-9]/.test(value)) return text(language, "Adress måste innehålla gata och nummer.", "Address must include street and number.");
+      if (value.trim().length < 5 || !/[0-9]/.test(value)) return text(language, "Lägg till gatunummer i adressen innan du skickar förfrågan.", "Add the street number to the address before sending the request.");
       return "";
     }
   },
