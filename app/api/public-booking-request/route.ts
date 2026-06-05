@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { generateBookingNumber } from "../../lib/bookingNumber";
+import { checkPersistentRateLimit, getClientIp } from "../../lib/rateLimit";
 import { buildPublicRequestAdminEmail, buildPublicRequestCustomerEmail } from "../../lib/publicRequestEmailText";
 
 export const runtime = "nodejs";
@@ -10,11 +11,10 @@ type Language = "sv" | "en";
 const AUTH_HEADER = ["Author", "ization"].join("");
 const TOKEN_PREFIX = ["Bear", "er"].join("");
 const EMAIL_ENDPOINT = ["https://api.re", "send.com/emails"].join("");
+const DEV_SENDER = ["Iboren <onboarding", "@resend.dev>"].join("");
 const EMAIL_WAIT_LIMIT_MS = 4500;
 const RATE_LIMIT_WINDOW_MS = 10 * 60 * 1000;
 const RATE_LIMIT_MAX = 4;
-
-const requestBuckets = new Map<string, { count: number; resetAt: number }>();
 
 type PublicBookingPayload = {
   service?: string;
@@ -188,25 +188,6 @@ function validatePublicBooking(payload: NormalizedPublicBooking, language: Langu
   if (bookingDate.getTime() < today.getTime()) throw new PublicBookingValidationError(message(language, "Datum kan inte vara bakåt i tiden.", "Date cannot be in the past."));
 }
 
-function getClientKey(request: Request, payload?: NormalizedPublicBooking) {
-  const forwardedFor = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim();
-  const ip = request.headers.get("cf-connecting-ip") || forwardedFor || "unknown-ip";
-  const email = payload?.email?.toLowerCase() || "unknown-email";
-  return `${ip}:${email}`;
-}
-
-function checkRateLimit(key: string) {
-  const now = Date.now();
-  const current = requestBuckets.get(key);
-  if (!current || current.resetAt <= now) {
-    requestBuckets.set(key, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS });
-    return true;
-  }
-  if (current.count >= RATE_LIMIT_MAX) return false;
-  current.count += 1;
-  return true;
-}
-
 function hasHoneypotValue(json: PublicBookingPayload) {
   return Boolean(firstFilled(json.website, json.companyWebsite, json.homepage, json.url));
 }
@@ -225,7 +206,7 @@ async function getPublicRequestBookingNumber(payload: NormalizedPublicBooking) {
   try {
     return await generateBookingNumber(supabase, { service: payload.service, area: payload.area, createdAt: new Date() });
   } catch (error) {
-    console.warn("IBOREN_PUBLIC_REQUEST_BOOKING_NUMBER_FAILED", { message: error instanceof Error ? error.message : "unknown_error" });
+    console.warn("IBOREN_PUBLIC_REQUEST_BOOKING_NUMBER_FAILED", { reason: error instanceof Error ? error.name : "unknown_error" });
     return null;
   }
 }
@@ -260,7 +241,7 @@ async function savePublicRequest(payload: NormalizedPublicBooking, requestId: st
   });
 
   if (error) {
-    console.warn("IBOREN_PUBLIC_REQUEST_SAVE_FAILED", { requestId, bookingNumber, message: error.message });
+    console.warn("IBOREN_PUBLIC_REQUEST_SAVE_FAILED", { requestId, bookingNumber, code: error.code });
     return false;
   }
 
@@ -307,6 +288,40 @@ function normalizePayload(json: PublicBookingPayload) {
   } satisfies NormalizedPublicBooking;
 }
 
+function getEmailConfig() {
+  const apiKey = process.env.RESEND_API_KEY || "";
+  const toEmail = process.env.BOOKING_TO_EMAIL || "hej@iboren.se";
+  const fromEmail = process.env.BOOKING_FROM_EMAIL || (process.env.NODE_ENV === "production" ? "" : DEV_SENDER);
+  return { apiKey, toEmail, fromEmail, configured: Boolean(apiKey && fromEmail) };
+}
+
+async function sendBookingEmails(params: { payload: NormalizedPublicBooking; id: string; language: Language; saved: boolean; bookingNumber: string | null }) {
+  const emailConfig = getEmailConfig();
+  const adminText = buildPublicRequestAdminEmail(params.payload, params.id, params.language, params.saved, params.bookingNumber);
+  const customerText = buildPublicRequestCustomerEmail(params.payload, params.id, params.language, params.bookingNumber);
+
+  if (!emailConfig.configured) {
+    console.warn("IBOREN_PUBLIC_REQUEST_EMAIL_NOT_CONFIGURED", { requestId: params.id, bookingNumber: params.bookingNumber, hasApiKey: Boolean(emailConfig.apiKey), hasFromEmail: Boolean(emailConfig.fromEmail) });
+    if (process.env.NODE_ENV !== "production") console.info("IBOREN_PUBLIC_BOOKING_REQUEST", adminText);
+    return { adminSent: false, customerSent: false, configured: false };
+  }
+
+  const adminEmail = sendEmail({ apiKey: emailConfig.apiKey, from: emailConfig.fromEmail, to: emailConfig.toEmail, replyTo: params.payload.email, subject: buildAdminSubject(params.payload, params.language), text: adminText });
+  const customerEmail = sendEmail({ apiKey: emailConfig.apiKey, from: emailConfig.fromEmail, to: params.payload.email, replyTo: emailConfig.toEmail, subject: buildCustomerSubject(params.language), text: customerText });
+  const emailResult = await Promise.race([Promise.allSettled([adminEmail, customerEmail]), wait(EMAIL_WAIT_LIMIT_MS)]);
+
+  if (emailResult === "timeout") {
+    console.warn("IBOREN_PUBLIC_REQUEST_EMAIL_WAIT_TIMEOUT", { requestId: params.id, bookingNumber: params.bookingNumber });
+    return { adminSent: false, customerSent: false, configured: true, timeout: true };
+  }
+
+  const [adminResult, customerResult] = emailResult;
+  const adminSent = adminResult.status === "fulfilled" && adminResult.value.ok;
+  const customerSent = customerResult.status === "fulfilled" && customerResult.value.ok;
+  if (!adminSent || !customerSent) console.warn("IBOREN_PUBLIC_REQUEST_EMAIL_FAILED", { requestId: params.id, bookingNumber: params.bookingNumber, adminSent, customerSent });
+  return { adminSent, customerSent, configured: true };
+}
+
 export async function POST(request: Request) {
   try {
     const json = (await request.json()) as PublicBookingPayload;
@@ -326,36 +341,37 @@ export async function POST(request: Request) {
     validatePublicBooking(payload, language);
     if (!/^\S+@\S+\.\S+$/.test(payload.email)) return NextResponse.json({ ok: false, message: "Invalid email address." }, { status: 400 });
 
-    const rateLimitKey = getClientKey(request, payload);
-    if (!checkRateLimit(rateLimitKey)) return NextResponse.json({ ok: false, message: message(language, "För många förfrågningar på kort tid. Försök igen senare.", "Too many requests in a short time. Try again later.") }, { status: 429 });
+    const rateLimit = await checkPersistentRateLimit({
+      supabase: getAdminClient(),
+      route: "public-booking-request",
+      keyParts: [getClientIp(request), payload.email],
+      limit: RATE_LIMIT_MAX,
+      windowMs: RATE_LIMIT_WINDOW_MS,
+      failClosedInProduction: true
+    });
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        { ok: false, message: message(language, "För många förfrågningar på kort tid. Försök igen senare.", "Too many requests in a short time. Try again later.") },
+        { status: 429, headers: { "Retry-After": String(rateLimit.retryAfterSeconds || 60) } }
+      );
+    }
 
     const id = requestId();
     const bookingNumber = await getPublicRequestBookingNumber(payload);
     const saved = await savePublicRequest(payload, id, language, bookingNumber);
-    const resendApiKey = process.env.RESEND_API_KEY;
-    const toEmail = process.env.BOOKING_TO_EMAIL || "hej@iboren.se";
-    const fromEmail = process.env.BOOKING_FROM_EMAIL || "Iboren <onboarding@resend.dev>";
-    const adminText = buildPublicRequestAdminEmail(payload, id, language, saved, bookingNumber);
-    const customerText = buildPublicRequestCustomerEmail(payload, id, language, bookingNumber);
-
-    if (resendApiKey) {
-      const adminEmail = sendEmail({ apiKey: resendApiKey, from: fromEmail, to: toEmail, replyTo: payload.email, subject: buildAdminSubject(payload, language), text: adminText });
-      const customerEmail = sendEmail({ apiKey: resendApiKey, from: fromEmail, to: payload.email, replyTo: toEmail, subject: buildCustomerSubject(language), text: customerText });
-      const emailResult = await Promise.race([Promise.allSettled([adminEmail, customerEmail]), wait(EMAIL_WAIT_LIMIT_MS)]);
-      if (emailResult === "timeout") console.warn("IBOREN_PUBLIC_REQUEST_EMAIL_WAIT_TIMEOUT", { requestId: id, bookingNumber });
-    } else {
-      console.info("IBOREN_PUBLIC_BOOKING_REQUEST", adminText);
-    }
+    const emailStatus = await sendBookingEmails({ payload, id, language, saved, bookingNumber });
 
     return NextResponse.json({
       ok: true,
       requestId: id,
       bookingNumber,
       saved,
+      emailStatus,
       message: message(language, "Tack! Din förfrågan har skickats. Vi bekräftar alltid tid och pris innan bokningen blir bindande.", "Thank you. Your request has been sent. We always confirm time and price before the booking becomes binding.")
     });
   } catch (error) {
     if (error instanceof PublicBookingValidationError) return NextResponse.json({ ok: false, message: error.message }, { status: 400 });
-    return NextResponse.json({ ok: false, message: error instanceof Error ? error.message : "Invalid request." }, { status: 400 });
+    console.warn("IBOREN_PUBLIC_REQUEST_FAILED", { reason: error instanceof Error ? error.name : "unknown_error" });
+    return NextResponse.json({ ok: false, message: "Kunde inte skicka förfrågan just nu. Försök igen senare." }, { status: 400 });
   }
 }
