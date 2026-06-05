@@ -49,6 +49,11 @@ function requiredMessage(language: Language, label: string) {
   return text(language, `${label} måste fyllas i.`, `${label} is required.`);
 }
 
+function addressHasStreetNumber(address: string) {
+  const streetPart = address.split(",")[0] || address;
+  return /\b\d+[A-Za-zÅÄÖåäö]?\b/.test(streetPart);
+}
+
 const rules: FieldRule[] = [
   {
     key: "area",
@@ -75,7 +80,7 @@ const rules: FieldRule[] = [
     required: true,
     validate: (value, language) => {
       if (!value.trim()) return requiredMessage(language, text(language, "Adress", "Address"));
-      if (value.trim().length < 5 || !/[0-9]/.test(value)) return text(language, "Lägg till gatunummer i adressen innan du skickar förfrågan.", "Add the street number to the address before sending the request.");
+      if (value.trim().length < 5 || !addressHasStreetNumber(value)) return text(language, "Lägg till gatunummer i adressen innan du skickar förfrågan.", "Add the street number to the address before sending the request.");
       return "";
     }
   },
