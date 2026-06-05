@@ -79,10 +79,12 @@ const copy = {
     timeEstimate: "Uppskattad tid",
     moms: "Alla priser visas inklusive moms för privatpersoner.",
     priceNote: "Samma prislogik som huvudkalkylatorn används. Slutligt pris bekräftas efter förfrågan.",
+    searchAddress: "Sök adress",
+    searchAddressHint: "Skriv eller välj adress i adressfältet.",
     yes: "Ja",
     no: "Nej",
     unknown: "Vet ej",
-    placeholders: { area: "Södertälje", postalCode: "151 46", address: "Gatuadress och nummer", size: "75", rooms: "4", bathrooms: "1", floor: "0", windows: "8", name: "För- och efternamn", email: "namn@email.se", phone: "+46 ...", notes: "Särskilda önskemål..." }
+    placeholders: { area: "Södertälje", postalCode: "", address: "Gatuadress och nummer", size: "75", rooms: "4", bathrooms: "1", floor: "0", windows: "8", name: "För- och efternamn", email: "namn@email.se", phone: "+46 ...", notes: "Särskilda önskemål..." }
   },
   en: {
     title: "Create a clear booking request.",
@@ -141,10 +143,12 @@ const copy = {
     timeEstimate: "Estimated time",
     moms: "Prices are shown including VAT for private customers.",
     priceNote: "The same price logic as the main calculator is used. Final price is confirmed after the request.",
+    searchAddress: "Search address",
+    searchAddressHint: "Type or choose the address in the address field.",
     yes: "Yes",
     no: "No",
     unknown: "Not sure",
-    placeholders: { area: "Södertälje", postalCode: "151 46", address: "Street address and number", size: "75", rooms: "4", bathrooms: "1", floor: "0", windows: "8", name: "First and last name", email: "name@email.se", phone: "+46 ...", notes: "Special requests..." }
+    placeholders: { area: "Södertälje", postalCode: "", address: "Street address and number", size: "75", rooms: "4", bathrooms: "1", floor: "0", windows: "8", name: "First and last name", email: "name@email.se", phone: "+46 ...", notes: "Special requests..." }
   }
 };
 
@@ -176,7 +180,7 @@ const options = {
 };
 
 function base(lang: Lang): Draft {
-  return createBookingFormDraft(lang);
+  return { ...createBookingFormDraft(lang), postalCode: "" };
 }
 
 function getSupabase() {
@@ -192,8 +196,8 @@ function normalizeAreaValue(value: string) {
   return value;
 }
 
-function Field({ label, value, onChange, placeholder, type = "text", required = false }: { label: string; value: string; onChange: (value: string) => void; placeholder?: string; type?: string; required?: boolean }) {
-  return <label className="block"><span className="mb-2 block text-sm font-black text-porcelain/75">{label}{required ? " *" : ""}</span><input required={required} type={type} value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} className="w-full rounded-2xl border border-white/10 bg-porcelain px-4 py-4 text-base font-bold text-ink outline-none placeholder:text-ink/35 focus:border-gold focus:ring-2 focus:ring-gold/25" /></label>;
+function Field({ id, label, value, onChange, placeholder, type = "text", required = false }: { id?: string; label: string; value: string; onChange: (value: string) => void; placeholder?: string; type?: string; required?: boolean }) {
+  return <label className="block"><span className="mb-2 block text-sm font-black text-porcelain/75">{label}{required ? " *" : ""}</span><input id={id} required={required} type={type} value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} className="w-full rounded-2xl border border-white/10 bg-porcelain px-4 py-4 text-base font-bold text-ink outline-none placeholder:text-ink/35 focus:border-gold focus:ring-2 focus:ring-gold/25" /></label>;
 }
 
 function Select({ label, value, options: selectOptions, onChange }: { label: string; value: string; options: string[]; onChange: (value: string) => void }) {
@@ -229,7 +233,7 @@ export default function PublicBookingRequestForm({ language }: { language: Lang 
       if (session?.access_token) {
         setAuthToken(session.access_token);
         setAccountEmail(email);
-        setDraft((current) => ({ ...current, name: current.name || fullName, email: email || current.email }));
+        setDraft((current) => ({ ...current, name: current.name || fullName, email: email || current.email, postalCode: current.postalCode || "" }));
       } else {
         setAuthToken("");
         setAccountEmail("");
@@ -250,6 +254,12 @@ export default function PublicBookingRequestForm({ language }: { language: Lang 
 
   function toggleExtra(item: string) {
     setDraft((current) => ({ ...current, extras: current.extras.includes(item) ? current.extras.filter((extra) => extra !== item) : [...current.extras, item] }));
+  }
+
+  function focusAddressField() {
+    document.getElementById("booking-address")?.focus();
+    setStatus("idle");
+    setMessage(t.searchAddressHint);
   }
 
   async function submit(event: FormEvent<HTMLFormElement>) {
@@ -301,7 +311,7 @@ export default function PublicBookingRequestForm({ language }: { language: Lang 
               <Select label={t.service} value={draft.service} options={o.services} onChange={(value) => setField("service", value)} />
               <div className="grid gap-4 sm:grid-cols-2"><Select label={t.customerType} value={draft.customerType} options={o.customerTypes} onChange={(value) => setField("customerType", value)} /><Select label={t.rut} value={draft.rutRequested ? t.yes : t.no} options={[t.yes, t.no]} onChange={(value) => setField("rutRequested", value === t.yes)} /></div>
               <div className="grid gap-4 sm:grid-cols-3"><Field required label={t.area} value={draft.area} onChange={(value) => setField("area", value)} placeholder={t.placeholders.area} /><Field label={t.postalCode} value={draft.postalCode} onChange={(value) => setField("postalCode", value.slice(0, 12))} placeholder={t.placeholders.postalCode} /><Field required label={t.size} value={draft.size} onChange={(value) => setField("size", value.replace(/[^0-9]/g, ""))} placeholder={t.placeholders.size} /></div>
-              <div className="grid grid-cols-[minmax(0,1fr)_4.5rem] items-end gap-3"><Field required label={t.address} value={draft.address} onChange={(value) => setField("address", value)} placeholder={t.placeholders.address} /><button type="button" aria-label={language === "sv" ? "Använd min position" : "Use my location"} title={language === "sv" ? "Använd min position" : "Use my location"} className="grid h-[58px] place-items-center rounded-2xl border border-gold/35 bg-transparent text-gold transition hover:bg-gold hover:text-ink"><LocateFixed className="h-5 w-5" /></button></div>
+              <div className="grid grid-cols-[minmax(0,1fr)_4.5rem] items-end gap-3"><Field id="booking-address" required label={t.address} value={draft.address} onChange={(value) => setField("address", value)} placeholder={t.placeholders.address} /><button type="button" onClick={focusAddressField} aria-label={t.searchAddress} title={t.searchAddress} className="grid h-[58px] place-items-center rounded-2xl border border-gold/35 bg-transparent text-gold transition hover:bg-gold hover:text-ink"><LocateFixed className="h-5 w-5" /></button></div>
               <div className="rounded-[1.75rem] border border-gold/15 bg-[#181917] p-5"><p className="mb-5 text-xs font-black uppercase tracking-[.32em] text-gold">Objekt & detaljer</p><div className="grid gap-4"><div className="grid gap-4 sm:grid-cols-2"><Select label={t.propertyType} value={draft.propertyType} options={o.types} onChange={(value) => setField("propertyType", value)} /><Field label={t.rooms} value={draft.rooms} onChange={(value) => setField("rooms", value.replace(/[^0-9]/g, ""))} placeholder={t.placeholders.rooms} /></div>
               <div className="grid gap-4 sm:grid-cols-2"><Field label={t.bathrooms} value={draft.bathrooms} onChange={(value) => setField("bathrooms", value.replace(/[^0-9]/g, ""))} placeholder={t.placeholders.bathrooms} /><Select label={t.pets} value={draft.pets} options={[t.yes, t.no, t.unknown]} onChange={(value) => setField("pets", value)} /></div>
               <div className="grid gap-4 sm:grid-cols-3"><Field label={t.floor} value={draft.floor} onChange={(value) => setField("floor", value.replace(/[^0-9]/g, ""))} placeholder={t.placeholders.floor} /><Select label={t.elevator} value={draft.elevator} options={[t.yes, t.no, t.unknown]} onChange={(value) => setField("elevator", value)} /><Select label={t.parking} value={draft.parking} options={[t.yes, t.no, t.unknown]} onChange={(value) => setField("parking", value)} /></div>
