@@ -1,5 +1,5 @@
-import PublicBookingRequestForm from "../../PublicBookingRequestForm";
+import UnifiedBookingForm from "../../UnifiedBookingForm";
 
 export default function EnglishPublicBookingRequestPage() {
-  return <PublicBookingRequestForm language="en" />;
+  return <UnifiedBookingForm language="en" />;
 }
