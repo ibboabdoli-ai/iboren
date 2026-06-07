@@ -65,7 +65,15 @@ async function verifyAdmin(request: Request) {
     return { ok: false as const, status: 401, message: "Sessionen är inte giltig." };
   }
 
-  if (!getAdminEmails().includes(email)) {
+  const { data: roles, error: roleError } = await supabase
+    .from("user_roles")
+    .select("role, active")
+    .or(`user_id.eq.${data.user.id},email.ilike.${email}`)
+    .limit(2);
+  if (roleError) return { ok: false as const, status: 500, message: "Kunde inte kontrollera adminåtkomst." };
+  const isAdminByRole = Boolean((roles || []).find((row) => row.active && row.role === "admin"));
+
+  if (!getAdminEmails().includes(email) && !isAdminByRole) {
     return { ok: false as const, status: 403, message: "Adminåtkomst krävs." };
   }
 

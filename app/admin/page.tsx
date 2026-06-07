@@ -31,7 +31,6 @@ type AdminBooking = {
 };
 
 const statuses = ["all", "new", "confirmed", "completed", "cancelled"];
-const adminEmails = ["ibbo.abdoli@gmail.com"];
 const workflowFilters = [
   { id: "needs_action", label: "Needs action", hint: "Active bookings only" },
   { id: "this_week", label: "This week", hint: "Next 7 days" },
@@ -171,6 +170,7 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(true);
   const [bookingsLoading, setBookingsLoading] = useState(false);
   const [user, setUser] = useState<User | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [bookings, setBookings] = useState<AdminBooking[]>([]);
   const [rawCount, setRawCount] = useState<number | null>(null);
   const [duplicateCount, setDuplicateCount] = useState(0);
@@ -180,8 +180,6 @@ export default function AdminPage() {
   const [sortMode, setSortMode] = useState<SortMode>("booking_date");
   const [message, setMessage] = useState("");
   const [updatingId, setUpdatingId] = useState<string | null>(null);
-
-  const isAdmin = Boolean(user?.email && adminEmails.includes(user.email.toLowerCase()));
 
   const filteredBookings = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -263,7 +261,18 @@ export default function AdminPage() {
       const { data } = await supabase.auth.getUser();
       if (cancelled) return;
       setUser(data.user ?? null);
-      setLoading(false);
+      try {
+        const { data: sessionData } = await supabase.auth.getSession();
+        const token = sessionData.session?.access_token;
+        if (token) {
+          const roleResponse = await fetch("/api/me/role", { headers: { Authorization: `Bearer ${token}` } });
+          const roleResult = await roleResponse.json().catch(() => null);
+          if (!cancelled) setIsAdmin(Boolean(roleResponse.ok && roleResult?.ok && roleResult.role === "admin" && roleResult.active));
+        }
+      } catch {
+        if (!cancelled) setMessage("Kunde inte kontrollera adminåtkomst just nu.");
+      }
+      if (!cancelled) setLoading(false);
     }
 
     void init();

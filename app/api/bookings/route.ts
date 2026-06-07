@@ -358,7 +358,17 @@ async function saveBooking(payload: NormalizedBookingPayload, auth: AuthContext,
 async function saveRecurringBookings(payload: NormalizedBookingPayload, auth: AuthContext, language: Language) {
   const dates = buildVisitDates(payload.date, payload.frequency);
   const results: SaveBookingResult[] = [];
-  for (let index = 0; index < dates.length; index += 1) results.push(await saveBooking(withVisitDate(payload, dates[index], index, dates.length), auth, language));
+  try {
+    for (let index = 0; index < dates.length; index += 1) results.push(await saveBooking(withVisitDate(payload, dates[index], index, dates.length), auth, language));
+  } catch (error) {
+    const createdIds = results.filter((result) => !result.duplicate).map((result) => result.id);
+    const adminClient = getAdminClient();
+    if (createdIds.length && adminClient) {
+      const { error: rollbackError } = await adminClient.from("bookings").delete().in("id", createdIds);
+      if (rollbackError) console.error("IBOREN_RECURRING_BOOKING_ROLLBACK_FAILED", { createdIds, code: rollbackError.code });
+    }
+    throw error;
+  }
   const created = results.filter((result) => !result.duplicate);
   const duplicates = results.filter((result) => result.duplicate);
   const first = created[0] || results[0];
@@ -366,7 +376,9 @@ async function saveRecurringBookings(payload: NormalizedBookingPayload, auth: Au
 }
 
 async function sendEmail(params: { apiKey: string; from: string; to: string; replyTo?: string; subject: string; text: string }) {
-  return fetch(EMAIL_ENDPOINT, { method: "POST", headers: { [AUTH_HEADER]: `${TOKEN_PREFIX} ${params.apiKey}`, "Content-Type": "application/json" }, body: JSON.stringify({ from: params.from, to: [params.to], reply_to: params.replyTo, subject: params.subject, text: params.text }) });
+  const response = await fetch(EMAIL_ENDPOINT, { method: "POST", headers: { [AUTH_HEADER]: `${TOKEN_PREFIX} ${params.apiKey}`, "Content-Type": "application/json" }, body: JSON.stringify({ from: params.from, to: [params.to], reply_to: params.replyTo, subject: params.subject, text: params.text }) });
+  if (!response.ok) throw new Error(`Email delivery failed with status ${response.status}.`);
+  return response;
 }
 
 function wait(ms: number) { return new Promise<"timeout">((resolve) => setTimeout(() => resolve("timeout"), ms)); }
@@ -411,7 +423,10 @@ export async function POST(request: Request) {
       const customerEmail = sendEmail({ apiKey: resendApiKey, from: fromEmail, to: payload.email, replyTo: toEmail, subject: customerSubject, text: customerText });
       const emailResult = await Promise.race([Promise.allSettled([adminEmail, customerEmail]), wait(EMAIL_WAIT_LIMIT_MS)]);
       if (emailResult === "timeout") console.warn("IBOREN_BOOKING_EMAIL_WAIT_TIMEOUT", { bookingId, bookingNumber });
-      return NextResponse.json({ ok: true, bookingId, bookingNumber, bookingIds: bookingSet.created.map((item) => item.id), bookingNumbers: bookingSet.created.map((item) => item.bookingNumber), visitDates: bookingSet.dates, duplicates: bookingSet.duplicates.length, message: language === "en" ? "Thank you. Your booking request has been saved. Iboren will get back to you as soon as possible." : "Tack! Din bokningsförfrågan är sparad. Iboren återkommer så snart som möjligt." });
+      const emailFailed = emailResult !== "timeout" && emailResult.some((result) => result.status === "rejected");
+      if (emailFailed) console.warn("IBOREN_BOOKING_EMAIL_FAILED", { bookingId, bookingNumber });
+      const emailDelivered = emailResult !== "timeout" && !emailFailed;
+      return NextResponse.json({ ok: true, bookingId, bookingNumber, bookingIds: bookingSet.created.map((item) => item.id), bookingNumbers: bookingSet.created.map((item) => item.bookingNumber), visitDates: bookingSet.dates, duplicates: bookingSet.duplicates.length, emailDelivered, message: emailDelivered ? language === "en" ? "Thank you. Your booking request has been saved. Iboren will get back to you as soon as possible." : "Tack! Din bokningsförfrågan är sparad. Iboren återkommer så snart som möjligt." : language === "en" ? "Your booking request was saved, but the confirmation email could not be delivered. Iboren will still follow up." : "Din bokningsförfrågan sparades, men bekräftelsemejlet kunde inte skickas. Iboren kommer fortfarande att följa upp." });
     }
 
     console.info("IBOREN_BOOKING_REQUEST", adminText);
@@ -419,6 +434,8 @@ export async function POST(request: Request) {
   } catch (error) {
     if (error instanceof DuplicateBookingError) return NextResponse.json({ ok: false, duplicate: true, message: error.message }, { status: 409 });
     if (error instanceof BookingValidationError) return NextResponse.json({ ok: false, message: error.message }, { status: 400 });
-    return NextResponse.json({ ok: false, message: error instanceof Error ? error.message : "Invalid request." }, { status: 400 });
+    if (error instanceof SyntaxError) return NextResponse.json({ ok: false, message: "Invalid request." }, { status: 400 });
+    console.error("IBOREN_BOOKING_REQUEST_FAILED", error);
+    return NextResponse.json({ ok: false, message: "Kunde inte spara bokningen just nu. Försök igen senare. / Could not save the booking right now. Please try again later." }, { status: 500 });
   }
 }

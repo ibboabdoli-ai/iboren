@@ -72,8 +72,8 @@ export async function GET(request: Request) {
   const emailRole = rows.find((row) => row.active && row.email.toLowerCase() === email);
   const row = exactUserRole || emailRole;
   const adminByEnv = getAdminEmails().includes(email);
-  const role = row ? normalizeRole(row.role) : adminByEnv ? "admin" : "customer";
-  const active = row ? Boolean(row.active) : adminByEnv || role === "customer";
+  const role = adminByEnv ? "admin" : row ? normalizeRole(row.role) : "customer";
+  const active = adminByEnv || (row ? Boolean(row.active) : role === "customer");
 
   return NextResponse.json({
     ok: true,

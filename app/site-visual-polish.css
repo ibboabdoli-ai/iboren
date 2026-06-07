@@ -1,0 +1,68 @@
+::selection {
+  background: rgba(216, 164, 111, .82);
+  color: #181917;
+}
+
+html {
+  scrollbar-color: rgba(216, 164, 111, .62) #181917;
+  scrollbar-width: thin;
+}
+
+body::-webkit-scrollbar {
+  width: 11px;
+}
+
+body::-webkit-scrollbar-track {
+  background: #181917;
+}
+
+body::-webkit-scrollbar-thumb {
+  border: 3px solid #181917;
+  border-radius: 999px;
+  background: rgba(216, 164, 111, .62);
+}
+
+:where(a, button, input, select, textarea, summary):focus-visible {
+  outline: 2px solid #d8a46f;
+  outline-offset: 4px;
+}
+
+.service-page-dark :where(.service-panel, .service-card, .service-cta-card),
+.price-page-dark :where(.price-panel, .price-card, .price-cta-card) {
+  box-shadow:
+    0 26px 72px rgba(0, 0, 0, .22),
+    inset 0 1px 0 rgba(255, 255, 255, .035);
+}
+
+.service-page-dark :where(.service-panel, .service-card, .service-cta-card),
+.price-page-dark :where(.price-panel, .price-card, .price-cta-card) {
+  transition:
+    border-color .25s ease,
+    box-shadow .25s ease,
+    transform .25s ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .service-page-dark :where(.service-card, .service-cta-card):hover,
+  .price-page-dark :where(.price-card, .price-cta-card):hover {
+    border-color: rgba(216, 164, 111, .32) !important;
+    box-shadow:
+      0 32px 88px rgba(0, 0, 0, .3),
+      inset 0 1px 0 rgba(255, 255, 255, .055);
+    transform: translateY(-3px);
+  }
+}
+
+.service-page-dark :where(.service-eyebrow, .service-back-link),
+.price-page-dark :where(.price-eyebrow, .price-back-link) {
+  letter-spacing: .12em;
+  text-underline-offset: .28em;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .service-page-dark :where(.service-panel, .service-card, .service-cta-card),
+  .price-page-dark :where(.price-panel, .price-card, .price-cta-card) {
+    transition: none;
+    transform: none;
+  }
+}
