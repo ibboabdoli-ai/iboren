@@ -21,9 +21,9 @@ export default function HomeBookingCta({ user }: Props) {
         </div>
 
         <div className="w-full">
-          <div className="mx-auto max-w-3xl rounded-2xl border border-gold/15 bg-night/70 p-8 shadow-lg">
+          <div className="iboren-card-glass iboren-card-glass-hover mx-auto max-w-3xl rounded-2xl p-8">
             <h3 className="text-2xl font-bold text-porcelain">Beräkna pris direkt</h3>
-            <p className="mt-3 text-porcelain/80">Få en tydlig prisindikation först. När allt ser rätt ut kan du fortsätta till en ej bindande bokningsförfrågan.</p>
+            <p className="iboren-text-muted-dark mt-3">Få en tydlig prisindikation först. När allt ser rätt ut kan du fortsätta till en ej bindande bokningsförfrågan.</p>
             <div className="mt-6 flex flex-wrap items-center gap-3">
               <Link href="/priser#pris-kalkylator" className="btn-primary">Få pris direkt</Link>
             </div>
