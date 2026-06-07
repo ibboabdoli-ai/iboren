@@ -36,6 +36,7 @@ jobs:
             home_cta_cleanup) ;;
             *) echo "Unsupported task_id"; exit 1 ;;
           esac
+
           BRANCH_NAME="safe-patch/${TASK_ID}/${RUN_ID}-${RUN_ATTEMPT}"
           git checkout -b "$BRANCH_NAME"
           echo "BRANCH_NAME=$BRANCH_NAME" >> "$GITHUB_ENV"
@@ -85,7 +86,14 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
           git add -- app/components/home/HomeHeader.tsx app/components/home/HomeHero.tsx app/components/home/HomeBookingCta.tsx
+
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+            exit 1
+          fi
+
           git commit -m "Apply safe patch: ${TASK_ID}"
           git push --set-upstream origin "$BRANCH_NAME"
 
@@ -97,19 +105,22 @@ jobs:
           case "$TASK_ID" in
             home_cta_cleanup)
               PR_TITLE="Apply safe patch: home CTA cleanup"
-              PR_BODY="Automated predefined safe patch: \`home_cta_cleanup\`.
+              cat > /tmp/iboren-safe-patch-pr-body.md <<'EOF'
+Automated predefined safe patch: `home_cta_cleanup`.
 
 Allowed files:
-- \`app/components/home/HomeHeader.tsx\`
-- \`app/components/home/HomeHero.tsx\`
-- \`app/components/home/HomeBookingCta.tsx\`
+- `app/components/home/HomeHeader.tsx`
+- `app/components/home/HomeHero.tsx`
+- `app/components/home/HomeBookingCta.tsx`
 
 Validation completed before push:
-- \`npm run lint -- --quiet\`
-- \`npm run build\`
+- `npm run lint -- --quiet`
+- `npm run build`
 
-This workflow never merges pull requests."
+This workflow never merges pull requests.
+EOF
               ;;
             *) echo "Unsupported task_id"; exit 1 ;;
           esac
-          gh pr create --base main --head "$BRANCH_NAME" --title "$PR_TITLE" --body "$PR_BODY"
+
+          gh pr create --base main --head "$BRANCH_NAME" --title "$PR_TITLE" --body-file /tmp/iboren-safe-patch-pr-body.md
