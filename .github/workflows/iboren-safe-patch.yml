@@ -1,0 +1,115 @@
+name: Iboren Safe Patch
+
+on:
+  workflow_dispatch:
+    inputs:
+      task_id:
+        description: Predefined safe patch task
+        required: true
+        type: choice
+        options:
+          - home_cta_cleanup
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  safe-patch:
+    name: Apply predefined patch and open PR
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Create isolated patch branch
+        env:
+          TASK_ID: ${{ inputs.task_id }}
+          RUN_ID: ${{ github.run_id }}
+          RUN_ATTEMPT: ${{ github.run_attempt }}
+        run: |
+          case "$TASK_ID" in
+            home_cta_cleanup) ;;
+            *) echo "Unsupported task_id"; exit 1 ;;
+          esac
+          BRANCH_NAME="safe-patch/${TASK_ID}/${RUN_ID}-${RUN_ATTEMPT}"
+          git checkout -b "$BRANCH_NAME"
+          echo "BRANCH_NAME=$BRANCH_NAME" >> "$GITHUB_ENV"
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Apply predefined patch
+        env:
+          TASK_ID: ${{ inputs.task_id }}
+        run: node scripts/iboren-safe-patch.mjs "$TASK_ID"
+
+      - name: Verify allowlist
+        env:
+          TASK_ID: ${{ inputs.task_id }}
+        run: node scripts/iboren-safe-patch.mjs "$TASK_ID" --verify-only
+
+      - name: Lint
+        run: npm run lint -- --quiet
+
+      - name: Build
+        run: npm run build
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          BOOKING_TO_EMAIL: ${{ secrets.BOOKING_TO_EMAIL }}
+          BOOKING_FROM_EMAIL: ${{ secrets.BOOKING_FROM_EMAIL }}
+          ADMIN_EMAILS: ${{ secrets.ADMIN_EMAILS }}
+
+      - name: Verify allowlist after checks
+        env:
+          TASK_ID: ${{ inputs.task_id }}
+        run: node scripts/iboren-safe-patch.mjs "$TASK_ID" --verify-only
+
+      - name: Commit and push patch branch
+        env:
+          TASK_ID: ${{ inputs.task_id }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -- app/components/home/HomeHeader.tsx app/components/home/HomeHero.tsx app/components/home/HomeBookingCta.tsx
+          git commit -m "Apply safe patch: ${TASK_ID}"
+          git push --set-upstream origin "$BRANCH_NAME"
+
+      - name: Open pull request to main
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TASK_ID: ${{ inputs.task_id }}
+        run: |
+          case "$TASK_ID" in
+            home_cta_cleanup)
+              PR_TITLE="Apply safe patch: home CTA cleanup"
+              PR_BODY="Automated predefined safe patch: \`home_cta_cleanup\`.
+
+Allowed files:
+- \`app/components/home/HomeHeader.tsx\`
+- \`app/components/home/HomeHero.tsx\`
+- \`app/components/home/HomeBookingCta.tsx\`
+
+Validation completed before push:
+- \`npm run lint -- --quiet\`
+- \`npm run build\`
+
+This workflow never merges pull requests."
+              ;;
+            *) echo "Unsupported task_id"; exit 1 ;;
+          esac
+          gh pr create --base main --head "$BRANCH_NAME" --title "$PR_TITLE" --body "$PR_BODY"
