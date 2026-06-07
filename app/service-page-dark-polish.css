@@ -12,4 +12,10 @@
 
 .service-page-dark .service-back-link,
 .service-page-dark .service-eyebrow,
-.service-page-dark .
+.service-page-dark .eyebrow {
+  color: #d8a46f !important;
+}
+
+.service-page-dark .service-title,
+.service-page-dark h1,
+.service-page
