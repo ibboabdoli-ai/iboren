@@ -360,3 +360,44 @@ select:-webkit-autofill:focus {
 }
 
 /* Redeploy trigger: 2026-05-30 booking form polish retry. */
+
+/* Iboren dark/glass utilities */
+.iboren-page-dark {
+  background:
+    radial-gradient(circle at 65% 12%, rgba(212, 165, 116, .14), transparent 34%),
+    linear-gradient(180deg, #181917 0%, #141512 100%);
+  color: var(--porcelain);
+}
+
+.iboren-section-dark {
+  background: #141512;
+  color: var(--porcelain);
+}
+
+.iboren-card-glass {
+  border: 1px solid rgba(212, 165, 116, .15);
+  background: rgba(255, 253, 248, .055);
+  box-shadow: 0 18px 55px rgba(2, 5, 4, .24);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  transition:
+    transform .3s ease,
+    border-color .3s ease,
+    background-color .3s ease,
+    box-shadow .3s ease;
+}
+
+.iboren-card-glass-hover:hover {
+  transform: translateY(-4px);
+  border-color: rgba(212, 165, 116, .35);
+  background: rgba(255, 253, 248, .085);
+  box-shadow: 0 24px 70px rgba(212, 165, 116, .16);
+}
+
+.iboren-text-muted-dark {
+  color: rgba(255, 253, 248, .68);
+}
+
+.iboren-gold-accent {
+  color: var(--gold);
+}
