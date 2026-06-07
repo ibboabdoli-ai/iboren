@@ -15,7 +15,6 @@ import AdminBookingNotesFormatter from "./AdminBookingNotesFormatter";
 import AdminOperationsQuickLink from "./AdminOperationsQuickLink";
 import ProfileAccessLinks from "./ProfileAccessLinks";
 import BookingNumberUiEnhancer from "./BookingNumberUiEnhancer";
-import ThemeSwitcher from "./ThemeSwitcher";
 import "./globals.css";
 import "./premium-hover.css";
 import "./booking-date-mobile-fix.css";
@@ -80,11 +79,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="sv">
       <head>
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `(function(){try{var m=localStorage.getItem("iboren-theme")||"dark";var d=m==="system"?(matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"):m;document.documentElement.dataset.theme=d;document.documentElement.dataset.themeMode=m}catch(e){document.documentElement.dataset.theme="dark"}})();`
-          }}
-        />
         <link rel="preload" as="image" href="/cinematic/03-home-after.webp" fetchPriority="high" />
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -107,7 +101,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <AdminOperationsQuickLink />
         <ProfileAccessLinks />
         <BookingNumberUiEnhancer />
-        <ThemeSwitcher />
         {children}
         <Script
   id="iboren-service-ai-chat"
