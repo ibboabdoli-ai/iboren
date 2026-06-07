@@ -18,7 +18,7 @@ export default function EnglishRutInfo() {
           <p className="mt-6 max-w-2xl text-lg leading-8 text-ink/72">RUT deduction may apply according to Skatteverket rules when the conditions are fulfilled. Iboren therefore shows price before RUT and a price indication after RUT in the calculator.</p>
         </div>
 
-        <div className="rounded-[2rem] border border-burgundy/10 bg-porcelain p-6 shadow-soft md:p-8">
+        <div className="iboren-card-glass iboren-card-glass-hover rounded-[2rem] p-6 shadow-soft md:p-8">
           <div className="mb-6 flex items-start gap-3 rounded-2xl bg-cream p-4 text-sm leading-7 text-ink/72">
             <Info className="mt-1 h-5 w-5 shrink-0 text-burgundy" />
           <p>RUT is a tax reduction on labour cost. The deduction may be applied when the requirements from Skatteverket are fulfilled and the final handling is made during invoicing.</p>

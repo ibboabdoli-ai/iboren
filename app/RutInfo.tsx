@@ -20,7 +20,7 @@ export default function RutInfo() {
           <p className="mt-6 max-w-2xl text-lg leading-8 text-ink/72">RUT-avdrag kan tillämpas enligt Skatteverkets regler när villkoren är uppfyllda. Därför visar Iboren pris före RUT och en prisindikation efter RUT i prisberäknaren. För privatpersoner visas priser inklusive moms.</p>
         </div>
 
-        <div className="rounded-[2rem] border border-burgundy/10 bg-porcelain p-6 shadow-soft md:p-8">
+        <div className="iboren-card-glass iboren-card-glass-hover rounded-[2rem] p-6 shadow-soft md:p-8">
           <div className="mb-6 flex items-start gap-3 rounded-2xl bg-cream p-4 text-sm leading-7 text-ink/72">
             <Info className="mt-1 h-5 w-5 shrink-0 text-burgundy" />
             <p>RUT är en skattereduktion på arbetskostnaden. Avdraget kan tillämpas när Skatteverkets villkor är uppfyllda och slutlig hantering sker i samband med fakturering. Moms ingår i priset som visas för privatpersoner.</p>
