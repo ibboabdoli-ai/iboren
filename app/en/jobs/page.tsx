@@ -46,21 +46,21 @@ export default function EnglishJobsPage() {
   }
 
   return (
-    <main className="min-h-screen bg-cream text-ink">
-      <section className="relative overflow-hidden py-20 md:py-28">
+    <main className="service-page-dark min-h-screen bg-cream text-ink">
+      <section className="service-hero relative overflow-hidden py-20 md:py-28">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_20%,rgba(212,165,116,.35),transparent_32%),radial-gradient(circle_at_18%_75%,rgba(107,39,55,.14),transparent_34%)]" />
         <div className="luxe-container relative grid gap-10 lg:grid-cols-[.85fr_1.15fr] lg:items-start">
           <div>
-            <Link href="/en" className="mb-10 inline-flex text-sm font-bold text-burgundy">← Back</Link>
-            <p className="eyebrow">Career</p>
-            <h1 className="display mt-4 text-6xl font-bold leading-[.88] text-burgundy md:text-8xl">Work as a cleaner with Iboren</h1>
-            <p className="mt-7 max-w-2xl text-lg leading-8 text-ink/75 md:text-xl">We are looking for careful and reliable people who want to work with home cleaning, move-out cleaning and office cleaning in Södertälje and Stockholm.</p>
-            <div className="mt-8 rounded-2xl border border-burgundy/10 bg-porcelain p-5 text-sm leading-7 text-ink/75">
+            <Link href="/en" className="service-back-link mb-10 inline-flex text-sm font-bold text-burgundy">← Back</Link>
+            <p className="service-eyebrow eyebrow">Career</p>
+            <h1 className="service-title display mt-4 text-6xl font-bold leading-[.88] text-burgundy md:text-8xl">Work as a cleaner with Iboren</h1>
+            <p className="service-lead mt-7 max-w-2xl text-lg leading-8 text-ink/75 md:text-xl">We are looking for careful and reliable people who want to work with home cleaning, move-out cleaning and office cleaning in Södertälje and Stockholm.</p>
+            <div className="service-panel mt-8 rounded-2xl border border-burgundy/10 bg-porcelain p-5 text-sm leading-7 text-ink/75">
               <p className="flex gap-3"><BriefcaseBusiness className="mt-1 h-5 w-5 shrink-0 text-burgundy" /> Tell us about your experience, when you can work and in which areas you can take assignments. You can attach a CV as PDF, DOC, DOCX or TXT.</p>
             </div>
           </div>
 
-          <form onSubmit={submit} className="rounded-[2rem] border border-burgundy/10 bg-porcelain p-6 shadow-luxe md:p-8">
+          <form onSubmit={submit} className="service-panel rounded-[2rem] border border-burgundy/10 bg-porcelain p-6 shadow-luxe md:p-8">
             <div className="mb-7"><p className="text-xs font-black uppercase tracking-[.28em] text-burgundy">Application</p><h2 className="display mt-2 text-4xl font-bold text-burgundy">Interest application</h2></div>
             <div className="grid gap-4">
               <div className="grid gap-4 sm:grid-cols-2">
@@ -100,7 +100,7 @@ export default function EnglishJobsPage() {
         </div>
       </section>
 
-      <section className="bg-porcelain py-16"><div className="luxe-container grid gap-5 md:grid-cols-3">{["Flexible hours", "Clear assignments", "Södertälje & Stockholm"].map((item) => <article key={item} className="rounded-[2rem] bg-cream p-6 shadow-soft"><CheckCircle2 className="mb-5 text-burgundy" /><h3 className="display text-3xl font-bold text-burgundy">{item}</h3><p className="mt-3 leading-7 text-ink/75">Iboren collects information to match the right person with the right type of assignment.</p></article>)}</div></section>
+      <section className="bg-porcelain py-16"><div className="luxe-container grid gap-5 md:grid-cols-3">{["Flexible hours", "Clear assignments", "Södertälje & Stockholm"].map((item) => <article key={item} className="service-card rounded-[2rem] bg-cream p-6 shadow-soft"><CheckCircle2 className="mb-5 text-burgundy" /><h3 className="display text-3xl font-bold text-burgundy">{item}</h3><p className="mt-3 leading-7 text-ink/75">Iboren collects information to match the right person with the right type of assignment.</p></article>)}</div></section>
     </main>
   );
 }

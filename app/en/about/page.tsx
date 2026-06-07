@@ -17,22 +17,22 @@ const points = [
 
 export default function EnglishAboutPage() {
   return (
-    <main className="min-h-screen bg-cream text-ink">
-      <section className="relative overflow-hidden bg-cream py-20 md:py-28">
+    <main className="service-page-dark min-h-screen bg-cream text-ink">
+      <section className="service-hero relative overflow-hidden bg-cream py-20 md:py-28">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_20%,rgba(212,165,116,.35),transparent_32%),radial-gradient(circle_at_18%_75%,rgba(107,39,55,.14),transparent_34%)]" />
         <div className="luxe-container relative grid gap-10 md:grid-cols-[1fr_.9fr] md:items-center">
           <div>
-            <Link href="/en" className="mb-10 inline-flex text-sm font-bold text-burgundy">← Back</Link>
-            <p className="eyebrow">Local cleaning company</p>
-            <h1 className="display mt-4 text-6xl font-bold leading-[.88] text-burgundy md:text-8xl">About Iboren</h1>
-            <p className="mt-7 max-w-2xl text-lg leading-8 text-ink/70 md:text-xl">Iboren helps private customers and businesses with careful cleaning in Södertälje and Stockholm. We focus on clear communication, reliable service and simple booking from first contact to completed job.</p>
+            <Link href="/en" className="service-back-link mb-10 inline-flex text-sm font-bold text-burgundy">← Back</Link>
+            <p className="service-eyebrow eyebrow">Local cleaning company</p>
+            <h1 className="service-title display mt-4 text-6xl font-bold leading-[.88] text-burgundy md:text-8xl">About Iboren</h1>
+            <p className="service-lead mt-7 max-w-2xl text-lg leading-8 text-ink/70 md:text-xl">Iboren helps private customers and businesses with careful cleaning in Södertälje and Stockholm. We focus on clear communication, reliable service and simple booking from first contact to completed job.</p>
             <p className="mt-5 max-w-2xl leading-8 text-ink/65">When you send a request, we collect the right details from the start: service, address, size, date, contact details and special requests. This makes it easier to give the right response and confirm the job safely.</p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <Link href="/en#booking" className="btn-primary">Send request <ArrowRight size={18} /></Link>
               <Link href="/en/prices" className="btn-secondary">Calculate price</Link>
             </div>
           </div>
-          <aside className="rounded-[2.5rem] border border-burgundy/10 bg-porcelain p-8 text-ink shadow-luxe">
+          <aside className="service-panel rounded-[2.5rem] border border-burgundy/10 bg-porcelain p-8 text-ink shadow-luxe">
             <div className="mb-12 grid h-16 w-16 place-items-center rounded-full bg-burgundy text-porcelain"><Sparkles size={30} /></div>
             <h2 className="display text-4xl font-bold text-burgundy">Safer cleaning from first contact.</h2>
             <div className="mt-7 grid gap-4">
@@ -51,7 +51,7 @@ export default function EnglishAboutPage() {
       </section>
 
       <section className="bg-cream py-16">
-        <div className="luxe-container max-w-4xl rounded-[2rem] bg-burgundy p-8 text-porcelain shadow-luxe">
+        <div className="service-cta-card luxe-container max-w-4xl rounded-[2rem] bg-burgundy p-8 text-porcelain shadow-luxe">
           <p className="text-xs font-black uppercase tracking-[.28em] text-gold">Iboren</p>
           <h2 className="display mt-3 text-4xl font-bold md:text-6xl">Cleaning with clarity and responsibility.</h2>
           <p className="mt-5 max-w-2xl leading-8 text-porcelain/72">The goal is to make it easy to describe what needs to be cleaned, receive the right response and feel secure before the job is confirmed.</p>
@@ -66,5 +66,5 @@ export default function EnglishAboutPage() {
 }
 
 function Info({ icon, title, text }: { icon: React.ReactNode; title: string; text: string }) {
-  return <article className="rounded-[2rem] bg-cream p-6 shadow-soft"><div className="mb-6 grid h-12 w-12 place-items-center rounded-full bg-burgundy text-porcelain">{icon}</div><h3 className="display text-3xl font-bold text-burgundy">{title}</h3><p className="mt-3 leading-7 text-ink/65">{text}</p></article>;
+  return <article className="service-card rounded-[2rem] bg-cream p-6 shadow-soft"><div className="service-icon mb-6 grid h-12 w-12 place-items-center rounded-full bg-burgundy text-porcelain">{icon}</div><h3 className="display text-3xl font-bold text-burgundy">{title}</h3><p className="mt-3 leading-7 text-ink/65">{text}</p></article>;
 }

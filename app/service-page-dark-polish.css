@@ -106,3 +106,17 @@
   background: #181917 !important;
   color: #f4efe5 !important;
 }
+
+.service-page-dark .service-panel input,
+.service-page-dark .service-panel select,
+.service-page-dark .service-panel textarea,
+.service-page-dark .service-panel label[class*="border-dashed"] {
+  border-color: rgba(216, 164, 111, .2) !important;
+  background: #1f1f1d !important;
+  color: #f4efe5 !important;
+}
+
+.service-page-dark .service-panel input::placeholder,
+.service-page-dark .service-panel textarea::placeholder {
+  color: rgba(244, 239, 229, .42);
+}
