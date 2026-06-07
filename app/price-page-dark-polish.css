@@ -214,3 +214,24 @@
   color: #d8a46f !important;
   stroke: #d8a46f !important;
 }
+/* Make RUT check icons clearly visible: gold circle + gold check path. */
+.price-page-dark :is(#rut-avdrag, #rut-deduction) .lucide-circle-check,
+.price-page-dark :is(#rut-avdrag, #rut-deduction) .lucide-circle-check-big,
+.price-page-dark :is(#rut-avdrag, #rut-deduction) .lucide-check-circle,
+.price-page-dark :is(#rut-avdrag, #rut-deduction) .lucide-check-circle-2 {
+  color: #d8a46f !important;
+  stroke: #d8a46f !important;
+  stroke-width: 2.4 !important;
+}
+
+.price-page-dark :is(#rut-avdrag, #rut-deduction) .lucide-circle-check circle,
+.price-page-dark :is(#rut-avdrag, #rut-deduction) .lucide-circle-check path,
+.price-page-dark :is(#rut-avdrag, #rut-deduction) .lucide-circle-check-big circle,
+.price-page-dark :is(#rut-avdrag, #rut-deduction) .lucide-circle-check-big path,
+.price-page-dark :is(#rut-avdrag, #rut-deduction) .lucide-check-circle circle,
+.price-page-dark :is(#rut-avdrag, #rut-deduction) .lucide-check-circle path,
+.price-page-dark :is(#rut-avdrag, #rut-deduction) .lucide-check-circle-2 circle,
+.price-page-dark :is(#rut-avdrag, #rut-deduction) .lucide-check-circle-2 path {
+  stroke: #d8a46f !important;
+  stroke-width: 2.4 !important;
+}
