@@ -156,3 +156,33 @@
 .price-page-dark #price-calculator > div:last-child svg {
   color: #d8a46f !important;
 }
+
+/* Keep the RUT information section readable inside the dark price theme. */
+.price-page-dark :is(#rut-avdrag, #rut-deduction) {
+  background: #181917 !important;
+  color: #f4efe5;
+}
+
+.price-page-dark :is(#rut-avdrag, #rut-deduction) .eyebrow,
+.price-page-dark :is(#rut-avdrag, #rut-deduction) h2 {
+  color: #d8a46f !important;
+}
+
+.price-page-dark :is(#rut-avdrag, #rut-deduction) > div > div:first-child > p:last-child {
+  color: rgba(244, 239, 229, .78) !important;
+}
+
+.price-page-dark :is(#rut-avdrag, #rut-deduction) > div > div:last-child {
+  border-color: rgba(216, 164, 111, .18) !important;
+  background: #252420 !important;
+  box-shadow: 0 28px 90px rgba(0, 0, 0, .28) !important;
+}
+
+.price-page-dark :is(#rut-avdrag, #rut-deduction) > div > div:last-child p {
+  background: #181917 !important;
+  color: rgba(244, 239, 229, .82) !important;
+}
+
+.price-page-dark :is(#rut-avdrag, #rut-deduction) svg {
+  color: #d8a46f !important;
+}
