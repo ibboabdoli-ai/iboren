@@ -107,6 +107,19 @@
   color: #f4efe5 !important;
 }
 
+.service-page-dark .iboren-card-glass {
+  border-color: rgba(216, 164, 111, .15) !important;
+  background: rgba(255, 253, 248, .055) !important;
+  box-shadow: 0 18px 55px rgba(2, 5, 4, .24) !important;
+}
+
+.service-page-dark .iboren-card-glass-hover:hover {
+  transform: translateY(-4px);
+  border-color: rgba(216, 164, 111, .38) !important;
+  background: rgba(255, 253, 248, .085) !important;
+  box-shadow: 0 24px 70px rgba(216, 164, 111, .16) !important;
+}
+
 .service-page-dark form label {
   color: rgba(244, 239, 229, .78);
 }

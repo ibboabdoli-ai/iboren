@@ -39,7 +39,7 @@ export default function TjansterPage() {
           {services.map((service) => {
             const Icon = service.icon;
             return (
-              <Link key={service.href} href={service.href} className="service-card group rounded-[2rem] p-7 shadow-soft transition hover:-translate-y-1">
+              <Link key={service.href} href={service.href} className="service-card iboren-card-glass iboren-card-glass-hover group rounded-[2rem] p-7 shadow-soft">
                 <div className="mb-8 flex items-center justify-between">
                   <div className="service-icon grid h-14 w-14 place-items-center rounded-full"><Icon size={27} /></div>
                   <span className="text-sm font-bold text-gold group-hover:text-gold">Läs mer →</span>
@@ -53,7 +53,7 @@ export default function TjansterPage() {
       </section>
 
       <section className="py-16">
-        <div className="service-cta-card luxe-container max-w-4xl rounded-[2rem] p-8 shadow-luxe">
+        <div className="service-cta-card iboren-card-glass iboren-card-glass-hover luxe-container max-w-4xl rounded-[2rem] p-8 shadow-luxe">
           <div className="service-icon grid h-14 w-14 place-items-center rounded-full"><Sparkles /></div>
           <h2 className="display mt-6 text-4xl font-bold md:text-6xl">Osäker på vilken tjänst du behöver?</h2>
           <p className="mt-5 max-w-2xl leading-8">Börja med prisindikatorn eller skicka en bokningsförfrågan. Iboren återkommer med nästa steg.</p>
