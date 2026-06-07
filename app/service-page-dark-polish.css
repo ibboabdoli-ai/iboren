@@ -12,20 +12,4 @@
 
 .service-page-dark .service-back-link,
 .service-page-dark .service-eyebrow,
-.service-page-dark .eyebrow {
-  color: #d8a46f !important;
-}
-
-.service-page-dark .service-title,
-.service-page-dark h1,
-.service-page-dark h2,
-.service-page-dark h3 {
-  color: #d8a46f;
-}
-
-.service-page-dark .service-lead,
-.service-page-dark p {
-  color: rgba(244, 239, 229, .74);
-}
-
-.service-page-dark
+.service-page-dark .
