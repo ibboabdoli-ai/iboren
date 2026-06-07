@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { LocateFixed } from "lucide-react";
 import { createClient } from "@supabase/supabase-js";
@@ -297,7 +297,18 @@ function applyEstimateQueryToDraft(current: Draft, language: Lang): Draft {
 }
 
 function Field({ id, label, value, onChange, placeholder, type = "text", required = false }: { id?: string; label: string; value: string; onChange: (value: string) => void; placeholder?: string; type?: string; required?: boolean }) {
-  return <label className="block"><span className="mb-2 block text-sm font-black text-porcelain/75">{label}{required ? " *" : ""}</span><input id={id} required={required} type={type} value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} className="w-full rounded-2xl border border-white/10 bg-porcelain px-4 py-4 text-base font-bold text-ink outline-none placeholder:text-ink/35 focus:border-gold focus:ring-2 focus:ring-gold/25" /></label>;
+  const inputRef = useRef<HTMLInputElement | null>(null);
+
+  function openDatePicker() {
+    if (type !== "date") return;
+    try {
+      inputRef.current?.showPicker?.();
+    } catch {
+      // Native picker availability and activation rules vary by browser.
+    }
+  }
+
+  return <label className="block"><span className="mb-2 block text-sm font-black text-porcelain/75">{label}{required ? " *" : ""}</span><input ref={inputRef} id={id} required={required} type={type} value={value} onChange={(e) => onChange(e.target.value)} onClick={openDatePicker} onKeyDown={(event) => { if (type === "date" && (event.key === "Enter" || event.key === " ")) { event.preventDefault(); openDatePicker(); } }} placeholder={placeholder} className="w-full rounded-2xl border border-white/10 bg-porcelain px-4 py-4 text-base font-bold text-ink outline-none placeholder:text-ink/35 focus:border-gold focus:ring-2 focus:ring-gold/25" /></label>;
 }
 
 function Select({ label, value, options: selectOptions, onChange }: { label: string; value: string; options: string[]; onChange: (value: string) => void }) {
