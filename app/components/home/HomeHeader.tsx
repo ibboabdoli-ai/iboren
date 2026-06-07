@@ -22,14 +22,14 @@ export default function HomeHeader({ user }: Props) {
             <span className="mt-1 block text-[10px] font-bold uppercase tracking-[0.36em] text-gold/75 md:text-[11px]">Pris direkt & enkel bokning</span>
           </span>
         </a>
-        <div className="hidden items-center gap-6 text-sm font-semibold text-porcelain/68 md:flex">
-          <a href="#services" className="hover:text-gold">Tjänster</a>
-          <Link href="/priser" className="hover:text-gold">Priser</Link>
-          <Link href="/boka-utan-konto" className="hover:text-gold">Boka</Link>
-          <Link href="/jobb" className="hover:text-gold">Jobba hos oss</Link>
-          <Link href="/om-iboren" className="hover:text-gold">Om oss</Link>
-          <Link href="/en" className="hover:text-gold">EN</Link>
-          <Link href={user ? "/profile" : "/login"} className="inline-flex items-center gap-2 hover:text-gold"><UserRound size={17} /> {user ? "Min profil" : "Logga in"}</Link>
+        <div className="hidden items-center gap-2 text-sm font-semibold text-porcelain/68 md:flex">
+          <a href="#services" className="rounded-full px-3 py-2 transition hover:bg-gold/10 hover:text-gold">Tjänster</a>
+          <Link href="/priser" className="rounded-full px-3 py-2 transition hover:bg-gold/10 hover:text-gold">Priser</Link>
+          <Link href="/boka-utan-konto" className="rounded-full px-3 py-2 transition hover:bg-gold/10 hover:text-gold">Boka</Link>
+          <Link href="/jobb" className="rounded-full px-3 py-2 transition hover:bg-gold/10 hover:text-gold">Jobba hos oss</Link>
+          <Link href="/om-iboren" className="rounded-full px-3 py-2 transition hover:bg-gold/10 hover:text-gold">Om oss</Link>
+          <Link href="/en" className="rounded-full px-3 py-2 transition hover:bg-gold/10 hover:text-gold">EN</Link>
+          <Link href={user ? "/profile" : "/login"} className="inline-flex items-center gap-2 rounded-full px-3 py-2 transition hover:bg-gold/10 hover:text-gold"><UserRound size={17} /> {user ? "Min profil" : "Logga in"}</Link>
           <Link href="/priser#pris-kalkylator" className="rounded-full border border-gold/40 bg-gold px-5 py-3 text-night">Få pris direkt</Link>
         </div>
         <button onClick={() => setMenuOpen(!menuOpen)} className="grid h-11 w-11 place-items-center rounded-full border border-gold/25 bg-porcelain/5 text-gold md:hidden">{menuOpen ? <X size={19} /> : <Menu size={19} />}</button>
