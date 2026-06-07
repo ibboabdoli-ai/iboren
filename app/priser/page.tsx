@@ -43,8 +43,8 @@ export default function PriserPage() {
             <p className="price-page-eyebrow text-xs font-black uppercase tracking-[.32em]">Pris direkt</p>
             <h1 className="price-page-title display mt-4 text-6xl font-bold leading-[.88] md:text-8xl">Beräkna pris för städning</h1>
             <p className="price-page-lead mt-7 max-w-2xl text-lg leading-8 md:text-xl">Räkna fram ett uppskattat pris för hemstädning, flyttstädning, storstädning, kontorsstädning eller fönsterputs i Södertälje och Stockholm.</p>
-            <div className="price-info-card mt-8 rounded-2xl border p-5 text-sm leading-7">
-              <p className="flex gap-3"><Info className="mt-1 h-5 w-5 shrink-0" /> Kalkylen visar en prisindikation med tydlig RUT-beräkning. Alla priser för privatpersoner visas inklusive moms. Efter din förfrågan bekräftar Iboren slutligt pris, tid och eventuella tillval.</p>
+            <div className="price-info-card iboren-card-glass iboren-card-glass-hover mt-8 rounded-2xl border p-5 text-sm leading-7">
+              <p className="iboren-text-muted-dark flex gap-3"><Info className="iboren-gold-accent mt-1 h-5 w-5 shrink-0" /> Kalkylen visar en prisindikation med tydlig RUT-beräkning. Alla priser för privatpersoner visas inklusive moms. Efter din förfrågan bekräftar Iboren slutligt pris, tid och eventuella tillval.</p>
             </div>
             <div className="price-check-list mt-8 grid gap-3 text-sm font-bold">
               {priceNotes.map((item) => <p key={item} className="flex gap-3"><CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0" /> {item}</p>)}
@@ -62,7 +62,7 @@ export default function PriserPage() {
           <p className="price-page-eyebrow text-xs font-black uppercase tracking-[.32em]">Tjänster</p>
           <h2 className="price-page-title display mt-4 max-w-3xl text-5xl font-bold leading-[.92] md:text-6xl">Gå vidare till rätt tjänst eller skicka förfrågan.</h2>
           <div className="mt-10 grid gap-4 md:grid-cols-5">
-            {serviceLinks.map((item) => <Link key={item.href} href={item.href} className="price-service-card rounded-[1.6rem] p-5 font-black transition hover:-translate-y-1">{item.label}<ArrowRight className="mt-4 h-4 w-4" /></Link>)}
+            {serviceLinks.map((item) => <Link key={item.href} href={item.href} className="price-service-card iboren-card-glass iboren-card-glass-hover iboren-gold-accent rounded-[1.6rem] p-5 font-black">{item.label}<ArrowRight className="mt-4 h-4 w-4" /></Link>)}
           </div>
         </div>
       </section>
