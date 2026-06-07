@@ -4,6 +4,7 @@ import { readFileSync, writeFileSync } from "node:fs";
 const HOME_HEADER = "app/components/home/HomeHeader.tsx";
 const HOME_HERO = "app/components/home/HomeHero.tsx";
 const HOME_BOOKING_CTA = "app/components/home/HomeBookingCta.tsx";
+const UNIFIED_BOOKING_FORM = "app/UnifiedBookingFormCore.tsx";
 
 function replaceOnce(content, before, after, description) {
   const first = content.indexOf(before);
@@ -96,6 +97,23 @@ const tasks = {
           description: "desktop login/profile hover class",
           before: 'className="inline-flex items-center gap-2 hover:text-gold"',
           after: 'className="inline-flex items-center gap-2 rounded-full px-3 py-2 transition hover:bg-gold/10 hover:text-gold"'
+        }
+      ]);
+    }
+  },
+  booking_date_picker_open: {
+    allowedFiles: [UNIFIED_BOOKING_FORM],
+    apply() {
+      editFile(UNIFIED_BOOKING_FORM, [
+        {
+          description: "React useRef import",
+          before: 'import { FormEvent, useEffect, useMemo, useState } from "react";',
+          after: 'import { FormEvent, useEffect, useMemo, useRef, useState } from "react";'
+        },
+        {
+          description: "shared booking Field date picker behavior",
+          before: 'function Field({ id, label, value, onChange, placeholder, type = "text", required = false }: { id?: string; label: string; value: string; onChange: (value: string) => void; placeholder?: string; type?: string; required?: boolean }) {\n  return <label className="block"><span className="mb-2 block text-sm font-black text-porcelain/75">{label}{required ? " *" : ""}</span><input id={id} required={required} type={type} value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} className="w-full rounded-2xl border border-white/10 bg-porcelain px-4 py-4 text-base font-bold text-ink outline-none placeholder:text-ink/35 focus:border-gold focus:ring-2 focus:ring-gold/25" /></label>;\n}',
+          after: 'function Field({ id, label, value, onChange, placeholder, type = "text", required = false }: { id?: string; label: string; value: string; onChange: (value: string) => void; placeholder?: string; type?: string; required?: boolean }) {\n  const inputRef = useRef<HTMLInputElement | null>(null);\n\n  function openDatePicker() {\n    if (type !== "date") return;\n    try {\n      inputRef.current?.showPicker?.();\n    } catch {\n      // Native picker availability and activation rules vary by browser.\n    }\n  }\n\n  return <label className="block"><span className="mb-2 block text-sm font-black text-porcelain/75">{label}{required ? " *" : ""}</span><input ref={inputRef} id={id} required={required} type={type} value={value} onChange={(e) => onChange(e.target.value)} onClick={openDatePicker} onKeyDown={(event) => { if (type === "date" && (event.key === "Enter" || event.key === " ")) { event.preventDefault(); openDatePicker(); } }} placeholder={placeholder} className="w-full rounded-2xl border border-white/10 bg-porcelain px-4 py-4 text-base font-bold text-ink outline-none placeholder:text-ink/35 focus:border-gold focus:ring-2 focus:ring-gold/25" /></label>;\n}'
         }
       ]);
     }

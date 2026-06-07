@@ -10,6 +10,7 @@ on:
         options:
           - home_cta_cleanup
           - home_nav_hover_polish
+          - booking_date_picker_open
 
 permissions:
   contents: write
@@ -39,6 +40,9 @@ jobs:
               ;;
             home_nav_hover_polish)
               PATCH_FILES="app/components/home/HomeHeader.tsx"
+              ;;
+            booking_date_picker_open)
+              PATCH_FILES="app/UnifiedBookingFormCore.tsx"
               ;;
             *) echo "Unsupported task_id"; exit 1 ;;
           esac
@@ -141,6 +145,25 @@ jobs:
                 '' \
                 'This workflow never merges pull requests.' \
                 > /tmp/iboren-safe-patch-pr-body.md
+              ;;
+            booking_date_picker_open)
+              PR_TITLE="Apply safe patch: open booking date picker"
+              cat > /tmp/iboren-safe-patch-pr-body.md <<'EOF'
+          Adds Safe Patch task `booking_date_picker_open`.
+
+          Actual allowed target file:
+          - `app/UnifiedBookingFormCore.tsx`
+
+          This covers both Swedish and English booking pages because they share the same form component.
+
+          This task only adds safe native date-picker opening behavior. It does not change booking submit, API, pricing, RUT, validation, language copy, or route logic.
+
+          Validation completed before push:
+          - `npm run lint -- --quiet`
+          - `npm run build`
+
+          This workflow never merges pull requests.
+          EOF
               ;;
             *) echo "Unsupported task_id"; exit 1 ;;
           esac
