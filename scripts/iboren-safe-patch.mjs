@@ -12,9 +12,19 @@ function replaceOnce(content, before, after, description) {
   return content.slice(0, first) + after + content.slice(first + before.length);
 }
 
+function replaceExactCount(content, before, after, expectedCount, description) {
+  const matches = content.split(before).length - 1;
+  if (matches !== expectedCount) throw new Error(`Expected ${expectedCount} matches, found ${matches}: ${description}`);
+  return content.split(before).join(after);
+}
+
 function editFile(path, edits) {
   let content = readFileSync(path, "utf8");
-  for (const edit of edits) content = replaceOnce(content, edit.before, edit.after, edit.description);
+  for (const edit of edits) {
+    content = edit.expectedCount
+      ? replaceExactCount(content, edit.before, edit.after, edit.expectedCount, edit.description)
+      : replaceOnce(content, edit.before, edit.after, edit.description);
+  }
   writeFileSync(path, content, "utf8");
 }
 
@@ -63,6 +73,29 @@ const tasks = {
           description: "booking CTA links",
           before: '<div className="mt-6 flex flex-wrap items-center gap-3">\n              <Link href="/boka-utan-konto" className="btn-primary">Öppna bokningsformulär</Link>\n              <Link href="/priser" className="btn-secondary">Se priser först</Link>\n            </div>',
           after: '<div className="mt-6 flex flex-wrap items-center gap-3">\n              <Link href="/priser#pris-kalkylator" className="btn-primary">Få pris direkt</Link>\n            </div>'
+        }
+      ]);
+    }
+  },
+  home_nav_hover_polish: {
+    allowedFiles: [HOME_HEADER],
+    apply() {
+      editFile(HOME_HEADER, [
+        {
+          description: "desktop nav spacing",
+          before: '<div className="hidden items-center gap-6 text-sm font-semibold text-porcelain/68 md:flex">',
+          after: '<div className="hidden items-center gap-2 text-sm font-semibold text-porcelain/68 md:flex">'
+        },
+        {
+          description: "desktop nav link hover classes",
+          before: 'className="hover:text-gold"',
+          after: 'className="rounded-full px-3 py-2 transition hover:bg-gold/10 hover:text-gold"',
+          expectedCount: 6
+        },
+        {
+          description: "desktop login/profile hover class",
+          before: 'className="inline-flex items-center gap-2 hover:text-gold"',
+          after: 'className="inline-flex items-center gap-2 rounded-full px-3 py-2 transition hover:bg-gold/10 hover:text-gold"'
         }
       ]);
     }

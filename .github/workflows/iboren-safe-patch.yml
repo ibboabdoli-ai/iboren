@@ -9,6 +9,7 @@ on:
         type: choice
         options:
           - home_cta_cleanup
+          - home_nav_hover_polish
 
 permissions:
   contents: write
@@ -33,13 +34,19 @@ jobs:
           RUN_ATTEMPT: ${{ github.run_attempt }}
         run: |
           case "$TASK_ID" in
-            home_cta_cleanup) ;;
+            home_cta_cleanup)
+              PATCH_FILES="app/components/home/HomeHeader.tsx app/components/home/HomeHero.tsx app/components/home/HomeBookingCta.tsx"
+              ;;
+            home_nav_hover_polish)
+              PATCH_FILES="app/components/home/HomeHeader.tsx"
+              ;;
             *) echo "Unsupported task_id"; exit 1 ;;
           esac
 
           BRANCH_NAME="safe-patch/${TASK_ID}/${RUN_ID}-${RUN_ATTEMPT}"
           git checkout -b "$BRANCH_NAME"
           echo "BRANCH_NAME=$BRANCH_NAME" >> "$GITHUB_ENV"
+          echo "PATCH_FILES=$PATCH_FILES" >> "$GITHUB_ENV"
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -87,7 +94,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-          git add -- app/components/home/HomeHeader.tsx app/components/home/HomeHero.tsx app/components/home/HomeBookingCta.tsx
+          git add -- $PATCH_FILES
 
           if git diff --cached --quiet; then
             echo "No changes to commit."
@@ -112,6 +119,21 @@ jobs:
                 '- `app/components/home/HomeHeader.tsx`' \
                 '- `app/components/home/HomeHero.tsx`' \
                 '- `app/components/home/HomeBookingCta.tsx`' \
+                '' \
+                'Validation completed before push:' \
+                '- `npm run lint -- --quiet`' \
+                '- `npm run build`' \
+                '' \
+                'This workflow never merges pull requests.' \
+                > /tmp/iboren-safe-patch-pr-body.md
+              ;;
+            home_nav_hover_polish)
+              PR_TITLE="Apply safe patch: home nav hover polish"
+              printf '%s\n' \
+                'Automated predefined safe patch: `home_nav_hover_polish`.' \
+                '' \
+                'Allowed file:' \
+                '- `app/components/home/HomeHeader.tsx`' \
                 '' \
                 'Validation completed before push:' \
                 '- `npm run lint -- --quiet`' \
