@@ -112,35 +112,35 @@ jobs:
           case "$TASK_ID" in
             home_cta_cleanup)
               PR_TITLE="Apply safe patch: home CTA cleanup"
-              cat > /tmp/iboren-safe-patch-pr-body.md <<'EOF'
-          Automated predefined safe patch: `home_cta_cleanup`.
-
-          Allowed files:
-          - `app/components/home/HomeHeader.tsx`
-          - `app/components/home/HomeHero.tsx`
-          - `app/components/home/HomeBookingCta.tsx`
-
-          Validation completed before push:
-          - `npm run lint -- --quiet`
-          - `npm run build`
-
-          This workflow never merges pull requests.
-          EOF
+              printf '%s\n' \
+                'Automated predefined safe patch: `home_cta_cleanup`.' \
+                '' \
+                'Allowed files:' \
+                '- `app/components/home/HomeHeader.tsx`' \
+                '- `app/components/home/HomeHero.tsx`' \
+                '- `app/components/home/HomeBookingCta.tsx`' \
+                '' \
+                'Validation completed before push:' \
+                '- `npm run lint -- --quiet`' \
+                '- `npm run build`' \
+                '' \
+                'This workflow never merges pull requests.' \
+                > /tmp/iboren-safe-patch-pr-body.md
               ;;
             home_nav_hover_polish)
               PR_TITLE="Apply safe patch: home nav hover polish"
-              cat > /tmp/iboren-safe-patch-pr-body.md <<'EOF'
-          Automated predefined safe patch: `home_nav_hover_polish`.
-
-          Allowed file:
-          - `app/components/home/HomeHeader.tsx`
-
-          Validation completed before push:
-          - `npm run lint -- --quiet`
-          - `npm run build`
-
-          This workflow never merges pull requests.
-          EOF
+              printf '%s\n' \
+                'Automated predefined safe patch: `home_nav_hover_polish`.' \
+                '' \
+                'Allowed file:' \
+                '- `app/components/home/HomeHeader.tsx`' \
+                '' \
+                'Validation completed before push:' \
+                '- `npm run lint -- --quiet`' \
+                '- `npm run build`' \
+                '' \
+                'This workflow never merges pull requests.' \
+                > /tmp/iboren-safe-patch-pr-body.md
               ;;
             *) echo "Unsupported task_id"; exit 1 ;;
           esac
