@@ -59,10 +59,11 @@ type NormalizedBookingPayload = {
 type AuthContext = { user: User; token: string };
 type SaveBookingResult = { id: string; bookingNumber: string | null; duplicate: boolean; date: string };
 type RecurringPlan = { count: number; stepDays?: number; stepMonths?: number; label: string };
+type EmailDeliveryResult = "sent" | "failed" | "timeout" | "not_configured";
 
 class DuplicateBookingError extends Error {
-  constructor() {
-    super("Den här bokningen finns redan. Ändra datum, tid eller uppgifter om du vill skapa en ny bokning.");
+  constructor(language: Language = "sv") {
+    super(message(language, "Den här bokningen finns redan. Ändra datum, tid eller uppgifter om du vill skapa en ny bokning.", "This booking already exists. Change the date, time or details if you want to create a new booking."));
     this.name = "DuplicateBookingError";
   }
 }
@@ -343,14 +344,14 @@ async function saveBooking(payload: NormalizedBookingPayload, auth: AuthContext,
   const size = Number.parseInt(payload.size, 10);
   const sizeSqm = Number.isFinite(size) ? size : null;
   const { data: existing, error: lookupError } = await supabase.from("bookings").select("id, booking_number").eq("user_id", auth.user.id).eq("service", payload.service).eq("address", payload.address).eq("preferred_date", payload.date).eq("size_sqm", sizeSqm).eq("frequency", payload.frequency).eq("time_window", payload.timeWindow).eq("customer_email", payload.email).neq("status", "cancelled").limit(1).maybeSingle<{ id: string; booking_number: string | null }>();
-  if (lookupError) throw new Error(`Kunde inte kontrollera tidigare bokning: ${lookupError.message}`);
+  if (lookupError) throw new Error("BOOKING_LOOKUP_FAILED");
   if (existing?.id) return { id: existing.id, bookingNumber: existing.booking_number || null, duplicate: true, date: payload.date };
   const bookingNumber = await createBookingNumber(payload);
   const notesWithRut = [payload.notes || "", "", "--- Kundtyp & RUT ---", `Kundtyp: ${payload.customerType}`, `RUT önskas: ${payload.rutRequested ? "Ja" : "Nej"}`, `Språk / Language: ${language}`].join("\n").trim();
   const { data, error } = await supabase.from("bookings").insert({ user_id: auth.user.id, booking_number: bookingNumber, service: payload.service, area: payload.area, address: payload.address || null, size_sqm: sizeSqm, frequency: payload.frequency, preferred_date: payload.date, time_window: payload.timeWindow, customer_name: payload.name, customer_email: payload.email, customer_phone: payload.phone || null, notes: notesWithRut || null, status: "new" }).select("id, booking_number").single<{ id: string; booking_number: string | null }>();
   if (error) {
-    if (isUniqueDuplicateError(error)) throw new DuplicateBookingError();
-    throw new Error(`Kunde inte spara bokningen i databasen: ${error.message}`);
+    if (isUniqueDuplicateError(error)) throw new DuplicateBookingError(language);
+    throw new Error("BOOKING_INSERT_FAILED");
   }
   return { id: data.id, bookingNumber: data.booking_number || bookingNumber, duplicate: false, date: payload.date };
 }
@@ -365,7 +366,7 @@ async function saveRecurringBookings(payload: NormalizedBookingPayload, auth: Au
     const adminClient = getAdminClient();
     if (createdIds.length && adminClient) {
       const { error: rollbackError } = await adminClient.from("bookings").delete().in("id", createdIds);
-      if (rollbackError) console.error("IBOREN_RECURRING_BOOKING_ROLLBACK_FAILED", { createdIds, code: rollbackError.code });
+      if (rollbackError) console.error("IBOREN_RECURRING_BOOKING_ROLLBACK_FAILED", { createdCount: createdIds.length, errorCode: rollbackError.code || "unknown" });
     }
     throw error;
   }
@@ -383,12 +384,20 @@ async function sendEmail(params: { apiKey: string; from: string; to: string; rep
 
 function wait(ms: number) { return new Promise<"timeout">((resolve) => setTimeout(() => resolve("timeout"), ms)); }
 
+async function emailDeliveryResult(email: Promise<Response>): Promise<EmailDeliveryResult> {
+  return Promise.race([
+    email.then(() => "sent" as const).catch(() => "failed" as const),
+    wait(EMAIL_WAIT_LIMIT_MS)
+  ]);
+}
+
 export async function POST(request: Request) {
+  let language = getRequestLanguage(request, {});
   try {
     const auth = await getAuthContext(request);
     if (!auth) return NextResponse.json({ ok: false, message: "Du behöver logga in för att skicka en bokningsförfrågan." }, { status: 401 });
     const json = (await request.json()) as BookingPayload;
-    const language = getRequestLanguage(request, json);
+    language = getRequestLanguage(request, json);
     const customerType = normalizeCustomerType(json.customerType);
     const service = firstFilled(json.service);
     const payload: NormalizedBookingPayload = { service, area: firstFilled(json.area), address: firstFilled(json.address), size: firstFilled(json.size, json.sizeSqm, json.size_sqm), frequency: firstFilled(json.frequency) || "Engång", date: firstFilled(json.date, json.preferredDate, json.preferred_date), timeWindow: firstFilled(json.timeWindow, json.time, json.time_window) || "Flexibel", name: firstFilled(json.name, json.customerName, json.customer_name), email: firstFilled(json.email, json.customerEmail, json.customer_email), phone: firstFilled(json.phone, json.customerPhone, json.customer_phone), notes: firstFilled(json.notes), customerType, rutRequested: normalizeRutRequested(json.rutRequested, customerType, service) };
@@ -412,30 +421,31 @@ export async function POST(request: Request) {
     const bookingNumber = firstBooking.bookingNumber;
     const resendApiKey = process.env.RESEND_API_KEY;
     const toEmail = process.env.BOOKING_TO_EMAIL || "hej@iboren.se";
-    const fromEmail = process.env.BOOKING_FROM_EMAIL || "Iboren <onboarding@resend.dev>";
+    const fromEmail = process.env.BOOKING_FROM_EMAIL;
     const adminText = buildAdminText(payload, auth.user, firstBooking, language, recurring);
     const adminSubject = buildAdminSubject(payload, language);
     const customerText = buildCustomerText(payload, firstBooking, language, recurring);
     const customerSubject = buildCustomerSubject(payload, language);
 
-    if (resendApiKey) {
+    let adminEmailResult: EmailDeliveryResult = "not_configured";
+    let customerEmailResult: EmailDeliveryResult = "not_configured";
+
+    if (resendApiKey && fromEmail) {
       const adminEmail = sendEmail({ apiKey: resendApiKey, from: fromEmail, to: toEmail, replyTo: payload.email, subject: adminSubject, text: adminText });
       const customerEmail = sendEmail({ apiKey: resendApiKey, from: fromEmail, to: payload.email, replyTo: toEmail, subject: customerSubject, text: customerText });
-      const emailResult = await Promise.race([Promise.allSettled([adminEmail, customerEmail]), wait(EMAIL_WAIT_LIMIT_MS)]);
-      if (emailResult === "timeout") console.warn("IBOREN_BOOKING_EMAIL_WAIT_TIMEOUT", { bookingId, bookingNumber });
-      const emailFailed = emailResult !== "timeout" && emailResult.some((result) => result.status === "rejected");
-      if (emailFailed) console.warn("IBOREN_BOOKING_EMAIL_FAILED", { bookingId, bookingNumber });
-      const emailDelivered = emailResult !== "timeout" && !emailFailed;
-      return NextResponse.json({ ok: true, bookingId, bookingNumber, bookingIds: bookingSet.created.map((item) => item.id), bookingNumbers: bookingSet.created.map((item) => item.bookingNumber), visitDates: bookingSet.dates, duplicates: bookingSet.duplicates.length, emailDelivered, message: emailDelivered ? language === "en" ? "Thank you. Your booking request has been saved. Iboren will get back to you as soon as possible." : "Tack! Din bokningsförfrågan är sparad. Iboren återkommer så snart som möjligt." : language === "en" ? "Your booking request was saved, but the confirmation email could not be delivered. Iboren will still follow up." : "Din bokningsförfrågan sparades, men bekräftelsemejlet kunde inte skickas. Iboren kommer fortfarande att följa upp." });
+      [adminEmailResult, customerEmailResult] = await Promise.all([emailDeliveryResult(adminEmail), emailDeliveryResult(customerEmail)]);
+    } else if (resendApiKey && !fromEmail) {
+      console.error("IBOREN_BOOKING_EMAIL_CONFIG_MISSING", { missing: "BOOKING_FROM_EMAIL" });
     }
 
-    console.info("IBOREN_BOOKING_REQUEST", adminText);
-    return NextResponse.json({ ok: true, bookingId, bookingNumber, bookingIds: bookingSet.created.map((item) => item.id), bookingNumbers: bookingSet.created.map((item) => item.bookingNumber), visitDates: bookingSet.dates, duplicates: bookingSet.duplicates.length, message: language === "en" ? "The booking has been saved. Demo mode: add RESEND_API_KEY in Vercel for real email." : "Bokningen är sparad. Demo-läge: lägg till RESEND_API_KEY i Vercel för riktig e-post." });
+    const emailDelivered = adminEmailResult === "sent" && customerEmailResult === "sent";
+    if (!emailDelivered) console.warn("IBOREN_BOOKING_EMAIL_INCOMPLETE", { adminEmailResult, customerEmailResult });
+    return NextResponse.json({ ok: true, bookingId, bookingNumber, bookingIds: bookingSet.created.map((item) => item.id), bookingNumbers: bookingSet.created.map((item) => item.bookingNumber), visitDates: bookingSet.dates, duplicates: bookingSet.duplicates.length, emailDelivered, adminEmailDelivered: adminEmailResult === "sent", customerEmailDelivered: customerEmailResult === "sent", message: emailDelivered ? language === "en" ? "Thank you. Your booking request has been saved. Iboren will get back to you as soon as possible." : "Tack! Din bokningsförfrågan är sparad. Iboren återkommer så snart som möjligt." : message(language, "Bokningen är sparad, men e-postbekräftelsen kunde inte skickas just nu. Iboren följer upp manuellt.", "Your booking was saved, but the email confirmation could not be sent right now. Iboren will follow up manually.") });
   } catch (error) {
     if (error instanceof DuplicateBookingError) return NextResponse.json({ ok: false, duplicate: true, message: error.message }, { status: 409 });
     if (error instanceof BookingValidationError) return NextResponse.json({ ok: false, message: error.message }, { status: 400 });
     if (error instanceof SyntaxError) return NextResponse.json({ ok: false, message: "Invalid request." }, { status: 400 });
-    console.error("IBOREN_BOOKING_REQUEST_FAILED", error);
-    return NextResponse.json({ ok: false, message: "Kunde inte spara bokningen just nu. Försök igen senare. / Could not save the booking right now. Please try again later." }, { status: 500 });
+    console.error("IBOREN_BOOKING_REQUEST_FAILED", { errorType: error instanceof Error ? error.name : "unknown" });
+    return NextResponse.json({ ok: false, message: message(language, "Kunde inte spara bokningen just nu. Försök igen eller kontakta [hej@iboren.se](mailto:hej@iboren.se).", "Could not save the booking right now. Please try again or contact [hej@iboren.se](mailto:hej@iboren.se).") }, { status: 500 });
   }
 }
