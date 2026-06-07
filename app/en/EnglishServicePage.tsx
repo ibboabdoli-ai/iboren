@@ -122,56 +122,56 @@ export function EnglishServicePage({ service }: { service: EnglishServiceKey }) 
   const item = serviceContent[service];
   const Icon = item.icon;
   return (
-    <main className="min-h-screen bg-cream text-ink">
+    <main className="min-h-screen bg-[#181917] text-porcelain">
       <section className="relative overflow-hidden py-20 md:py-28">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_65%_20%,rgba(212,165,116,.35),transparent_32%),radial-gradient(circle_at_15%_70%,rgba(107,39,55,.14),transparent_34%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_65%_20%,rgba(212,165,116,.22),transparent_32%),radial-gradient(circle_at_15%_70%,rgba(212,165,116,.08),transparent_34%)]" />
         <div className="luxe-container relative grid gap-10 md:grid-cols-[.95fr_1.05fr] md:items-center">
           <div>
-            <Link href="/en" className="mb-10 inline-flex text-sm font-bold text-burgundy">← Back</Link>
-            <p className="eyebrow">{item.kicker}</p>
-            <h1 className="display mt-4 text-6xl font-bold leading-[.88] text-burgundy md:text-8xl">{item.title}</h1>
-            <p className="mt-7 max-w-2xl text-lg leading-8 text-ink/70 md:text-xl">{item.intro}</p>
+            <Link href="/en" className="mb-10 inline-flex text-sm font-bold text-gold transition hover:text-porcelain">← Back</Link>
+            <p className="eyebrow text-gold">{item.kicker}</p>
+            <h1 className="display mt-4 text-6xl font-bold leading-[.88] text-gold md:text-8xl">{item.title}</h1>
+            <p className="mt-7 max-w-2xl text-lg leading-8 text-porcelain/70 md:text-xl">{item.intro}</p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <Link href="/en#booking" className="btn-primary">Send request <ArrowRight size={18} /></Link>
               <Link href="/en/prices" className="btn-secondary">Calculate price</Link>
             </div>
           </div>
-          <div className="rounded-[2.5rem] border border-burgundy/10 bg-porcelain/70 p-8 shadow-luxe backdrop-blur-xl">
+          <div className="rounded-[2.5rem] border border-gold/15 bg-white/[0.055] p-8 shadow-luxe backdrop-blur-xl transition duration-300 hover:-translate-y-1 hover:border-gold/35 hover:bg-white/[0.085] hover:shadow-[0_24px_70px_rgba(216,164,111,0.16)]">
             <div className="mb-16 flex items-center justify-between">
-              <div className="grid h-16 w-16 place-items-center rounded-full bg-burgundy text-porcelain"><Icon size={30} /></div>
-              <span className="rounded-full border border-gold/50 bg-gold/20 px-4 py-2 text-xs font-bold uppercase tracking-[.24em] text-burgundy">{item.badge}</span>
+              <div className="grid h-16 w-16 place-items-center rounded-full bg-gold/15 text-gold"><Icon size={30} /></div>
+              <span className="rounded-full border border-gold/50 bg-gold/15 px-4 py-2 text-xs font-bold uppercase tracking-[.24em] text-gold">{item.badge}</span>
             </div>
-            <h2 className="display text-4xl font-bold text-ink">{item.cardTitle}</h2>
+            <h2 className="display text-4xl font-bold text-gold">{item.cardTitle}</h2>
             <div className="mt-7 grid gap-4">
-              {item.items.map((point) => <p key={point} className="flex gap-3 text-ink/70"><CheckCircle2 className="mt-1 h-5 w-5 shrink-0 text-burgundy" /> {point}</p>)}
+              {item.items.map((point) => <p key={point} className="flex gap-3 text-porcelain/70"><CheckCircle2 className="mt-1 h-5 w-5 shrink-0 text-gold" /> {point}</p>)}
             </div>
           </div>
         </div>
       </section>
 
-      <section className="bg-porcelain py-16"><div className="luxe-container grid gap-5 md:grid-cols-3"><Info icon={<Sparkles />} title="Smart flow" text="The form keeps the customer details structured from the first contact." /><Info icon={<ShieldCheck />} title="Clear basis" text="No binding booking before price, time and scope are confirmed." /><Info icon={<Icon />} title="Flexible" text="Works for one-time requests, recurring services and add-ons." /></div></section>
+      <section className="bg-[#141512] py-16"><div className="luxe-container grid gap-5 md:grid-cols-3"><Info icon={<Sparkles />} title="Smart flow" text="The form keeps the customer details structured from the first contact." /><Info icon={<ShieldCheck />} title="Clear basis" text="No binding booking before price, time and scope are confirmed." /><Info icon={<Icon />} title="Flexible" text="Works for one-time requests, recurring services and add-ons." /></div></section>
 
-      <section className="bg-cream py-16">
+      <section className="bg-[#181917] py-16">
         <div className="luxe-container grid gap-10 md:grid-cols-[.9fr_1.1fr] md:items-start">
           <div>
-            <p className="eyebrow">What is included?</p>
-            <h2 className="display mt-3 text-4xl font-bold text-burgundy md:text-6xl">{item.includedTitle}</h2>
-            <p className="mt-5 leading-8 text-ink/65">{item.includedIntro}</p>
+            <p className="eyebrow text-gold">What is included?</p>
+            <h2 className="display mt-3 text-4xl font-bold text-gold md:text-6xl">{item.includedTitle}</h2>
+            <p className="mt-5 leading-8 text-porcelain/65">{item.includedIntro}</p>
           </div>
           <div className="grid gap-4">
-            {item.included.map((point) => <p key={point} className="flex gap-3 rounded-2xl bg-porcelain p-5 text-ink/70 shadow-sm"><CheckCircle2 className="mt-1 h-5 w-5 shrink-0 text-burgundy" /> {point}</p>)}
+            {item.included.map((point) => <p key={point} className="flex gap-3 rounded-2xl border border-gold/15 bg-white/[0.055] p-5 text-porcelain/70 shadow-sm backdrop-blur-xl transition duration-300 hover:-translate-y-1 hover:border-gold/35 hover:bg-white/[0.085] hover:shadow-[0_24px_70px_rgba(216,164,111,0.16)]"><CheckCircle2 className="mt-1 h-5 w-5 shrink-0 text-gold" /> {point}</p>)}
           </div>
         </div>
       </section>
 
-      <section className="bg-porcelain py-16">
+      <section className="bg-[#141512] py-16">
         <div className="luxe-container max-w-4xl">
-          <p className="eyebrow">FAQ</p>
-          <h2 className="display mt-3 text-4xl font-bold text-burgundy md:text-6xl">Common questions about {item.title.toLowerCase()}.</h2>
+          <p className="eyebrow text-gold">FAQ</p>
+          <h2 className="display mt-3 text-4xl font-bold text-gold md:text-6xl">Common questions about {item.title.toLowerCase()}.</h2>
           <div className="mt-10 grid gap-4">
-            {item.faq.map((faq) => <article key={faq.q} className="rounded-[1.5rem] bg-cream p-6 shadow-sm"><h3 className="font-bold text-burgundy">{faq.q}</h3><p className="mt-2 leading-7 text-ink/65">{faq.a}</p></article>)}
+            {item.faq.map((faq) => <article key={faq.q} className="rounded-[1.5rem] border border-gold/15 bg-white/[0.055] p-6 shadow-sm backdrop-blur-xl transition duration-300 hover:-translate-y-1 hover:border-gold/35 hover:bg-white/[0.085] hover:shadow-[0_24px_70px_rgba(216,164,111,0.16)]"><h3 className="font-bold text-gold">{faq.q}</h3><p className="mt-2 leading-7 text-porcelain/65">{faq.a}</p></article>)}
           </div>
-          <div className="mt-10 rounded-[2rem] bg-burgundy p-7 text-porcelain"><h2 className="display text-4xl font-bold">Ready to send a request?</h2><p className="mt-3 text-porcelain/70">Fill in address, size, rooms and preferred date so Iboren can follow up.</p><Link href="/en#booking" className="mt-6 inline-flex rounded-full bg-gold px-5 py-3 text-sm font-black uppercase tracking-[.12em] text-ink">Start request</Link></div>
+          <div className="mt-10 rounded-[2rem] border border-gold/20 bg-white/[0.07] p-7 text-porcelain shadow-[0_24px_70px_rgba(216,164,111,0.12)] backdrop-blur-xl"><h2 className="display text-4xl font-bold text-gold">Ready to send a request?</h2><p className="mt-3 text-porcelain/70">Fill in address, size, rooms and preferred date so Iboren can follow up.</p><Link href="/en#booking" className="mt-6 inline-flex rounded-full bg-gold px-5 py-3 text-sm font-black uppercase tracking-[.12em] text-ink">Start request</Link></div>
         </div>
       </section>
     </main>
@@ -179,5 +179,5 @@ export function EnglishServicePage({ service }: { service: EnglishServiceKey }) 
 }
 
 function Info({ icon, title, text }: { icon: React.ReactNode; title: string; text: string }) {
-  return <article className="rounded-[2rem] bg-cream p-6 shadow-soft"><div className="mb-6 grid h-12 w-12 place-items-center rounded-full bg-burgundy text-porcelain">{icon}</div><h3 className="display text-3xl font-bold text-burgundy">{title}</h3><p className="mt-3 leading-7 text-ink/65">{text}</p></article>;
+  return <article className="rounded-[2rem] border border-gold/15 bg-white/[0.055] p-6 shadow-soft backdrop-blur-xl transition duration-300 hover:-translate-y-1 hover:border-gold/35 hover:bg-white/[0.085] hover:shadow-[0_24px_70px_rgba(216,164,111,0.16)]"><div className="mb-6 grid h-12 w-12 place-items-center rounded-full bg-gold/15 text-gold">{icon}</div><h3 className="display text-3xl font-bold text-gold">{title}</h3><p className="mt-3 leading-7 text-porcelain/65">{text}</p></article>;
 }
