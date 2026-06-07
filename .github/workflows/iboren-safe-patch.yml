@@ -106,19 +106,19 @@ jobs:
             home_cta_cleanup)
               PR_TITLE="Apply safe patch: home CTA cleanup"
               cat > /tmp/iboren-safe-patch-pr-body.md <<'EOF'
-Automated predefined safe patch: `home_cta_cleanup`.
+          Automated predefined safe patch: `home_cta_cleanup`.
 
-Allowed files:
-- `app/components/home/HomeHeader.tsx`
-- `app/components/home/HomeHero.tsx`
-- `app/components/home/HomeBookingCta.tsx`
+          Allowed files:
+          - `app/components/home/HomeHeader.tsx`
+          - `app/components/home/HomeHero.tsx`
+          - `app/components/home/HomeBookingCta.tsx`
 
-Validation completed before push:
-- `npm run lint -- --quiet`
-- `npm run build`
+          Validation completed before push:
+          - `npm run lint -- --quiet`
+          - `npm run build`
 
-This workflow never merges pull requests.
-EOF
+          This workflow never merges pull requests.
+          EOF
               ;;
             *) echo "Unsupported task_id"; exit 1 ;;
           esac
