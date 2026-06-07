@@ -202,3 +202,15 @@
 .price-page-dark :is(#rut-avdrag, #rut-deduction) > div > div:last-child > div:first-child svg {
   color: #d8a46f !important;
 }
+/* Force RUT check icons to gold, including SVG stroke paths. */
+.price-page-dark :is(#rut-avdrag, #rut-deduction) .lucide-circle-check,
+.price-page-dark :is(#rut-avdrag, #rut-deduction) .lucide-circle-check * {
+  color: #d8a46f !important;
+  stroke: #d8a46f !important;
+}
+
+.price-page-dark :is(#rut-avdrag, #rut-deduction) svg[stroke="currentColor"],
+.price-page-dark :is(#rut-avdrag, #rut-deduction) svg[stroke="currentColor"] * {
+  color: #d8a46f !important;
+  stroke: #d8a46f !important;
+}
