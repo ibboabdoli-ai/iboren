@@ -1,0 +1,36 @@
+import type { User } from "@supabase/supabase-js";
+import { Mail, ShieldCheck } from "lucide-react";
+import Link from "next/link";
+
+type Props = {
+  user: User | null;
+};
+
+export default function HomeBookingCta({ user }: Props) {
+  return (
+    <section id="booking" className="bg-ink py-24 text-porcelain md:py-32">
+      <div className="luxe-container grid gap-10">
+        <div className="max-w-4xl">
+          <p className="mb-4 text-[11px] font-bold uppercase tracking-[.38em] text-gold">Bokning</p>
+          <h2 className="display text-5xl font-normal uppercase leading-[.9] md:text-7xl">Skapa en tydlig bokningsförfrågan.</h2>
+          <p className="mt-6 max-w-xl text-lg leading-8 text-porcelain/70">Formuläret samlar rätt information direkt: tjänst, plats, storlek, rum, datum, kontakt och särskilda önskemål.</p>
+          <div className="mt-8 grid gap-3 text-sm text-porcelain/70">
+            <p className="flex items-center gap-3"><ShieldCheck className="h-5 w-5 text-gold" /> Plats delas bara efter aktivt val.</p>
+            <p className="flex items-center gap-3"><Mail className="h-5 w-5 text-gold" /> {user ? "Din förfrågan sparas även på din profil." : "Logga in för att boka och spara förfrågan på din profil."}</p>
+          </div>
+        </div>
+
+        <div className="w-full">
+          <div className="mx-auto max-w-3xl rounded-2xl border border-gold/15 bg-night/70 p-8 shadow-lg">
+            <h3 className="text-2xl font-bold text-porcelain">Skicka en bokningsförfrågan</h3>
+            <p className="mt-3 text-porcelain/80">Fyll i formuläret på vår bokningssida. Du får en tydlig sammanfattning och prisindikation innan du skickar.</p>
+            <div className="mt-6 flex flex-wrap items-center gap-3">
+              <Link href="/boka-utan-konto" className="btn-primary">Öppna bokningsformulär</Link>
+              <Link href="/priser" className="btn-secondary">Se priser först</Link>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}

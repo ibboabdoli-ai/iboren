@@ -2,8 +2,11 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { ArrowUpRight, Building2, CheckCircle2, Home, Mail, Menu, ShieldCheck, Truck, UserRound, X } from "lucide-react";
+import { Building2, CheckCircle2, Home, Truck } from "lucide-react";
 import { createClient, User } from "@supabase/supabase-js";
+import HomeBookingCta from "./components/home/HomeBookingCta";
+import HomeHeader from "./components/home/HomeHeader";
+import HomeHero from "./components/home/HomeHero";
 // UnifiedBookingFormCore removed from this page to avoid rendering the embedded form on the Swedish homepage
 
 const frames = [
@@ -21,8 +24,6 @@ const services = [
   { icon: Building2, title: "Kontorsstädning", href: "/kontorsstadning", price: "skräddarsydd offert", body: "För företag, lokaler och återkommande service." }
 ];
 
-const trustBadges = ["RUT-avdrag", "Prisindikation online", "Ej bindande förfrågan"];
-
 function getSupabase() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -31,7 +32,6 @@ function getSupabase() {
 }
 
 export default function HomePage() {
-  const [menuOpen, setMenuOpen] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [activeFrame, setActiveFrame] = useState(0);
   const wheelLock = useRef(false);
@@ -84,44 +84,9 @@ export default function HomePage() {
 
   return (
     <main className="min-h-screen overflow-x-hidden bg-night text-porcelain">
-      <header className="fixed inset-x-0 top-0 z-50 border-b border-gold/10 bg-night/80 backdrop-blur-2xl">
-        <nav className="luxe-container flex h-20 items-center justify-between">
-          <a href="#top" className="group flex items-center" onClick={() => setMenuOpen(false)} aria-label="Iboren startsida">
-            <span className="sr-only">Iboren</span>
-            <span className="flex flex-col leading-none">
-              <span className="display block text-4xl font-semibold tracking-wide text-porcelain md:text-5xl">Iboren</span>
-              <span className="mt-1 block text-[10px] font-bold uppercase tracking-[0.36em] text-gold/75 md:text-[11px]">Pris direkt & enkel bokning</span>
-            </span>
-          </a>
-          <div className="hidden items-center gap-6 text-sm font-semibold text-porcelain/68 md:flex">
-            <a href="#services" className="hover:text-gold">Tjänster</a>
-            <Link href="/priser" className="hover:text-gold">Priser</Link>
-            <Link href="/boka-utan-konto" className="hover:text-gold">Boka</Link>
-            <Link href="/jobb" className="hover:text-gold">Jobba hos oss</Link>
-            <Link href="/om-iboren" className="hover:text-gold">Om oss</Link>
-            <Link href="/en" className="hover:text-gold">EN</Link>
-            <Link href={user ? "/profile" : "/login"} className="inline-flex items-center gap-2 hover:text-gold"><UserRound size={17} /> {user ? "Min profil" : "Logga in"}</Link>
-            <Link href="/boka-utan-konto" className="rounded-full border border-gold/40 bg-gold px-5 py-3 text-night">Skicka förfrågan</Link>
-          </div>
-          <button onClick={() => setMenuOpen(!menuOpen)} className="grid h-11 w-11 place-items-center rounded-full border border-gold/25 bg-porcelain/5 text-gold md:hidden">{menuOpen ? <X size={19} /> : <Menu size={19} />}</button>
-        </nav>
-        {menuOpen && <div className="border-t border-gold/10 bg-night/95 px-4 pb-6 md:hidden"><div className="mx-auto grid max-w-sm gap-2 pt-2 text-porcelain"><a href="#services" onClick={() => setMenuOpen(false)} className="rounded-2xl px-4 py-3 font-semibold">Tjänster</a><Link href="/priser" onClick={() => setMenuOpen(false)} className="rounded-2xl px-4 py-3 font-semibold">Priser</Link><Link href="/boka-utan-konto" onClick={() => setMenuOpen(false)} className="rounded-2xl px-4 py-3 font-semibold">Boka</Link><Link href="/jobb" onClick={() => setMenuOpen(false)} className="rounded-2xl px-4 py-3 font-semibold">Jobba hos oss</Link><Link href="/om-iboren" onClick={() => setMenuOpen(false)} className="rounded-2xl px-4 py-3 font-semibold">Om oss</Link><Link href="/en" onClick={() => setMenuOpen(false)} className="rounded-2xl px-4 py-3 font-semibold">English</Link><Link href={user ? "/profile" : "/login"} className="rounded-2xl px-4 py-3 font-semibold">{user ? "Min profil" : "Logga in"}</Link><Link href="/boka-utan-konto" onClick={() => setMenuOpen(false)} className="mt-2 rounded-full bg-gold px-5 py-4 text-center text-sm font-bold text-night">Skicka förfrågan</Link></div></div>}
-      </header>
+      <HomeHeader user={user} />
 
-      <section id="top" className="relative grid min-h-screen place-items-center overflow-hidden px-5 pt-28 text-center">
-        <img src={frames[2].image} alt="Rent hem" loading="eager" decoding="async" fetchPriority="high" sizes="100vw" className="absolute inset-0 h-full w-full object-cover" />
-        <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(2,5,4,.58),rgba(2,5,4,.16)_48%,rgba(2,5,4,.62)),radial-gradient(circle_at_center,transparent_0_38%,rgba(0,0,0,.34)_100%)]" />
-        <div className="relative z-10 mx-auto max-w-6xl">
-          <p className="text-[11px] font-bold uppercase tracking-[0.36em] text-gold/90 md:tracking-[0.44em]">Södertälje · Stockholm · RUT-avdrag</p>
-          <h1 className="display mt-5 text-[clamp(3rem,12vw,8.5rem)] font-normal uppercase leading-[.9] tracking-[.01em] text-porcelain md:mt-6 md:leading-[.86]">Städning i Södertälje & Stockholm</h1>
-          <p className="mx-auto mt-6 max-w-3xl text-base font-semibold leading-7 text-porcelain/88 md:mt-7 md:text-2xl md:leading-8">Hemstädning, flyttstädning, kontorsstädning och fönsterputs. Beräkna pris online och skicka en ej bindande förfrågan.</p>
-          {user && <p className="mt-5 inline-flex rounded-full border border-gold/25 bg-night/50 px-4 py-2 text-sm font-bold text-gold">Inloggad som {user.email}</p>}
-          <div className="mt-7 flex flex-wrap items-center justify-center gap-2 md:mt-8">{trustBadges.map((badge) => <span key={badge} className="rounded-full border border-gold/25 bg-night/45 px-3 py-2 text-[10px] font-bold uppercase tracking-[.16em] text-gold md:px-4 md:text-xs md:tracking-[.18em]">{badge}</span>)}</div>
-          <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row md:mt-10"><Link href="/priser" className="btn-primary">Beräkna pris <ArrowUpRight size={17} /></Link><Link href="/boka-utan-konto" className="btn-secondary">Skicka förfrågan</Link></div>
-          <p className="mx-auto mt-5 max-w-xl text-sm font-bold leading-6 text-porcelain/75">Vi bekräftar alltid tid och slutligt pris innan förfrågan blir bindande.</p>
-          <div className="mt-8 inline-flex items-center gap-4 text-[11px] font-bold uppercase tracking-[0.32em] text-gold/75 before:h-px before:w-10 before:bg-gold/40 after:h-px after:w-10 after:bg-gold/40 md:mt-10">Se före och efter</div>
-        </div>
-      </section>
+      <HomeHero user={user} image={frames[2].image} />
 
       <section id="cinematic-scroll" onWheel={handleCinematicWheel} onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd} className="relative h-screen min-h-screen overflow-hidden bg-night">
         <div className="relative h-screen min-h-screen overflow-hidden bg-night">
@@ -136,30 +101,7 @@ export default function HomePage() {
 
       <section id="process" className="bg-porcelain py-24 text-ink md:py-32"><div className="luxe-container"><p className="eyebrow">II / Så fungerar det</p><h2 className="display mt-4 max-w-4xl text-5xl font-normal uppercase leading-[.9] text-burgundy md:text-7xl">Fyra steg. En tydlig förfrågan.</h2><div className="mt-12 grid gap-4 md:grid-cols-4">{["Välj tjänst", "Fyll i plats", "Se sammanfattning", "Skicka förfrågan"].map((item, i) => <article key={item} className="rounded-[2rem] border border-burgundy/10 bg-cream p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-soft"><div className="mb-10 flex items-center justify-between"><span className="display text-4xl text-burgundy/55">0{i + 1}</span><CheckCircle2 className="text-burgundy" /></div><h3 className="display text-3xl font-normal uppercase">{item}</h3><p className="mt-4 text-sm leading-7 text-ink/60">Ett enkelt steg som gör bokningsunderlaget tydligare och lättare att följa upp.</p></article>)}</div></div></section>
 
-      <section id="booking" className="bg-ink py-24 text-porcelain md:py-32">
-        <div className="luxe-container grid gap-10">
-          <div className="max-w-4xl">
-            <p className="mb-4 text-[11px] font-bold uppercase tracking-[.38em] text-gold">Bokning</p>
-            <h2 className="display text-5xl font-normal uppercase leading-[.9] md:text-7xl">Skapa en tydlig bokningsförfrågan.</h2>
-            <p className="mt-6 max-w-xl text-lg leading-8 text-porcelain/70">Formuläret samlar rätt information direkt: tjänst, plats, storlek, rum, datum, kontakt och särskilda önskemål.</p>
-            <div className="mt-8 grid gap-3 text-sm text-porcelain/70">
-              <p className="flex items-center gap-3"><ShieldCheck className="h-5 w-5 text-gold" /> Plats delas bara efter aktivt val.</p>
-              <p className="flex items-center gap-3"><Mail className="h-5 w-5 text-gold" /> {user ? "Din förfrågan sparas även på din profil." : "Logga in för att boka och spara förfrågan på din profil."}</p>
-            </div>
-          </div>
-
-          <div className="w-full">
-            <div className="mx-auto max-w-3xl rounded-2xl border border-gold/15 bg-night/70 p-8 shadow-lg">
-              <h3 className="text-2xl font-bold text-porcelain">Skicka en bokningsförfrågan</h3>
-              <p className="mt-3 text-porcelain/80">Fyll i formuläret på vår bokningssida. Du får en tydlig sammanfattning och prisindikation innan du skickar.</p>
-              <div className="mt-6 flex flex-wrap items-center gap-3">
-                <Link href="/boka-utan-konto" className="btn-primary">Öppna bokningsformulär</Link>
-                <Link href="/priser" className="btn-secondary">Se priser först</Link>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
+      <HomeBookingCta user={user} />
 
       <footer className="border-t border-gold/10 bg-night py-10"><div className="luxe-container grid gap-8 md:grid-cols-[1.1fr_1fr_1fr]"><div><p className="display text-4xl font-normal uppercase text-gold">Iboren</p><p className="mt-2 max-w-sm text-sm leading-7 text-porcelain/65">Städning i Södertälje och Stockholm med tydlig prisbild, RUT-avdrag och ej bindande bokningsförfrågan.</p></div><div><p className="mb-3 text-xs font-black uppercase tracking-[.22em] text-gold">Tjänster</p><div className="grid gap-2 text-sm font-semibold text-porcelain/70"><Link href="/hemstadning" className="hover:text-gold">Hemstädning</Link><Link href="/flyttstadning" className="hover:text-gold">Flyttstädning</Link><Link href="/kontorsstadning" className="hover:text-gold">Kontorsstädning</Link><Link href="/fonsterputs" className="hover:text-gold">Fönsterputs</Link></div></div><div><p className="mb-3 text-xs font-black uppercase tracking-[.22em] text-gold">Iboren</p><div className="grid gap-2 text-sm font-semibold text-porcelain/70"><Link href="/priser" className="hover:text-gold">Priser</Link><Link href="/jobb" className="hover:text-gold">Jobba hos oss</Link><Link href="/om-iboren" className="hover:text-gold">Om oss</Link><Link href="/privacy" className="hover:text-gold">Privacy</Link><Link href="/terms" className="hover:text-gold">Terms</Link><a href="mailto:hej@iboren.se" className="hover:text-gold">hej@iboren.se</a></div></div></div></footer>
     </main>
