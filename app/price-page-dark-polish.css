@@ -186,3 +186,19 @@
 .price-page-dark :is(#rut-avdrag, #rut-deduction) svg {
   color: #d8a46f !important;
 }
+/* Final polish: fix the first RUT notice wrapper on dark price pages. */
+.price-page-dark :is(#rut-avdrag, #rut-deduction) > div > div:last-child > div:first-child {
+  border: 1px solid rgba(216, 164, 111, .16) !important;
+  background: #181917 !important;
+  color: #f4efe5 !important;
+  box-shadow: none !important;
+}
+
+.price-page-dark :is(#rut-avdrag, #rut-deduction) > div > div:last-child > div:first-child * {
+  background: transparent !important;
+  color: rgba(244, 239, 229, .86) !important;
+}
+
+.price-page-dark :is(#rut-avdrag, #rut-deduction) > div > div:last-child > div:first-child svg {
+  color: #d8a46f !important;
+}
