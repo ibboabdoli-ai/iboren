@@ -18,4 +18,117 @@
 
 .service-page-dark .service-title,
 .service-page-dark h1,
-.service-page
+.service-page-dark h2,
+.service-page-dark h3 {
+  color: #d8a46f;
+}
+
+.service-page-dark .service-lead,
+.service-page-dark p {
+  color: rgba(244, 239, 229, .74);
+}
+
+.service-page-dark .service-panel,
+.service-page-dark article,
+.service-page-dark .service-card,
+.service-page-dark section[class*="bg-cream"] article,
+.service-page-dark section[class*="bg-porcelain"] article {
+  border: 1px solid rgba(216, 164, 111, .14) !important;
+  background: #252420 !important;
+  color: #f4efe5 !important;
+  box-shadow: 0 28px 90px rgba(0, 0, 0, .24) !important;
+}
+
+.service-page-dark .service-panel p,
+.service-page-dark article p,
+.service-page-dark .service-card p {
+  color: rgba(244, 239, 229, .74) !important;
+}
+
+.service-page-dark .service-panel svg,
+.service-page-dark article svg,
+.service-page-dark .service-card svg {
+  color: #d8a46f !important;
+}
+
+.service-page-dark div[class*="bg-burgundy"],
+.service-page-dark div[class*="bg-ink"] {
+  border: 1px solid rgba(216, 164, 111, .16) !important;
+  background: #181917 !important;
+}
+
+.service-page-dark div[class*="bg-burgundy"] h2,
+.service-page-dark div[class*="bg-ink"] h2 {
+  color: #d8a46f !important;
+}
+
+.service-page-dark div[class*="bg-burgundy"] p,
+.service-page-dark div[class*="bg-ink"] p {
+  color: rgba(244, 239, 229, .74) !important;
+}
+
+.service-page-dark section[class*="bg-cream"],
+.service-page-dark section[class*="bg-porcelain"] {
+  background: #1f1f1d !important;
+}
+
+.service-page-dark section:nth-of-type(even) {
+  background: #181917 !important;
+}
+
+.service-page-dark .service-icon,
+.service-page-dark div[class*="bg-burgundy"][class*="rounded-full"],
+.service-page-dark div[class*="bg-gold"][class*="rounded-full"] {
+  background: #d8a46f !important;
+  color: #181917 !important;
+}
+
+.service-page-dark span[class*="bg-gold"],
+.service-page-dark span[class*="border-gold"] {
+  border-color: rgba(216, 164, 111, .45) !important;
+  background: rgba(216, 164, 111, .10) !important;
+  color: #d8a46f !important;
+}
+
+.service-page-dark .btn-secondary {
+  border-color: rgba(216, 164, 111, .35);
+  background: rgba(244, 239, 229, .06);
+  color: #d8a46f;
+}
+
+.service-page-dark .btn-secondary:hover {
+  background: #d8a46f;
+  color: #181917;
+}
+
+.service-page-dark .service-cta-card {
+  border: 1px solid rgba(216, 164, 111, .16) !important;
+  background: #181917 !important;
+  color: #f4efe5 !important;
+}
+
+.service-page-dark form label {
+  color: rgba(244, 239, 229, .78);
+}
+
+.service-page-dark form input,
+.service-page-dark form select,
+.service-page-dark form textarea {
+  border-color: rgba(255, 255, 255, .12) !important;
+  background: #f7f4ed !important;
+  color: #181917 !important;
+}
+
+.service-page-dark form input::placeholder,
+.service-page-dark form textarea::placeholder {
+  color: rgba(24, 25, 23, .45) !important;
+}
+
+.service-page-dark form input[type="file"] {
+  color: rgba(24, 25, 23, .7) !important;
+}
+
+.service-page-dark form input[type="file"]::file-selector-button {
+  background: #d8a46f;
+  color: #181917;
+}
