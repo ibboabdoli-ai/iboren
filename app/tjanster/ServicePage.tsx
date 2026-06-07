@@ -25,7 +25,7 @@ export default function ServicePage({ service }: { service: ServicePageData }) {
             </div>
           </div>
 
-          <aside className="service-panel rounded-[2.5rem] p-8 shadow-luxe backdrop-blur-xl">
+          <aside className="service-panel iboren-card-glass iboren-card-glass-hover rounded-[2.5rem] p-8 shadow-luxe backdrop-blur-xl">
             <div className="service-icon mb-10 grid h-16 w-16 place-items-center rounded-full"><Sparkles size={30} /></div>
             <h2 className="display text-4xl font-bold">Pris och RUT</h2>
             <p className="mt-5 leading-8">{service.priceText}</p>
@@ -42,7 +42,7 @@ export default function ServicePage({ service }: { service: ServicePageData }) {
             <p className="mt-5 leading-8">Omfattningen anpassas efter bostad, lokal, skick och önskemål. Här är vanliga delar i förfrågan.</p>
           </div>
           <div className="grid gap-4">
-            {service.included.map((item) => <p key={item} className="service-card flex gap-3 rounded-2xl p-5 shadow-sm"><CheckCircle2 className="mt-1 h-5 w-5 shrink-0" /> {item}</p>)}
+            {service.included.map((item) => <p key={item} className="service-card iboren-card-glass iboren-card-glass-hover flex gap-3 rounded-2xl p-5 shadow-sm"><CheckCircle2 className="iboren-gold-accent mt-1 h-5 w-5 shrink-0" /> {item}</p>)}
           </div>
         </div>
       </section>
@@ -53,7 +53,7 @@ export default function ServicePage({ service }: { service: ServicePageData }) {
             "Tydlig prisbild",
             "RUT-avdrag",
             "Snabb återkoppling"
-          ].map((item) => <article key={item} className="rounded-[2rem] p-6 shadow-soft"><ShieldCheck className="mb-5" /><h3 className="display text-3xl font-bold">{item}</h3><p className="mt-3 leading-7">Iboren gör första steget enkelt, tydligt och lätt att följa upp.</p></article>)}
+          ].map((item) => <article key={item} className="iboren-card-glass iboren-card-glass-hover rounded-[2rem] p-6 shadow-soft"><ShieldCheck className="iboren-gold-accent mb-5" /><h3 className="display text-3xl font-bold">{item}</h3><p className="iboren-text-muted-dark mt-3 leading-7">Iboren gör första steget enkelt, tydligt och lätt att följa upp.</p></article>)}
         </div>
       </section>
 
@@ -62,9 +62,9 @@ export default function ServicePage({ service }: { service: ServicePageData }) {
           <p className="service-eyebrow text-xs font-black uppercase tracking-[.32em]">FAQ</p>
           <h2 className="display mt-3 text-4xl font-bold md:text-6xl">Vanliga frågor</h2>
           <div className="mt-10 grid gap-4">
-            {service.faq.map((item) => <article key={item.question} className="rounded-[1.5rem] p-6 shadow-sm"><h3 className="font-bold">{item.question}</h3><p className="mt-2 leading-7">{item.answer}</p></article>)}
+            {service.faq.map((item) => <article key={item.question} className="iboren-card-glass iboren-card-glass-hover rounded-[1.5rem] p-6 shadow-sm"><h3 className="font-bold">{item.question}</h3><p className="iboren-text-muted-dark mt-2 leading-7">{item.answer}</p></article>)}
           </div>
-          <div className="service-cta-card mt-10 rounded-[2rem] p-7"><h2 className="display text-4xl font-bold">Vill du gå vidare?</h2><p className="mt-3">Beräkna ett uppskattat pris eller skicka en bokningsförfrågan.</p><div className="mt-6 flex flex-col gap-3 sm:flex-row"><Link href="/priser" className="inline-flex rounded-full bg-gold px-5 py-3 text-sm font-black uppercase tracking-[.12em] text-ink">Beräkna pris</Link><Link href="/boka-utan-konto" className="inline-flex rounded-full border border-gold/35 px-5 py-3 text-sm font-bold text-gold">Boka städning</Link></div></div>
+          <div className="service-cta-card iboren-card-glass iboren-card-glass-hover mt-10 rounded-[2rem] p-7"><h2 className="display text-4xl font-bold">Vill du gå vidare?</h2><p className="iboren-text-muted-dark mt-3">Beräkna ett uppskattat pris eller skicka en bokningsförfrågan.</p><div className="mt-6 flex flex-col gap-3 sm:flex-row"><Link href="/priser" className="inline-flex rounded-full bg-gold px-5 py-3 text-sm font-black uppercase tracking-[.12em] text-ink">Beräkna pris</Link><Link href="/boka-utan-konto" className="inline-flex rounded-full border border-gold/35 px-5 py-3 text-sm font-bold text-gold">Boka städning</Link></div></div>
         </div>
       </section>
     </main>
