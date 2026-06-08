@@ -55,8 +55,8 @@ export default function EnglishJobsPage() {
             <p className="service-eyebrow eyebrow">Career</p>
             <h1 className="service-title display mt-4 text-6xl font-bold leading-[.88] text-burgundy md:text-8xl">Work as a cleaner with Iboren</h1>
             <p className="service-lead mt-7 max-w-2xl text-lg leading-8 text-ink/75 md:text-xl">We are looking for careful and reliable people who want to work with home cleaning, move-out cleaning and office cleaning in Södertälje and Stockholm.</p>
-            <div className="service-panel mt-8 rounded-2xl border border-burgundy/10 bg-porcelain p-5 text-sm leading-7 text-ink/75">
-              <p className="flex gap-3"><BriefcaseBusiness className="mt-1 h-5 w-5 shrink-0 text-burgundy" /> Tell us about your experience, when you can work and in which areas you can take assignments. You can attach a CV as PDF, DOC, DOCX or TXT.</p>
+            <div className="service-panel iboren-card-glass iboren-card-glass-hover mt-8 rounded-2xl p-5 text-sm leading-7">
+              <p className="iboren-text-muted-dark flex gap-3"><BriefcaseBusiness className="iboren-gold-accent mt-1 h-5 w-5 shrink-0" /> Tell us about your experience, when you can work and in which areas you can take assignments. You can attach a CV as PDF, DOC, DOCX or TXT.</p>
             </div>
           </div>
 
@@ -100,7 +100,7 @@ export default function EnglishJobsPage() {
         </div>
       </section>
 
-      <section className="bg-porcelain py-16"><div className="luxe-container grid gap-5 md:grid-cols-3">{["Flexible hours", "Clear assignments", "Södertälje & Stockholm"].map((item) => <article key={item} className="service-card rounded-[2rem] bg-cream p-6 shadow-soft"><CheckCircle2 className="mb-5 text-burgundy" /><h3 className="display text-3xl font-bold text-burgundy">{item}</h3><p className="mt-3 leading-7 text-ink/75">Iboren collects information to match the right person with the right type of assignment.</p></article>)}</div></section>
+      <section className="bg-porcelain py-16"><div className="luxe-container grid gap-5 md:grid-cols-3">{["Flexible hours", "Clear assignments", "Södertälje & Stockholm"].map((item) => <article key={item} className="service-card iboren-card-glass iboren-card-glass-hover rounded-[2rem] p-6 shadow-soft"><CheckCircle2 className="iboren-gold-accent mb-5" /><h3 className="display text-3xl font-bold">{item}</h3><p className="iboren-text-muted-dark mt-3 leading-7">Iboren collects information to match the right person with the right type of assignment.</p></article>)}</div></section>
     </main>
   );
 }

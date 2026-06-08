@@ -47,8 +47,8 @@ export default function JobbPage() {
             <p className="service-eyebrow text-xs font-black uppercase tracking-[.32em]">Karriär</p>
             <h1 className="service-title display mt-4 text-6xl font-bold leading-[.88] md:text-8xl">Jobba som städare hos Iboren</h1>
             <p className="service-lead mt-7 max-w-2xl text-lg leading-8 md:text-xl">Vi söker noggranna och pålitliga personer som vill arbeta med hemstädning, flyttstädning och kontorsstädning i Södertälje och Stockholm.</p>
-            <div className="service-panel mt-8 rounded-2xl p-5 text-sm leading-7">
-              <p className="flex gap-3"><BriefcaseBusiness className="mt-1 h-5 w-5 shrink-0" /> Berätta om din erfarenhet, vilka tider du kan arbeta och i vilka områden du kan ta uppdrag. Du kan bifoga CV som PDF, DOC, DOCX eller TXT.</p>
+            <div className="service-panel iboren-card-glass iboren-card-glass-hover mt-8 rounded-2xl p-5 text-sm leading-7">
+              <p className="iboren-text-muted-dark flex gap-3"><BriefcaseBusiness className="iboren-gold-accent mt-1 h-5 w-5 shrink-0" /> Berätta om din erfarenhet, vilka tider du kan arbeta och i vilka områden du kan ta uppdrag. Du kan bifoga CV som PDF, DOC, DOCX eller TXT.</p>
             </div>
           </div>
 
@@ -92,7 +92,7 @@ export default function JobbPage() {
         </div>
       </section>
 
-      <section className="py-16"><div className="luxe-container grid gap-5 md:grid-cols-3">{["Flexibla tider", "Tydliga uppdrag", "Södertälje & Stockholm"].map((item) => <article key={item} className="service-card rounded-[2rem] p-6 shadow-soft"><CheckCircle2 className="mb-5" /><h3 className="display text-3xl font-bold">{item}</h3><p className="mt-3 leading-7">Iboren samlar information för att matcha rätt person med rätt typ av uppdrag.</p></article>)}</div></section>
+      <section className="py-16"><div className="luxe-container grid gap-5 md:grid-cols-3">{["Flexibla tider", "Tydliga uppdrag", "Södertälje & Stockholm"].map((item) => <article key={item} className="service-card iboren-card-glass iboren-card-glass-hover rounded-[2rem] p-6 shadow-soft"><CheckCircle2 className="iboren-gold-accent mb-5" /><h3 className="display text-3xl font-bold">{item}</h3><p className="iboren-text-muted-dark mt-3 leading-7">Iboren samlar information för att matcha rätt person med rätt typ av uppdrag.</p></article>)}</div></section>
     </main>
   );
 }
