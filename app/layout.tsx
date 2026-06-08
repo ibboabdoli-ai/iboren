@@ -15,6 +15,7 @@ import AdminBookingNotesFormatter from "./AdminBookingNotesFormatter";
 import AdminOperationsQuickLink from "./AdminOperationsQuickLink";
 import ProfileAccessLinks from "./ProfileAccessLinks";
 import BookingNumberUiEnhancer from "./BookingNumberUiEnhancer";
+import ThemeProvider from "./components/theme/ThemeProvider";
 import "./globals.css";
 import "./premium-hover.css";
 import "./booking-date-mobile-fix.css";
@@ -77,8 +78,14 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="sv">
+    <html lang="sv" suppressHydrationWarning>
       <head>
+        <script
+          id="iboren-theme-init"
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var t=localStorage.getItem("iboren-theme");var m=t==="light"||t==="dark"||t==="system"?t:"system";var d=m==="system"?(window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"):m;document.documentElement.dataset.theme=d;}catch(e){document.documentElement.dataset.theme="dark";}})();`
+          }}
+        />
         <link rel="preload" as="image" href="/cinematic/03-home-after.webp" fetchPriority="high" />
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -86,28 +93,30 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <meta name="apple-mobile-web-app-title" content="Iboren" />
       </head>
       <body>
-        <StructuredData />
-        <GoogleAddressEnhancer />
-        <BookingFormValidationEnhancer />
-        <BookingAddressStreetNumberGuard />
-        <BookingEstimateQueryHydrator />
-        <BookingAddonDetailsEnhancer />
-        <PwaManifestSwitcher />
-        <MobileMenuPolish />
-        <BookingMobilePolish />
-        <PublicBookingRequestEnhancer />
-        <PublicBookingRequestLink />
-        <AdminBookingNotesFormatter />
-        <AdminOperationsQuickLink />
-        <ProfileAccessLinks />
-        <BookingNumberUiEnhancer />
-        {children}
-        <Script
+        <ThemeProvider>
+          <StructuredData />
+          <GoogleAddressEnhancer />
+          <BookingFormValidationEnhancer />
+          <BookingAddressStreetNumberGuard />
+          <BookingEstimateQueryHydrator />
+          <BookingAddonDetailsEnhancer />
+          <PwaManifestSwitcher />
+          <MobileMenuPolish />
+          <BookingMobilePolish />
+          <PublicBookingRequestEnhancer />
+          <PublicBookingRequestLink />
+          <AdminBookingNotesFormatter />
+          <AdminOperationsQuickLink />
+          <ProfileAccessLinks />
+          <BookingNumberUiEnhancer />
+          {children}
+          <Script
   id="iboren-service-ai-chat"
   src="https://service-ai-chat.vercel.app/widget-v2.js"
   data-client-id="iboren"
   strategy="afterInteractive"
 />
+        </ThemeProvider>
       </body>
     </html>
   );
