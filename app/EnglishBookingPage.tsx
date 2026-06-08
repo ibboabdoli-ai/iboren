@@ -4,7 +4,6 @@ import { FormEvent, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Building2, Home, LocateFixed, Mail, Menu, ShieldCheck, Truck, UserRound, X } from "lucide-react";
 import { createClient, type User } from "@supabase/supabase-js";
-import ThemeSwitch from "./components/theme/ThemeSwitch";
 
 type Option = { value: string; label: string };
 
@@ -335,7 +334,6 @@ export default function EnglishBookingPage() {
             <Link href="/" className="hover:text-gold">SV</Link>
             <Link href="/en" className="text-gold">EN</Link>
             <Link href={user ? "/profile" : "/login"} className="inline-flex items-center gap-2 hover:text-gold"><UserRound size={17} /> {user ? "My profile" : "Log in"}</Link>
-            <ThemeSwitch className="w-[5.75rem] shrink-0" />
             <Link href="/en/boka-utan-konto" className="rounded-full border border-gold/40 bg-gold px-5 py-3 text-night">Send request</Link>
           </div>
           <button type="button" aria-label="Toggle menu" aria-expanded={menuOpen} onClick={() => setMenuOpen(!menuOpen)} className="grid h-11 w-11 place-items-center rounded-full border border-gold/25 bg-porcelain/5 text-gold md:hidden">{menuOpen ? <X size={19} /> : <Menu size={19} />}</button>
@@ -350,7 +348,6 @@ export default function EnglishBookingPage() {
               <Link href="/en/about" onClick={() => setMenuOpen(false)} className="rounded-2xl px-4 py-3 font-semibold">About us</Link>
               <Link href="/" onClick={() => setMenuOpen(false)} className="rounded-2xl px-4 py-3 font-semibold">Svenska</Link>
               <Link href={user ? "/profile" : "/login"} className="rounded-2xl px-4 py-3 font-semibold">{user ? "My profile" : "Log in"}</Link>
-              <ThemeSwitch className="mx-4 my-2" />
               <Link href="/en/boka-utan-konto" onClick={() => setMenuOpen(false)} className="mt-2 rounded-full bg-gold px-5 py-4 text-center text-sm font-bold text-night">Send request</Link>
             </div>
           </div>
