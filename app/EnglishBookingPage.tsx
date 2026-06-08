@@ -4,7 +4,6 @@ import { FormEvent, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Building2, Home, LocateFixed, Mail, Menu, ShieldCheck, Truck, UserRound, X } from "lucide-react";
 import { createClient, type User } from "@supabase/supabase-js";
-import ThemeSwitch from "./components/theme/ThemeSwitch";
 
 type Option = { value: string; label: string };
 
@@ -335,7 +334,6 @@ export default function EnglishBookingPage() {
             <Link href="/" className="hover:text-gold">SV</Link>
             <Link href="/en" className="text-gold">EN</Link>
             <Link href={user ? "/profile" : "/login"} className="inline-flex items-center gap-2 hover:text-gold"><UserRound size={17} /> {user ? "My profile" : "Log in"}</Link>
-            <ThemeSwitch className="w-[5.75rem] shrink-0" />
             <Link href="/en/boka-utan-konto" className="rounded-full border border-gold/40 bg-gold px-5 py-3 text-night">Send request</Link>
           </div>
           <button type="button" aria-label="Toggle menu" aria-expanded={menuOpen} onClick={() => setMenuOpen(!menuOpen)} className="grid h-11 w-11 place-items-center rounded-full border border-gold/25 bg-porcelain/5 text-gold md:hidden">{menuOpen ? <X size={19} /> : <Menu size={19} />}</button>
@@ -350,7 +348,6 @@ export default function EnglishBookingPage() {
               <Link href="/en/about" onClick={() => setMenuOpen(false)} className="rounded-2xl px-4 py-3 font-semibold">About us</Link>
               <Link href="/" onClick={() => setMenuOpen(false)} className="rounded-2xl px-4 py-3 font-semibold">Svenska</Link>
               <Link href={user ? "/profile" : "/login"} className="rounded-2xl px-4 py-3 font-semibold">{user ? "My profile" : "Log in"}</Link>
-              <ThemeSwitch className="mx-4 my-2" />
               <Link href="/en/boka-utan-konto" onClick={() => setMenuOpen(false)} className="mt-2 rounded-full bg-gold px-5 py-4 text-center text-sm font-bold text-night">Send request</Link>
             </div>
           </div>
@@ -385,7 +382,7 @@ export default function EnglishBookingPage() {
                     <span className="iboren-gold-accent rounded-full border border-gold/20 px-3 py-1 text-[10px] font-bold uppercase tracking-[.2em]">{service.price}</span>
                   </div>
                   <p className="iboren-text-muted-dark mb-3 text-[11px] font-bold uppercase tracking-[.28em]">0{index + 1}</p>
-                  <h3 className="display text-4xl font-normal uppercase text-[var(--ib-text)]">{service.title}</h3>
+                  <h3 className="display text-4xl font-normal uppercase text-porcelain">{service.title}</h3>
                   <p className="iboren-text-muted-dark mt-4 leading-7">{service.body}</p>
                 </Link>
               );
@@ -409,7 +406,7 @@ export default function EnglishBookingPage() {
 
           <div className="w-full">
             <div className="iboren-card-glass iboren-card-glass-hover mx-auto max-w-3xl rounded-2xl p-8">
-              <h3 className="text-2xl font-bold text-[var(--ib-text)]">Send a booking request</h3>
+              <h3 className="text-2xl font-bold text-porcelain">Send a booking request</h3>
               <p className="iboren-text-muted-dark mt-3">Fill in the form on our booking page. You get a clear summary and price indication before sending.</p>
               <div className="mt-6 flex flex-wrap items-center gap-3">
                 <Link href="/en/boka-utan-konto" className="btn-primary">Open booking form</Link>
