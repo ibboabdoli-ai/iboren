@@ -376,14 +376,14 @@ export default function EnglishBookingPage() {
             {services.map((service, index) => {
               const Icon = service.icon;
               return (
-                <Link href={service.href} key={service.title} className="group relative overflow-hidden rounded-[2rem] border border-gold/15 bg-porcelain/[.035] p-7 shadow-[0_28px_90px_rgba(0,0,0,.22)] transition hover:-translate-y-1 hover:border-gold/40">
+                <Link href={service.href} key={service.title} className="iboren-card-glass iboren-card-glass-hover group relative overflow-hidden rounded-[2rem] p-7">
                   <div className="mb-20 flex items-start justify-between">
-                    <div className="grid h-14 w-14 place-items-center rounded-full border border-gold/30 bg-gold/10 text-gold"><Icon size={25} /></div>
-                    <span className="rounded-full border border-gold/20 px-3 py-1 text-[10px] font-bold uppercase tracking-[.2em] text-gold/80">{service.price}</span>
+                    <div className="iboren-gold-accent grid h-14 w-14 place-items-center rounded-full border border-gold/30 bg-gold/10"><Icon size={25} /></div>
+                    <span className="iboren-gold-accent rounded-full border border-gold/20 px-3 py-1 text-[10px] font-bold uppercase tracking-[.2em]">{service.price}</span>
                   </div>
-                  <p className="mb-3 text-[11px] font-bold uppercase tracking-[.28em] text-porcelain/42">0{index + 1}</p>
+                  <p className="iboren-text-muted-dark mb-3 text-[11px] font-bold uppercase tracking-[.28em]">0{index + 1}</p>
                   <h3 className="display text-4xl font-normal uppercase text-porcelain">{service.title}</h3>
-                  <p className="mt-4 leading-7 text-porcelain/62">{service.body}</p>
+                  <p className="iboren-text-muted-dark mt-4 leading-7">{service.body}</p>
                 </Link>
               );
             })}
@@ -405,9 +405,9 @@ export default function EnglishBookingPage() {
           </div>
 
           <div className="w-full">
-            <div className="mx-auto max-w-3xl rounded-2xl border border-gold/15 bg-night/70 p-8 shadow-lg">
+            <div className="iboren-card-glass iboren-card-glass-hover mx-auto max-w-3xl rounded-2xl p-8">
               <h3 className="text-2xl font-bold text-porcelain">Send a booking request</h3>
-              <p className="mt-3 text-porcelain/80">Fill in the form on our booking page. You get a clear summary and price indication before sending.</p>
+              <p className="iboren-text-muted-dark mt-3">Fill in the form on our booking page. You get a clear summary and price indication before sending.</p>
               <div className="mt-6 flex flex-wrap items-center gap-3">
                 <Link href="/en/boka-utan-konto" className="btn-primary">Open booking form</Link>
                 <Link href="/en/prices" className="btn-secondary">See prices first</Link>
