@@ -15,15 +15,15 @@ const posts = [
 
 export default function Page() {
   return (
-    <main className="min-h-screen bg-cream text-ink">
+    <main className="iboren-page-dark min-h-screen">
       <section className="py-24">
         <div className="luxe-container">
-          <Link href="/" className="mb-10 inline-flex text-sm font-bold text-burgundy">← Tillbaka</Link>
-          <p className="eyebrow">Guide</p>
-          <h1 className="display mt-4 text-6xl font-bold leading-[.88] text-burgundy md:text-8xl">Städguide</h1>
-          <p className="mt-7 max-w-2xl text-lg leading-8 text-ink/75">Praktiska guider om städning, pris, RUT-avdrag och bokning.</p>
+          <Link href="/" className="iboren-gold-accent mb-10 inline-flex text-sm font-bold">← Tillbaka</Link>
+          <p className="iboren-gold-accent text-[11px] font-bold uppercase tracking-[.38em]">Guide</p>
+          <h1 className="display mt-4 text-6xl font-bold leading-[.88] text-porcelain md:text-8xl">Städguide</h1>
+          <p className="iboren-text-muted-dark mt-7 max-w-2xl text-lg leading-8">Praktiska guider om städning, pris, RUT-avdrag och bokning.</p>
           <div className="mt-12 grid gap-5 md:grid-cols-3">
-            {posts.map((post) => <Link key={post.href} href={post.href} className="rounded-[2rem] bg-porcelain p-6 shadow-soft"><h2 className="display text-3xl font-bold text-burgundy">{post.title}</h2><p className="mt-3 leading-7 text-ink/75">{post.text}</p><span className="mt-6 inline-flex font-bold text-burgundy">Läs mer →</span></Link>)}
+            {posts.map((post) => <Link key={post.href} href={post.href} className="iboren-card-glass iboren-card-glass-hover rounded-[2rem] p-6"><h2 className="iboren-gold-accent display text-3xl font-bold">{post.title}</h2><p className="iboren-text-muted-dark mt-3 leading-7">{post.text}</p><span className="iboren-gold-accent mt-6 inline-flex font-bold">Läs mer →</span></Link>)}
           </div>
         </div>
       </section>
