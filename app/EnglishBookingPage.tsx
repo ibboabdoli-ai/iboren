@@ -385,7 +385,7 @@ export default function EnglishBookingPage() {
                     <span className="iboren-gold-accent rounded-full border border-gold/20 px-3 py-1 text-[10px] font-bold uppercase tracking-[.2em]">{service.price}</span>
                   </div>
                   <p className="iboren-text-muted-dark mb-3 text-[11px] font-bold uppercase tracking-[.28em]">0{index + 1}</p>
-                  <h3 className="display text-4xl font-normal uppercase text-[var(--ib-text)]">{service.title}</h3>
+                  <h3 className="display text-4xl font-normal uppercase text-porcelain">{service.title}</h3>
                   <p className="iboren-text-muted-dark mt-4 leading-7">{service.body}</p>
                 </Link>
               );
@@ -409,7 +409,7 @@ export default function EnglishBookingPage() {
 
           <div className="w-full">
             <div className="iboren-card-glass iboren-card-glass-hover mx-auto max-w-3xl rounded-2xl p-8">
-              <h3 className="text-2xl font-bold text-[var(--ib-text)]">Send a booking request</h3>
+              <h3 className="text-2xl font-bold text-porcelain">Send a booking request</h3>
               <p className="iboren-text-muted-dark mt-3">Fill in the form on our booking page. You get a clear summary and price indication before sending.</p>
               <div className="mt-6 flex flex-wrap items-center gap-3">
                 <Link href="/en/boka-utan-konto" className="btn-primary">Open booking form</Link>
