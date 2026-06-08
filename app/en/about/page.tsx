@@ -32,7 +32,7 @@ export default function EnglishAboutPage() {
               <Link href="/en/prices" className="btn-secondary">Calculate price</Link>
             </div>
           </div>
-          <aside className="service-panel rounded-[2.5rem] border border-burgundy/10 bg-porcelain p-8 text-ink shadow-luxe">
+          <aside className="service-panel iboren-card-glass iboren-card-glass-hover rounded-[2.5rem] p-8 shadow-luxe">
             <div className="mb-12 grid h-16 w-16 place-items-center rounded-full bg-burgundy text-porcelain"><Sparkles size={30} /></div>
             <h2 className="display text-4xl font-bold text-burgundy">Safer cleaning from first contact.</h2>
             <div className="mt-7 grid gap-4">
@@ -51,7 +51,7 @@ export default function EnglishAboutPage() {
       </section>
 
       <section className="bg-cream py-16">
-        <div className="service-cta-card luxe-container max-w-4xl rounded-[2rem] bg-burgundy p-8 text-porcelain shadow-luxe">
+        <div className="service-cta-card iboren-card-glass iboren-card-glass-hover luxe-container max-w-4xl rounded-[2rem] p-8 text-porcelain shadow-luxe">
           <p className="text-xs font-black uppercase tracking-[.28em] text-gold">Iboren</p>
           <h2 className="display mt-3 text-4xl font-bold md:text-6xl">Cleaning with clarity and responsibility.</h2>
           <p className="mt-5 max-w-2xl leading-8 text-porcelain/72">The goal is to make it easy to describe what needs to be cleaned, receive the right response and feel secure before the job is confirmed.</p>
@@ -66,5 +66,5 @@ export default function EnglishAboutPage() {
 }
 
 function Info({ icon, title, text }: { icon: React.ReactNode; title: string; text: string }) {
-  return <article className="service-card rounded-[2rem] bg-cream p-6 shadow-soft"><div className="service-icon mb-6 grid h-12 w-12 place-items-center rounded-full bg-burgundy text-porcelain">{icon}</div><h3 className="display text-3xl font-bold text-burgundy">{title}</h3><p className="mt-3 leading-7 text-ink/65">{text}</p></article>;
+  return <article className="service-card iboren-card-glass iboren-card-glass-hover rounded-[2rem] p-6 shadow-soft"><div className="service-icon mb-6 grid h-12 w-12 place-items-center rounded-full">{icon}</div><h3 className="display text-3xl font-bold">{title}</h3><p className="iboren-text-muted-dark mt-3 leading-7">{text}</p></article>;
 }
