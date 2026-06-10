@@ -10,12 +10,19 @@ user: User | null;
 };
 
 function IborenHeaderLogo() {
-return ( <span className="block rounded-2xl border border-gold/20 bg-porcelain px-3 py-2 shadow-[0_0_28px_rgba(212,165,116,.14)] transition group-hover:border-gold/35 md:px-4"> <img
-     src="/brand/iboren-logo-web-black.svg"
-     alt="Iboren"
-     className="h-10 w-auto max-w-[11rem] object-contain md:h-12 md:max-w-[14rem]"
-   /> </span>
-);
+  return (
+    <span className="inline-flex items-center rounded-2xl border border-gold/20 bg-porcelain px-4 py-2 shadow-[0_0_28px_rgba(212,165,116,.14)]">
+      <img
+        src="/logo.svg"
+        alt="Iboren"
+        width={180}
+        height={60}
+        className="h-10 w-auto object-contain md:h-12"
+        decoding="async"
+      />
+    </span>
+  );
+}
 }
 
 export default function HomeHeader({ user }: Props) {
