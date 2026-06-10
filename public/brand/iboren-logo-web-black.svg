@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="240" viewBox="0 0 1000 240" role="img" aria-label="Iboren logo">
+  <title>Iboren</title>
+  <rect width="100%" height="100%" fill="none"/>
+  <g transform="translate(42 35)" fill="none" stroke="#111111" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M34 86 L100 29 L166 86" stroke-width="14"/>
+    <path d="M53 84 V160 H147 V84" stroke-width="14"/>
+    <path d="M84 160 V119 H116 V160" stroke-width="12"/>
+    <path d="M181 45 L181 70" stroke-width="8"/>
+    <path d="M181 104 L181 129" stroke-width="8"/>
+    <path d="M139 87 L164 87" stroke-width="8"/>
+    <path d="M198 87 L223 87" stroke-width="8"/>
+    <path d="M153 59 L168 74" stroke-width="7"/>
+    <path d="M194 100 L209 115" stroke-width="7"/>
+    <path d="M209 59 L194 74" stroke-width="7"/>
+    <path d="M168 100 L153 115" stroke-width="7"/>
+  </g>
+  <text x="295" y="137" fill="#111111" font-family="Inter, Arial, Helvetica, sans-serif" font-size="94" font-weight="760" letter-spacing="-3">Iboren</text>
+  <text x="301" y="180" fill="#111111" font-family="Inter, Arial, Helvetica, sans-serif" font-size="25" font-weight="620" letter-spacing="4">STÄDNING · SÖDERTÄLJE · STOCKHOLM</text>
+</svg>
