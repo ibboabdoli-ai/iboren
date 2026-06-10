@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowRight, Building2, Home, Sparkles, Truck, Waves } from "lucide-react";
+import { ArrowRight, Building2, CircleHelp, Home, Sparkles, Truck, Waves } from "lucide-react";
 
 export const metadata: Metadata = {
   title: "Tjänster – Städning i Södertälje och Stockholm | Iboren",
@@ -54,7 +54,7 @@ export default function TjansterPage() {
 
       <section className="py-16">
         <div className="service-cta-card iboren-card-glass iboren-card-glass-hover luxe-container max-w-4xl rounded-[2rem] p-8 shadow-luxe">
-          <div className="service-icon grid h-14 w-14 place-items-center rounded-full"><Sparkles /></div>
+          <div className="service-icon grid h-14 w-14 place-items-center rounded-full"><CircleHelp /></div>
           <h2 className="display mt-6 text-4xl font-bold md:text-6xl">Osäker på vilken tjänst du behöver?</h2>
           <p className="mt-5 max-w-2xl leading-8">Börja med prisindikatorn eller skicka en bokningsförfrågan. Iboren återkommer med nästa steg.</p>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row"><Link href="/priser" className="inline-flex rounded-full bg-gold px-5 py-3 text-sm font-black uppercase tracking-[.12em] text-ink">Beräkna pris</Link><Link href="/boka-utan-konto" className="inline-flex rounded-full border border-gold/35 px-5 py-3 text-sm font-bold text-gold">Boka städning</Link></div>

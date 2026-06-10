@@ -53,6 +53,51 @@ body {
 }
 ::selection { background: rgba(107, 39, 55, 0.18); }
 
+#services,
+#process,
+#booking {
+  scroll-margin-top: 6rem;
+}
+
+.process-card {
+  overflow-wrap: anywhere;
+}
+
+.process-card h3 {
+  max-width: 100%;
+  font-size: clamp(1.65rem, 2.25vw, 2rem);
+  line-height: 1;
+}
+
+/* Keep the embedded AI chat composer readable on its dark background. */
+.saic2 .saic2-input {
+  background: #303230 !important;
+  color: #fffdf8 !important;
+  -webkit-text-fill-color: #fffdf8 !important;
+  caret-color: #d8a46f !important;
+}
+
+.saic2 .saic2-input::placeholder {
+  color: rgba(255, 253, 248, .58) !important;
+  -webkit-text-fill-color: rgba(255, 253, 248, .58) !important;
+  opacity: 1;
+}
+
+.saic2 .saic2-input:focus {
+  border-color: #d8a46f !important;
+  box-shadow: 0 0 0 3px rgba(216, 164, 111, .18);
+  outline: none;
+}
+
+header a:focus-visible,
+header button:focus-visible,
+.btn-primary:focus-visible,
+.btn-secondary:focus-visible,
+.iboren-card-glass-hover:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 4px;
+}
+
 .luxe-container { width: min(1180px, calc(100% - 32px)); margin-inline: auto; }
 .eyebrow { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .34em; color: rgba(107,39,55,.88); }
 .display { font-family: Georgia, serif; letter-spacing: -0.05em; }
@@ -68,7 +113,7 @@ header nav a[href="#top"].group {
   height: 60px !important;
   display: block !important;
   flex: 0 0 auto !important;
-  background-image: url('/logo.svg') !important;
+  background-image: url('/ibbologo.svg') !important;
   background-repeat: no-repeat !important;
   background-position: left center !important;
   background-size: contain !important;
@@ -424,10 +469,30 @@ select:-webkit-autofill:focus {
   box-shadow: 0 24px 70px rgba(212, 165, 116, .16);
 }
 
+.iboren-card-glass-hover:focus-visible {
+  transform: translateY(-4px);
+  border-color: rgba(212, 165, 116, .35);
+  background: rgba(255, 253, 248, .085);
+  box-shadow: 0 24px 70px rgba(212, 165, 116, .16);
+}
+
 .iboren-text-muted-dark {
   color: rgba(255, 253, 248, .68);
 }
 
 .iboren-gold-accent {
   color: var(--gold);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  .btn-primary,
+  .btn-secondary,
+  .iboren-card-glass,
+  .iboren-card-glass-hover {
+    transition-duration: .01ms;
+  }
 }

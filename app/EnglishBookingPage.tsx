@@ -325,21 +325,21 @@ export default function EnglishBookingPage() {
               <span className="mt-1 block text-[10px] font-bold uppercase tracking-[0.36em] text-gold/75 md:text-[11px]">Price estimate & simple booking</span>
             </span>
           </a>
-          <div className="hidden items-center gap-6 text-sm font-semibold text-porcelain/68 md:flex">
-            <a href="#services" className="hover:text-gold">Services</a>
-            <Link href="/en/prices" className="hover:text-gold">Prices</Link>
-            <Link href="/en/boka-utan-konto" className="hover:text-gold">Request</Link>
-            <Link href="/en/jobs" className="hover:text-gold">Work with us</Link>
-            <Link href="/en/about" className="hover:text-gold">About us</Link>
-            <Link href="/" className="hover:text-gold">SV</Link>
-            <Link href="/en" className="text-gold">EN</Link>
-            <Link href={user ? "/profile" : "/login"} className="inline-flex items-center gap-2 hover:text-gold"><UserRound size={17} /> {user ? "My profile" : "Log in"}</Link>
-            <Link href="/en/boka-utan-konto" className="rounded-full border border-gold/40 bg-gold px-5 py-3 text-night">Send request</Link>
+          <div className="hidden items-center gap-2 text-sm font-semibold text-porcelain/68 xl:flex">
+            <a href="#services" className="rounded-full px-3 py-2 transition hover:bg-gold/10 hover:text-gold">Services</a>
+            <Link href="/en/prices" className="rounded-full px-3 py-2 transition hover:bg-gold/10 hover:text-gold">Prices</Link>
+            <Link href="/en/boka-utan-konto" className="rounded-full px-3 py-2 transition hover:bg-gold/10 hover:text-gold">Request</Link>
+            <Link href="/en/jobs" className="rounded-full px-3 py-2 transition hover:bg-gold/10 hover:text-gold">Work with us</Link>
+            <Link href="/en/about" className="rounded-full px-3 py-2 transition hover:bg-gold/10 hover:text-gold">About us</Link>
+            <Link href="/" className="rounded-full px-3 py-2 transition hover:bg-gold/10 hover:text-gold">SV</Link>
+            <Link href="/en" className="rounded-full bg-gold/10 px-3 py-2 text-gold">EN</Link>
+            <Link href={user ? "/profile" : "/login"} className="inline-flex items-center gap-2 rounded-full px-3 py-2 transition hover:bg-gold/10 hover:text-gold"><UserRound size={17} /> {user ? "My profile" : "Log in"}</Link>
+            <Link href="/en/boka-utan-konto" className="rounded-full border border-gold/40 bg-gold px-5 py-3 text-night transition hover:bg-porcelain">Send request</Link>
           </div>
-          <button type="button" aria-label="Toggle menu" aria-expanded={menuOpen} onClick={() => setMenuOpen(!menuOpen)} className="grid h-11 w-11 place-items-center rounded-full border border-gold/25 bg-porcelain/5 text-gold md:hidden">{menuOpen ? <X size={19} /> : <Menu size={19} />}</button>
+          <button type="button" aria-label={menuOpen ? "Close menu" : "Open menu"} aria-expanded={menuOpen} aria-controls="english-mobile-menu" onClick={() => setMenuOpen(!menuOpen)} className="grid h-11 w-11 place-items-center rounded-full border border-gold/25 bg-porcelain/5 text-gold transition hover:bg-gold/10 xl:hidden">{menuOpen ? <X size={19} /> : <Menu size={19} />}</button>
         </nav>
         {menuOpen && (
-          <div className="border-t border-gold/10 bg-night/95 px-4 pb-6 md:hidden">
+          <div id="english-mobile-menu" className="max-h-[calc(100svh-5rem)] overflow-y-auto border-t border-gold/10 bg-night/95 px-4 pb-6 xl:hidden">
             <div className="mx-auto grid max-w-sm gap-2 pt-2 text-porcelain">
               <a href="#services" onClick={() => setMenuOpen(false)} className="rounded-2xl px-4 py-3 font-semibold">Services</a>
               <Link href="/en/boka-utan-konto" onClick={() => setMenuOpen(false)} className="rounded-2xl px-4 py-3 font-semibold">Request</Link>
@@ -347,7 +347,7 @@ export default function EnglishBookingPage() {
               <Link href="/en/jobs" onClick={() => setMenuOpen(false)} className="rounded-2xl px-4 py-3 font-semibold">Work with us</Link>
               <Link href="/en/about" onClick={() => setMenuOpen(false)} className="rounded-2xl px-4 py-3 font-semibold">About us</Link>
               <Link href="/" onClick={() => setMenuOpen(false)} className="rounded-2xl px-4 py-3 font-semibold">Svenska</Link>
-              <Link href={user ? "/profile" : "/login"} className="rounded-2xl px-4 py-3 font-semibold">{user ? "My profile" : "Log in"}</Link>
+              <Link href={user ? "/profile" : "/login"} onClick={() => setMenuOpen(false)} className="rounded-2xl px-4 py-3 font-semibold">{user ? "My profile" : "Log in"}</Link>
               <Link href="/en/boka-utan-konto" onClick={() => setMenuOpen(false)} className="mt-2 rounded-full bg-gold px-5 py-4 text-center text-sm font-bold text-night">Send request</Link>
             </div>
           </div>

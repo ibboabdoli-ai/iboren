@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, CheckCircle2, ShieldCheck, Sparkles } from "lucide-react";
+import { ArrowRight, BadgePercent, CheckCircle2, ShieldCheck } from "lucide-react";
 
 export type ServicePageData = {
   title: string;
@@ -26,7 +26,7 @@ export default function ServicePage({ service }: { service: ServicePageData }) {
           </div>
 
           <aside className="service-panel iboren-card-glass iboren-card-glass-hover rounded-[2.5rem] p-8 shadow-luxe backdrop-blur-xl">
-            <div className="service-icon mb-10 grid h-16 w-16 place-items-center rounded-full"><Sparkles size={30} /></div>
+            <div className="service-icon mb-10 grid h-16 w-16 place-items-center rounded-full"><BadgePercent size={30} /></div>
             <h2 className="display text-4xl font-bold">Pris och RUT</h2>
             <p className="mt-5 leading-8">{service.priceText}</p>
             <p className="service-card mt-5 rounded-2xl p-4 text-sm leading-7">Priset är en uppskattning. Slutligt pris bekräftas efter bokningsförfrågan.</p>

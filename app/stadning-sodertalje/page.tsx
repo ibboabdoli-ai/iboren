@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowRight, CheckCircle2, Home, Sparkles, Truck, Building2 } from "lucide-react";
+import { ArrowRight, CheckCircle2, Home, MapPin, Truck, Building2 } from "lucide-react";
 import FaqStructuredData from "../FaqStructuredData";
 
 export const metadata: Metadata = {
@@ -40,7 +40,7 @@ export default function StadningSodertaljePage() {
             </div>
           </div>
           <aside className="rounded-[2.5rem] bg-porcelain/80 p-8 shadow-luxe backdrop-blur-xl">
-            <div className="mb-12 grid h-16 w-16 place-items-center rounded-full bg-burgundy text-porcelain"><Sparkles size={30} /></div>
+            <div className="mb-12 grid h-16 w-16 place-items-center rounded-full bg-burgundy text-porcelain"><MapPin size={30} /></div>
             <h2 className="display text-4xl font-bold text-burgundy">Tydligt underlag från första kontakt.</h2>
             <div className="mt-7 grid gap-4">
               {["Adress och område", "Storlek och antal rum", "Önskat datum och tidsfönster", "Extra tjänster och önskemål"].map((item) => <p key={item} className="flex gap-3 text-ink/70"><CheckCircle2 className="mt-1 h-5 w-5 shrink-0 text-burgundy" /> {item}</p>)}

@@ -83,6 +83,13 @@
   color: #181917 !important;
 }
 
+.service-page-dark .service-icon svg,
+.service-page-dark div[class*="bg-burgundy"][class*="rounded-full"] svg,
+.service-page-dark div[class*="bg-gold"][class*="rounded-full"] svg {
+  color: #181917 !important;
+  stroke-width: 2.25;
+}
+
 .service-page-dark span[class*="bg-gold"],
 .service-page-dark span[class*="border-gold"] {
   border-color: rgba(216, 164, 111, .45) !important;
