@@ -9,6 +9,20 @@ type Props = {
   user: User | null;
 };
 
+function IborenHeaderLogo() {
+  return (
+    <span className="flex items-center gap-3 leading-none">
+      <span aria-hidden="true" className="relative grid h-10 w-10 place-items-center rounded-full border border-gold/30 bg-black/45 text-gold shadow-[0_0_28px_rgba(212,165,116,.18)] md:h-11 md:w-11">
+        <span className="text-2xl leading-none md:text-3xl">✦</span>
+      </span>
+      <span className="flex flex-col leading-none">
+        <span className="display block text-3xl font-semibold uppercase tracking-[0.18em] text-gold md:text-4xl">Iboren</span>
+        <span className="mt-1 block text-[9px] font-bold uppercase tracking-[0.32em] text-gold/72 md:text-[10px]">Professionell städservice</span>
+      </span>
+    </span>
+  );
+}
+
 export default function HomeHeader({ user }: Props) {
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -17,10 +31,7 @@ export default function HomeHeader({ user }: Props) {
       <nav className="luxe-container flex h-20 items-center justify-between">
         <a href="#top" className="group flex items-center" onClick={() => setMenuOpen(false)} aria-label="Iboren startsida">
           <span className="sr-only">Iboren</span>
-          <span className="flex flex-col leading-none">
-            <span className="display block text-4xl font-semibold tracking-wide text-porcelain md:text-5xl">Iboren</span>
-            <span className="mt-1 block text-[10px] font-bold uppercase tracking-[0.36em] text-gold/75 md:text-[11px]">Pris direkt & enkel bokning</span>
-          </span>
+          <IborenHeaderLogo />
         </a>
         <div className="hidden items-center gap-2 text-sm font-semibold text-porcelain/68 md:flex">
           <a href="#services" className="rounded-full px-3 py-2 transition hover:bg-gold/10 hover:text-gold">Tjänster</a>
