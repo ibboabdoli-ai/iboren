@@ -11,7 +11,10 @@ user: User | null;
 
 function IborenHeaderLogo() {
   return (
-    <span className="inline-flex items-center rounded-2xl border border-gold/20 bg-porcelain px-4 py-2 shadow-[0_0_28px_rgba(212,165,116,.14)]">
+    <span
+      className="inline-flex items-center rounded-2xl border border-gold/25 px-4 py-2 shadow-[0_0_28px_rgba(212,165,116,.18)]"
+      style={{ backgroundColor: "#F6EFE3" }}
+    >
       <img
         src="/logo.svg"
         alt="Iboren"
@@ -23,7 +26,6 @@ function IborenHeaderLogo() {
     </span>
   );
 }
-
 
 export default function HomeHeader({ user }: Props) {
 const [menuOpen, setMenuOpen] = useState(false);
