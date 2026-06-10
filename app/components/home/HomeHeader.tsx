@@ -23,7 +23,7 @@ function IborenHeaderLogo() {
     </span>
   );
 }
-}
+
 
 export default function HomeHeader({ user }: Props) {
 const [menuOpen, setMenuOpen] = useState(false);
