@@ -396,10 +396,10 @@ export default function EnglishBookingPage() {
           <div>
             <p className="mb-4 text-[11px] font-bold uppercase tracking-[.38em] text-gold">Request</p>
             <h2 className="display text-5xl font-normal uppercase leading-[.9] md:text-7xl">Create a clear booking request.</h2>
-            <p className="mt-6 max-w-xl text-lg leading-8 text-porcelain/70">Fill in service, location, size, rooms, date, contact details and special requests. Your request is saved to your profile after submission.</p>
+            <p className="mt-6 max-w-xl text-lg leading-8 text-porcelain/70">Fill in service, location, size, rooms, date, contact details and special requests. Log in if you want to save and follow the request in your profile.</p>
             <div className="mt-8 grid gap-3 text-sm text-porcelain/70">
               <p className="flex items-center gap-3"><ShieldCheck className="h-5 w-5 text-gold" /> Location is shared only after active consent.</p>
-              <p className="flex items-center gap-3"><Mail className="h-5 w-5 text-gold" /> {user ? "Your request is saved to your profile." : "Log in to send and save your request to your profile."}</p>
+              <p className="flex items-center gap-3"><Mail className="h-5 w-5 text-gold" /> {user ? "Your request is saved to your profile." : "You can send a request without an account. Log in if you want to save and follow it in your profile."}</p>
               <p className="flex items-center gap-3"><Home className="h-5 w-5 text-gold" /> Your request is reviewed before confirmation.</p>
             </div>
           </div>

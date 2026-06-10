@@ -10,6 +10,19 @@ export type ServicePageData = {
 };
 
 export default function ServicePage({ service }: { service: ServicePageData }) {
+  const isOfficeCleaning = service.title === "Kontorsstädning";
+  const trustItems = isOfficeCleaning
+    ? [
+        { title: "Tydlig offert", text: "Vi anpassar upplägg, tider och omfattning efter lokalen och återkommer med en tydlig offert." },
+        { title: "Företagsanpassat upplägg", text: "Välj städfrekvens, tider och kontaktväg som passar verksamheten." },
+        { title: "Tydlig uppföljning", text: "Förfrågan samlar underlaget som behövs innan upplägg och pris bekräftas." },
+      ]
+    : [
+        { title: "Tydlig prisbild", text: "Iboren gör första steget enkelt, tydligt och lätt att följa upp." },
+        { title: "RUT-avdrag", text: "RUT gäller normalt för upp till 50% av godkänd arbetskostnad, om kunden uppfyller villkoren och har RUT kvar. Material, resor och andra kostnader ingår inte." },
+        { title: "Snabb återkoppling", text: "Iboren gör första steget enkelt, tydligt och lätt att följa upp." },
+      ];
+
   return (
     <main className="service-page-dark min-h-screen">
       <section className="service-hero relative overflow-hidden py-20 md:py-28">
@@ -27,7 +40,7 @@ export default function ServicePage({ service }: { service: ServicePageData }) {
 
           <aside className="service-panel iboren-card-glass iboren-card-glass-hover rounded-[2.5rem] p-8 shadow-luxe backdrop-blur-xl">
             <div className="service-icon mb-10 grid h-16 w-16 place-items-center rounded-full"><BadgePercent size={30} /></div>
-            <h2 className="display text-4xl font-bold">Pris och RUT</h2>
+            <h2 className="display text-4xl font-bold">{isOfficeCleaning ? "Offert och upplägg" : "Pris och RUT"}</h2>
             <p className="mt-5 leading-8">{service.priceText}</p>
             <p className="service-card mt-5 rounded-2xl p-4 text-sm leading-7">Priset är en uppskattning. Slutligt pris bekräftas efter bokningsförfrågan.</p>
           </aside>
@@ -49,11 +62,7 @@ export default function ServicePage({ service }: { service: ServicePageData }) {
 
       <section className="py-16">
         <div className="luxe-container grid gap-5 md:grid-cols-3">
-          {[
-            "Tydlig prisbild",
-            "RUT-avdrag",
-            "Snabb återkoppling"
-          ].map((item) => <article key={item} className="iboren-card-glass iboren-card-glass-hover rounded-[2rem] p-6 shadow-soft"><ShieldCheck className="iboren-gold-accent mb-5" /><h3 className="display text-3xl font-bold">{item}</h3><p className="iboren-text-muted-dark mt-3 leading-7">Iboren gör första steget enkelt, tydligt och lätt att följa upp.</p></article>)}
+          {trustItems.map((item) => <article key={item.title} className="iboren-card-glass iboren-card-glass-hover rounded-[2rem] p-6 shadow-soft"><ShieldCheck className="iboren-gold-accent mb-5" /><h3 className="display text-3xl font-bold">{item.title}</h3><p className="iboren-text-muted-dark mt-3 leading-7">{item.text}</p></article>)}
         </div>
       </section>
 

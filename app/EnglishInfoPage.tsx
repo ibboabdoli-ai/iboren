@@ -24,6 +24,7 @@ function JsonLd({ data }: { data: Record<string, unknown> }) {
 export default function EnglishInfoPage({ title, eyebrow, description, city, service, urlPath, points, included = [], priceText, rutText, faq = [] }: Props) {
   const absoluteUrl = urlPath ? `https://iboren.se${urlPath}` : "https://iboren.se/en";
   const hasServiceSchema = Boolean(service || city);
+  const isOfficeCleaning = service === "Office cleaning";
 
   const serviceSchema = hasServiceSchema ? {
     "@context": "https://schema.org",
@@ -74,7 +75,7 @@ export default function EnglishInfoPage({ title, eyebrow, description, city, ser
         </div>
       </section>
 
-      {(priceText || rutText) && <section className="iboren-section-dark py-16"><div className="luxe-container grid gap-5 md:grid-cols-3"><InfoCard icon={<Sparkles />} title="Price indication" text={priceText || "Final price is confirmed before the work starts."} /><InfoCard icon={<ShieldCheck />} title="RUT information" text={rutText || "RUT deductions may apply according to Skatteverket rules when the conditions are fulfilled."} /><InfoCard icon={<Info />} title="Request first" text="A submitted form is a booking request, not a confirmed appointment. Iboren checks availability first." /></div></section>}
+      {(priceText || rutText) && <section className="iboren-section-dark py-16"><div className="luxe-container grid gap-5 md:grid-cols-3"><InfoCard icon={<Sparkles />} title="Price indication" text={priceText || "Final price is confirmed before the work starts."} /><InfoCard icon={<ShieldCheck />} title={isOfficeCleaning ? "Business quote" : "RUT information"} text={isOfficeCleaning ? "Choose a cleaning frequency, preferred times and contact method that suit the business. The quote is confirmed before work starts." : "RUT normally covers up to 50% of approved labour cost if the customer meets the conditions and has RUT remaining. Materials, travel and other costs are not included."} /><InfoCard icon={<Info />} title="Request first" text="A submitted form is a booking request, not a confirmed appointment. Iboren checks availability first." /></div></section>}
 
       {included.length > 0 && <section className="iboren-page-dark py-16"><div className="luxe-container grid gap-10 md:grid-cols-[.9fr_1.1fr] md:items-start"><div><p className="iboren-gold-accent text-[11px] font-bold uppercase tracking-[.38em]">What is included</p><h2 className="display mt-3 text-4xl font-bold text-porcelain md:text-6xl">Service overview.</h2><p className="iboren-text-muted-dark mt-5 leading-8">The exact scope is confirmed before the request becomes a booking. The list below describes the typical basis for this service.</p></div><div className="grid gap-4">{included.map((item) => <p key={item} className="iboren-card-glass iboren-card-glass-hover iboren-text-muted-dark flex gap-3 rounded-2xl p-5"><CheckCircle2 className="iboren-gold-accent mt-1 h-5 w-5 shrink-0" /> {item}</p>)}</div></div></section>}
 
