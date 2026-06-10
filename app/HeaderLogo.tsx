@@ -86,7 +86,7 @@ function logoHtml(isEnglish: boolean) {
   return `
     <span class="sr-only">${isEnglish ? "Iboren homepage" : "Iboren startsida"}</span>
     <img
-      src="/logo.svg"
+      src="/ibbologo.svg"
       alt="Iboren"
       width="180"
       height="60"

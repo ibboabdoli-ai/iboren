@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowRight, CheckCircle2, Mail, MapPin, ShieldCheck, Sparkles } from "lucide-react";
+import { ArrowRight, CheckCircle2, Mail, MapPin, ShieldCheck } from "lucide-react";
 
 export const metadata: Metadata = {
   title: "About Iboren – Local cleaning company in Södertälje and Stockholm",
@@ -33,7 +33,7 @@ export default function EnglishAboutPage() {
             </div>
           </div>
           <aside className="service-panel iboren-card-glass iboren-card-glass-hover rounded-[2.5rem] p-8 shadow-luxe">
-            <div className="mb-12 grid h-16 w-16 place-items-center rounded-full bg-burgundy text-porcelain"><Sparkles size={30} /></div>
+            <div className="mb-12 grid h-16 w-16 place-items-center rounded-full bg-burgundy text-porcelain"><ShieldCheck size={30} /></div>
             <h2 className="display text-4xl font-bold text-burgundy">Safer cleaning from first contact.</h2>
             <div className="mt-7 grid gap-4">
               {points.map((item) => <p key={item} className="flex gap-3 text-ink/70"><CheckCircle2 className="mt-1 h-5 w-5 shrink-0 text-burgundy" /> {item}</p>)}
