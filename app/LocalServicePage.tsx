@@ -24,6 +24,7 @@ function JsonLd({ data }: { data: Record<string, unknown> }) {
 }
 
 export default function LocalServicePage(props: LocalServicePageProps) {
+  const isOfficeCleaning = props.service === "Kontorsstädning";
   const serviceSchema = {
     "@context": "https://schema.org",
     "@type": "Service",
@@ -89,7 +90,11 @@ export default function LocalServicePage(props: LocalServicePageProps) {
       <section className="iboren-section-dark py-16">
         <div className="luxe-container grid gap-5 md:grid-cols-3">
           <Info icon={<Sparkles />} title="Prisindikation" text={props.priceText} />
-          <Info icon={<ShieldCheck />} title="RUT & villkor" text={props.rutText} />
+          <Info
+            icon={<ShieldCheck />}
+            title={isOfficeCleaning ? "Företagsanpassat upplägg" : "RUT & villkor"}
+            text={isOfficeCleaning ? "Välj städfrekvens, tider och kontaktväg som passar verksamheten. Offerten bekräftas innan uppdraget startar." : "RUT gäller normalt för upp till 50% av godkänd arbetskostnad, om kunden uppfyller villkoren och har RUT kvar. Material, resor och andra kostnader ingår inte."}
+          />
           <Info icon={<MapPin />} title={`Lokalt i ${props.city}`} text={`Bokningsformuläret samlar område, adress, yta, datum och önskemål för ${props.service.toLowerCase()} i ${props.city}.`} />
         </div>
       </section>

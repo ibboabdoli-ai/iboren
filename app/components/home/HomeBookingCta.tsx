@@ -16,7 +16,7 @@ export default function HomeBookingCta({ user }: Props) {
           <p className="mt-6 max-w-xl text-lg leading-8 text-porcelain/70">Formuläret samlar rätt information direkt: tjänst, plats, storlek, rum, datum, kontakt och särskilda önskemål.</p>
           <div className="mt-8 grid gap-3 text-sm text-porcelain/70">
             <p className="flex items-center gap-3"><ShieldCheck className="h-5 w-5 text-gold" /> Plats delas bara efter aktivt val.</p>
-            <p className="flex items-center gap-3"><Mail className="h-5 w-5 text-gold" /> {user ? "Din förfrågan sparas även på din profil." : "Logga in för att boka och spara förfrågan på din profil."}</p>
+            <p className="flex items-center gap-3"><Mail className="h-5 w-5 text-gold" /> {user ? "Din förfrågan sparas även på din profil." : "Du kan skicka en förfrågan utan konto. Logga in om du vill spara och följa den på din profil."}</p>
           </div>
         </div>
 
