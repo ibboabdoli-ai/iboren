@@ -12,7 +12,18 @@ export const metadata: Metadata = {
   title: "Hemstädning Stockholm | Pris med RUT | Iboren",
   description: "Boka hemstädning i Stockholm med tydlig prisindikation, RUT-avdrag och enkel bokningsförfrågan online hos Iboren.",
   keywords: ["hemstädning Stockholm", "städhjälp Stockholm", "städfirma Stockholm", "RUT hemstädning Stockholm"],
-  alternates: { canonical: "https://iboren.se/hemstadning-stockholm" }
+  alternates: {
+    canonical: "https://iboren.se/hemstadning-stockholm",
+    languages: {
+      sv: "https://iboren.se/hemstadning-stockholm",
+      en: "https://iboren.se/en/home-cleaning-stockholm",
+    },
+  },
+  openGraph: {
+    title: "Hemstädning Stockholm | Pris med RUT | Iboren",
+    description: "Boka hemstädning i Stockholm med tydlig prisindikation, RUT-avdrag och enkel bokningsförfrågan online hos Iboren.",
+    url: "https://iboren.se/hemstadning-stockholm",
+  },
 };
 
 export default function Page() {

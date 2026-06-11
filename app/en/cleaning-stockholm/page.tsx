@@ -13,6 +13,11 @@ export const metadata: Metadata = {
       en: "https://iboren.se/en/cleaning-stockholm",
     },
   },
+  openGraph: {
+    title: "Cleaning in Stockholm | Iboren",
+    description: "Cleaning services in Stockholm with clear price indication and a non-binding request.",
+    url: "https://iboren.se/en/cleaning-stockholm",
+  },
 };
 
 const services = [

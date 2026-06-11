@@ -6,7 +6,19 @@ import FaqStructuredData from "../FaqStructuredData";
 export const metadata: Metadata = {
   title: "Städning i Stockholm – Hemstädning, flyttstädning & kontor | Iboren",
   description: "Boka städning i Stockholm med Iboren. Skapa en tydlig förfrågan för hemstädning, flyttstädning, kontorsstädning och fönsterputs.",
-  keywords: ["städning Stockholm", "hemstädning Stockholm", "flyttstädning Stockholm", "städfirma Stockholm", "kontorsstädning Stockholm", "fönsterputs Stockholm"]
+  keywords: ["städning Stockholm", "hemstädning Stockholm", "flyttstädning Stockholm", "städfirma Stockholm", "kontorsstädning Stockholm", "fönsterputs Stockholm"],
+  alternates: {
+    canonical: "https://iboren.se/stadning-stockholm",
+    languages: {
+      sv: "https://iboren.se/stadning-stockholm",
+      en: "https://iboren.se/en/cleaning-stockholm",
+    },
+  },
+  openGraph: {
+    title: "Städning i Stockholm – Hemstädning, flyttstädning & kontor | Iboren",
+    description: "Boka städning i Stockholm med Iboren. Skapa en tydlig förfrågan för hemstädning, flyttstädning, kontorsstädning och fönsterputs.",
+    url: "https://iboren.se/stadning-stockholm",
+  },
 };
 
 const services = [
