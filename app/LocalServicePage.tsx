@@ -69,8 +69,8 @@ export default function LocalServicePage(props: LocalServicePageProps) {
             <h1 className="display mt-4 text-6xl font-bold leading-[.88] text-porcelain md:text-8xl">{props.title}</h1>
             <p className="iboren-text-muted-dark mt-7 max-w-2xl text-lg leading-8 md:text-xl">{props.intro}</p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-              <Link href="/priser" className="btn-primary">Beräkna pris <ArrowRight size={18} /></Link>
-              <Link href="/#booking" className="btn-secondary">Boka online</Link>
+              <Link href="/priser#pris-kalkylator" className="btn-primary">Få pris direkt <ArrowRight size={18} /></Link>
+              <Link href="/boka-utan-konto" className="btn-secondary">Skicka förfrågan</Link>
             </div>
           </div>
 
@@ -123,8 +123,8 @@ export default function LocalServicePage(props: LocalServicePageProps) {
             <h2 className="display text-4xl font-bold">Redo att skicka förfrågan?</h2>
             <p className="mt-3 text-porcelain/70">Beräkna pris eller gå direkt till bokningsformuläret.</p>
             <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-              <Link href="/priser" className="inline-flex rounded-full bg-gold px-5 py-3 text-sm font-black uppercase tracking-[.12em] text-ink">Beräkna pris</Link>
-              <Link href="/#booking" className="inline-flex rounded-full border border-gold/40 px-5 py-3 text-sm font-black uppercase tracking-[.12em] text-gold">Boka online</Link>
+              <Link href="/priser#pris-kalkylator" className="inline-flex rounded-full bg-gold px-5 py-3 text-sm font-black uppercase tracking-[.12em] text-ink">Få pris direkt</Link>
+              <Link href="/boka-utan-konto" className="inline-flex rounded-full border border-gold/40 px-5 py-3 text-sm font-black uppercase tracking-[.12em] text-gold">Skicka förfrågan</Link>
             </div>
           </div>
         </div>
