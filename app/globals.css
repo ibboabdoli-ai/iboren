@@ -69,24 +69,36 @@ body {
   line-height: 1;
 }
 
-/* Keep the embedded AI chat composer readable on its dark background. */
+/* Keep the embedded AI chat fields readable. */
+.saic2 .saic2-contact input,
 .saic2 .saic2-input {
-  background: #303230 !important;
-  color: #fffdf8 !important;
-  -webkit-text-fill-color: #fffdf8 !important;
-  caret-color: #d8a46f !important;
+  background: #fffdf8 !important;
+  color: #202020 !important;
+  -webkit-text-fill-color: #202020 !important;
+  border-color: #cbd5e1 !important;
+  caret-color: #6b2737 !important;
 }
 
+.saic2 .saic2-contact input::placeholder,
 .saic2 .saic2-input::placeholder {
-  color: rgba(255, 253, 248, .58) !important;
-  -webkit-text-fill-color: rgba(255, 253, 248, .58) !important;
+  color: #64748b !important;
+  -webkit-text-fill-color: #64748b !important;
   opacity: 1;
 }
 
+.saic2 .saic2-contact input:focus,
 .saic2 .saic2-input:focus {
   border-color: #d8a46f !important;
   box-shadow: 0 0 0 3px rgba(216, 164, 111, .18);
   outline: none;
+}
+
+.saic2 .saic2-contact input:disabled,
+.saic2 .saic2-input:disabled {
+  background: #f1f5f9 !important;
+  color: #475569 !important;
+  -webkit-text-fill-color: #475569 !important;
+  opacity: 1;
 }
 
 header a:focus-visible,
