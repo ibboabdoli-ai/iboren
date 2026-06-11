@@ -6,7 +6,13 @@ import FaqStructuredData from "../FaqStructuredData";
 export const metadata: Metadata = {
   title: "Städning i Södertälje – Hemstädning, flyttstädning & kontor | Iboren",
   description: "Boka städning i Södertälje med Iboren. Skapa en tydlig förfrågan för hemstädning, flyttstädning, kontorsstädning och fönsterputs.",
-  keywords: ["städning Södertälje", "hemstädning Södertälje", "flyttstädning Södertälje", "städfirma Södertälje", "kontorsstädning Södertälje", "fönsterputs Södertälje"]
+  keywords: ["städning Södertälje", "hemstädning Södertälje", "flyttstädning Södertälje", "städfirma Södertälje", "kontorsstädning Södertälje", "fönsterputs Södertälje"],
+  alternates: { canonical: "https://iboren.se/stadning-sodertalje" },
+  openGraph: {
+    title: "Städning i Södertälje – Hemstädning, flyttstädning & kontor | Iboren",
+    description: "Boka städning i Södertälje med Iboren. Skapa en tydlig förfrågan för hemstädning, flyttstädning, kontorsstädning och fönsterputs.",
+    url: "https://iboren.se/stadning-sodertalje",
+  },
 };
 
 const services = [

@@ -173,10 +173,32 @@ function getContent(slug: string): PageContent {
 export function generateMetadata({ params }: { params: { slug: string[] } }): Metadata {
   const slug = slugFromParams(params);
   const content = getContent(slug);
+  const canonical = `https://iboren.se/en/${slug}`;
+  const isHomeCleaningStockholm = slug === "home-cleaning-stockholm";
+
   return {
     title: `${content.title} | Iboren`,
     description: content.description,
-    alternates: { canonical: `https://iboren.se/en/${slug}` }
+    alternates: {
+      canonical,
+      ...(isHomeCleaningStockholm
+        ? {
+            languages: {
+              en: canonical,
+              sv: "https://iboren.se/hemstadning-stockholm",
+            },
+          }
+        : {}),
+    },
+    ...(isHomeCleaningStockholm
+      ? {
+          openGraph: {
+            title: `${content.title} | Iboren`,
+            description: content.description,
+            url: canonical,
+          },
+        }
+      : {}),
   };
 }
 
