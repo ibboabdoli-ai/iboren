@@ -41,7 +41,7 @@ export default function KontorsstadningPage() {
             <p className="service-eyebrow text-xs font-black uppercase tracking-[.32em]">Iboren Business</p>
             <h1 className="service-title display mt-4 text-6xl font-bold leading-[.88] md:text-8xl">Kontorsstädning</h1>
             <p className="service-lead mt-7 max-w-2xl text-lg leading-8 md:text-xl">För företag i Södertälje och Stockholm som vill ha tydlig kontorsstädning för arbetsytor, mötesrum, entré, pentry och toaletter. Ange frekvens, önskade tider, access, larm, nycklar och kontaktperson så att upplägget kan bekräftas innan service startar.</p>
-            <div className="mt-8 flex flex-col gap-3 sm:flex-row"><Link href="/boka-utan-konto" className="btn-primary">Skapa företagsförfrågan <ArrowRight size={18} /></Link><Link href="/stadning-stockholm" className="btn-secondary">Städning Stockholm</Link></div>
+            <div className="mt-8 flex flex-col gap-3 sm:flex-row"><Link href="/priser#pris-kalkylator" className="btn-primary">Få pris direkt <ArrowRight size={18} /></Link><Link href="/boka-utan-konto" className="btn-secondary">Skicka förfrågan</Link></div>
           </div>
           <div className="service-panel rounded-[2.5rem] p-8 shadow-luxe">
             <div className="mb-12 flex items-center justify-between"><div className="service-icon grid h-16 w-16 place-items-center rounded-full"><Building2 size={31} /></div><span className="rounded-full border px-4 py-2 text-xs font-bold uppercase tracking-[.24em]">B2B</span></div>
@@ -64,7 +64,7 @@ export default function KontorsstadningPage() {
         <div className="luxe-container max-w-4xl">
           <p className="service-eyebrow text-xs font-black uppercase tracking-[.32em]">FAQ</p><h2 className="display mt-3 text-4xl font-bold md:text-6xl">Vanliga frågor om kontorsstädning.</h2>
           <div className="mt-10 grid gap-4">{faq.map((item) => <article key={item.q} className="rounded-[1.5rem] p-6 shadow-sm"><h3 className="font-bold">{item.q}</h3><p className="mt-2 leading-7">{item.a}</p></article>)}</div>
-          <div className="service-cta-card mt-10 rounded-[2rem] p-7"><h2 className="display text-4xl font-bold">Redo att skicka företagsförfrågan?</h2><p className="mt-3">Fyll i lokal, frekvens, önskade tider, access och kontaktuppgifter så återkommer Iboren.</p><Link href="/boka-utan-konto" className="mt-6 inline-flex rounded-full bg-gold px-5 py-3 text-sm font-black uppercase tracking-[.12em] text-ink">Starta bokning</Link></div>
+          <div className="service-cta-card mt-10 rounded-[2rem] p-7"><h2 className="display text-4xl font-bold">Redo att skicka företagsförfrågan?</h2><p className="mt-3">Fyll i lokal, frekvens, önskade tider, access och kontaktuppgifter så återkommer Iboren.</p><Link href="/priser#pris-kalkylator" className="mt-6 inline-flex rounded-full bg-gold px-5 py-3 text-sm font-black uppercase tracking-[.12em] text-ink">Få pris direkt</Link></div>
         </div>
       </section>
     </main>

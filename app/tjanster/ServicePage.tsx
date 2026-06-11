@@ -33,8 +33,8 @@ export default function ServicePage({ service }: { service: ServicePageData }) {
             <h1 className="service-title display mt-4 max-w-full text-[clamp(2.35rem,10vw,3.15rem)] font-bold leading-[.9] md:text-8xl">{service.title}</h1>
             <p className="service-lead mt-7 max-w-2xl text-lg leading-8 md:text-xl">{service.intro}</p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-              <Link href="/priser" className="btn-primary">Beräkna pris <ArrowRight size={18} /></Link>
-              <Link href="/boka-utan-konto" className="btn-secondary">Boka städning</Link>
+              <Link href="/priser#pris-kalkylator" className="btn-primary">Få pris direkt <ArrowRight size={18} /></Link>
+              <Link href="/boka-utan-konto" className="btn-secondary">Skicka förfrågan</Link>
             </div>
           </div>
 
@@ -73,7 +73,7 @@ export default function ServicePage({ service }: { service: ServicePageData }) {
           <div className="mt-10 grid gap-4">
             {service.faq.map((item) => <article key={item.question} className="iboren-card-glass iboren-card-glass-hover rounded-[1.5rem] p-6 shadow-sm"><h3 className="font-bold">{item.question}</h3><p className="iboren-text-muted-dark mt-2 leading-7">{item.answer}</p></article>)}
           </div>
-          <div className="service-cta-card iboren-card-glass iboren-card-glass-hover mt-10 rounded-[2rem] p-7"><h2 className="display text-4xl font-bold">Vill du gå vidare?</h2><p className="iboren-text-muted-dark mt-3">Beräkna ett uppskattat pris eller skicka en bokningsförfrågan.</p><div className="mt-6 flex flex-col gap-3 sm:flex-row"><Link href="/priser" className="inline-flex rounded-full bg-gold px-5 py-3 text-sm font-black uppercase tracking-[.12em] text-ink">Beräkna pris</Link><Link href="/boka-utan-konto" className="inline-flex rounded-full border border-gold/35 px-5 py-3 text-sm font-bold text-gold">Boka städning</Link></div></div>
+          <div className="service-cta-card iboren-card-glass iboren-card-glass-hover mt-10 rounded-[2rem] p-7"><h2 className="display text-4xl font-bold">Vill du gå vidare?</h2><p className="iboren-text-muted-dark mt-3">Beräkna ett uppskattat pris eller skicka en bokningsförfrågan.</p><div className="mt-6 flex flex-col gap-3 sm:flex-row"><Link href="/priser#pris-kalkylator" className="inline-flex rounded-full bg-gold px-5 py-3 text-sm font-black uppercase tracking-[.12em] text-ink">Få pris direkt</Link><Link href="/boka-utan-konto" className="inline-flex rounded-full border border-gold/35 px-5 py-3 text-sm font-bold text-gold">Skicka förfrågan</Link></div></div>
         </div>
       </section>
     </main>
