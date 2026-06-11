@@ -58,6 +58,7 @@ export default function EnglishAboutPage() {
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
             <Link href="/en#booking" className="inline-flex rounded-full bg-gold px-5 py-3 text-sm font-black uppercase tracking-[.12em] text-ink">Send request</Link>
             <a href="mailto:hej@iboren.se" className="inline-flex rounded-full border border-gold/35 px-5 py-3 text-sm font-bold text-gold">hej@iboren.se</a>
+            <a href="tel:+46760354141" className="inline-flex rounded-full border border-gold/35 px-5 py-3 text-sm font-bold text-gold">+46 76 035 41 41</a>
           </div>
         </div>
       </section>
