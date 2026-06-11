@@ -23,7 +23,8 @@ const svToEn: Record<string, string> = {
   "/hemstadning-stockholm": "/en/home-cleaning-stockholm",
   "/flyttstadning-stockholm": "/en/move-out-cleaning-stockholm",
   "/fonsterputs-stockholm": "/en/window-cleaning-stockholm",
-  "/kontorsstadning-stockholm": "/en/office-cleaning-stockholm"
+  "/kontorsstadning-stockholm": "/en/office-cleaning-stockholm",
+  "/stadning-stockholm": "/en/cleaning-stockholm"
 };
 
 const tjansterToEn: Record<string, string> = {
