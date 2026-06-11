@@ -9,23 +9,6 @@ type Props = {
   user: User | null;
 };
 
-function IborenHeaderLogo() {
-  return (
-    <span
-      className="inline-flex items-center rounded-2xl border border-gold/25 px-4 py-2 shadow-[0_0_28px_rgba(212,165,116,.18)]"
-      style={{ backgroundColor: "#F6EFE3" }}
-    >
-      <img
-        src="/ibbologo.svg"
-        alt="Iboren"
-        width={180}
-        height={60}
-        className="h-10 w-auto object-contain md:h-12"
-        decoding="async"
-      />
-    </span>
-  );
-}
 export default function HomeHeader({ user }: Props) {
   const [menuOpen, setMenuOpen] = useState(false);
   const desktopLinkClass = "rounded-full px-3 py-2 transition hover:bg-gold/10 hover:text-gold";
@@ -34,9 +17,9 @@ export default function HomeHeader({ user }: Props) {
   return (
     <header className="fixed inset-x-0 top-0 z-50 border-b border-gold/10 bg-night/80 backdrop-blur-2xl">
       <nav className="luxe-container flex h-20 items-center justify-between">
-        <a href="#top" className="group flex items-center" onClick={() => setMenuOpen(false)} aria-label="Iboren startsida">
+        <a href="/" className="iboren-header-logo-link group flex items-center" onClick={() => setMenuOpen(false)} aria-label="Iboren startsida">
           <span className="sr-only">Iboren</span>
-          <IborenHeaderLogo />
+          <img src="/ibbologo.svg" alt="Iboren" width={180} height={60} className="iboren-header-logo" decoding="async" />
         </a>
 
         <div className="hidden items-center gap-2 text-sm font-semibold text-porcelain/68 xl:flex">

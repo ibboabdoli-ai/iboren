@@ -318,12 +318,9 @@ export default function EnglishBookingPage() {
     <main className="min-h-screen overflow-x-hidden bg-night text-porcelain">
       <header className="fixed inset-x-0 top-0 z-50 border-b border-gold/10 bg-night/80 backdrop-blur-2xl">
         <nav className="luxe-container flex h-20 items-center justify-between">
-          <a href="#top" className="group flex items-center" onClick={() => setMenuOpen(false)} aria-label="Iboren English homepage">
+          <a href="/en" className="iboren-header-logo-link group flex items-center" onClick={() => setMenuOpen(false)} aria-label="Iboren English homepage">
             <span className="sr-only">Iboren</span>
-            <span className="flex flex-col leading-none">
-              <span className="display block text-4xl font-semibold tracking-wide text-porcelain md:text-5xl">Iboren</span>
-              <span className="mt-1 block text-[10px] font-bold uppercase tracking-[0.36em] text-gold/75 md:text-[11px]">Price estimate & simple booking</span>
-            </span>
+            <img src="/ibbologo.svg" alt="Iboren" width={180} height={60} className="iboren-header-logo" decoding="async" />
           </a>
           <div className="hidden items-center gap-2 text-sm font-semibold text-porcelain/68 xl:flex">
             <a href="#services" className="rounded-full px-3 py-2 transition hover:bg-gold/10 hover:text-gold">Services</a>
