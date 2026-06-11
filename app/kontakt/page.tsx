@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Mail, MapPin, Clock, ArrowRight, CheckCircle2 } from "lucide-react";
+import { Mail, MapPin, Clock, ArrowRight, CheckCircle2, Phone } from "lucide-react";
 
 export const metadata: Metadata = {
   title: "Kontakt – Iboren Städning i Södertälje och Stockholm",
@@ -29,6 +29,7 @@ export default function KontaktPage() {
             <h2 className="iboren-gold-accent display text-4xl font-bold">Kontaktuppgifter</h2>
             <div className="mt-7 grid gap-5">
               <a href="mailto:hej@iboren.se" className="iboren-card-glass iboren-card-glass-hover iboren-text-muted-dark flex gap-3 rounded-2xl p-5"><Mail className="iboren-gold-accent mt-1 h-5 w-5 shrink-0" /> hej@iboren.se</a>
+              <a href="tel:+46760354141" className="iboren-card-glass iboren-card-glass-hover iboren-text-muted-dark flex gap-3 rounded-2xl p-5"><Phone className="iboren-gold-accent mt-1 h-5 w-5 shrink-0" /> 076 035 41 41</a>
               <p className="iboren-card-glass iboren-card-glass-hover iboren-text-muted-dark flex gap-3 rounded-2xl p-5"><MapPin className="iboren-gold-accent mt-1 h-5 w-5 shrink-0" /> Södertälje och Stockholm</p>
               <p className="iboren-card-glass iboren-card-glass-hover iboren-text-muted-dark flex gap-3 rounded-2xl p-5"><Clock className="iboren-gold-accent mt-1 h-5 w-5 shrink-0" /> Vi återkommer normalt så snart vi kan.</p>
             </div>
