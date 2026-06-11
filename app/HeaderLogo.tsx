@@ -141,8 +141,7 @@ function ensureSafeNavStyles() {
       }
 
       header[data-iboren-sticky-nav="1"] .iboren-header-logo-link,
-      #iboren-global-nav .iboren-header-logo-link,
-      header nav a[href="#top"].group {
+      #iboren-global-nav .iboren-header-logo-link {
         width: clamp(7.9rem, 36vw, 9.8rem) !important;
         height: clamp(2.65rem, 12vw, 3.2rem) !important;
         flex: 0 0 auto !important;
@@ -255,8 +254,7 @@ function ensureSafeNavStyles() {
 
     @media (max-width: 380px) {
       header[data-iboren-sticky-nav="1"] .iboren-header-logo-link,
-      #iboren-global-nav .iboren-header-logo-link,
-      header nav a[href="#top"].group {
+      #iboren-global-nav .iboren-header-logo-link {
         width: 7.3rem !important;
       }
     }
@@ -268,17 +266,6 @@ function ensureSafeNavStyles() {
 function applyBlur(header: HTMLElement) {
   header.style.backdropFilter = "blur(18px)";
   header.style.setProperty("-webkit-backdrop-filter", "blur(18px)");
-}
-
-function applyHeaderLogo() {
-  const { isEnglish } = getLanguageState();
-  const headerLogoLink = document.querySelector<HTMLAnchorElement>('header nav a[href="#top"], header nav a[href="/"], header nav a[href="/en"]');
-  if (!headerLogoLink || headerLogoLink.dataset.iborenLogoApplied === "1") return;
-
-  headerLogoLink.dataset.iborenLogoApplied = "1";
-  headerLogoLink.classList.add("iboren-header-logo-link");
-  headerLogoLink.href = isEnglish ? "/en" : "/";
-  headerLogoLink.innerHTML = logoHtml(isEnglish);
 }
 
 function stabilizeExistingHeader() {
@@ -384,7 +371,6 @@ function applyGlobalNavigationFixes() {
   createFallbackHeader();
   stabilizeExistingHeader();
   normalizeHeaderLanguageLinks();
-  applyHeaderLogo();
   bindGlobalMenu();
 }
 
