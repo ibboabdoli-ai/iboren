@@ -29,7 +29,7 @@ import "./site-visual-polish.css";
 
 const title = "Iboren – Städning i Södertälje och Stockholm";
 const description = "Skicka bokningsförfrågan för hemstädning, flyttstädning, kontorsstädning och fönsterputs med Iboren. Prisindikation, RUT-information och snabb återkoppling i Södertälje och Stockholm.";
-const previewImage = "/opengraph-image";
+const previewImage = "/og-image.png";
 
 
 export const metadata: Metadata = {
