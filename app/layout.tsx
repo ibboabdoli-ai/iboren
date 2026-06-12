@@ -51,7 +51,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title,
     description,
-    images: ["/twitter-image"]
+    images: [previewImage]
   },
   alternates: { canonical: "https://iboren.se" },
   manifest: "/api/pwa-manifest?start=/",
