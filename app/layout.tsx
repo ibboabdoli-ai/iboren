@@ -31,7 +31,7 @@ const title = "Iboren – Städning i Södertälje och Stockholm";
 const description = "Skicka bokningsförfrågan för hemstädning, flyttstädning, kontorsstädning och fönsterputs med Iboren. Prisindikation, RUT-information och snabb återkoppling i Södertälje och Stockholm.";
 const previewImage = "/og-image.png";
 const serviceAiChatApiBase = "https://service-ai-chat.vercel.app";
-const serviceAiChatWidgetSrc = `${serviceAiChatApiBase}/widget-v2.js?v=58a1`;
+const serviceAiChatWidgetSrc = `${serviceAiChatApiBase}/widget-v2.js?v=58b2`;
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://iboren.se"),
@@ -111,6 +111,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <ProfileAccessLinks />
           <BookingNumberUiEnhancer />
           {children}
+          <Script
+            id="iboren-service-ai-chat-guard"
+            src="/iboren-service-ai-chat-guard.js?v=58b2"
+            strategy="afterInteractive"
+          />
           <Script
             id="iboren-service-ai-chat"
             src={serviceAiChatWidgetSrc}
