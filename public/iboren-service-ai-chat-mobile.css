@@ -1,0 +1,62 @@
+@media (max-width: 520px) {
+  .saic2 {
+    left: 10px !important;
+    right: 10px !important;
+    max-width: calc(100vw - 20px) !important;
+  }
+
+  .saic2-panel {
+    width: calc(100vw - 20px) !important;
+    max-height: calc(100vh - 96px) !important;
+    border-radius: 18px !important;
+  }
+
+  .saic2-log {
+    max-height: 30vh !important;
+  }
+
+  .saic2-chips {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+    overflow: visible !important;
+    padding: 10px 12px !important;
+  }
+
+  .saic2-chip {
+    min-width: 0 !important;
+    width: 100% !important;
+    white-space: normal !important;
+    line-height: 1.25 !important;
+    padding: 10px 8px !important;
+    text-align: center !important;
+  }
+
+  .saic2-links {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 8px !important;
+    padding: 10px 12px !important;
+  }
+
+  .saic2-link {
+    min-width: 0 !important;
+    width: 100% !important;
+    white-space: normal !important;
+    line-height: 1.25 !important;
+  }
+
+  .saic2-form {
+    gap: 8px !important;
+    padding: 10px !important;
+  }
+
+  .saic2-input {
+    font-size: 16px !important;
+  }
+
+  .saic2-send {
+    min-width: 88px !important;
+    padding: 0 12px !important;
+  }
+}
