@@ -1,14 +1,30 @@
 @media (max-width: 520px) {
   .saic2 {
-    left: 10px !important;
-    right: 10px !important;
     max-width: calc(100vw - 20px) !important;
+  }
+
+  .saic2.pos-right {
+    right: 10px !important;
+    left: auto !important;
+  }
+
+  .saic2.pos-left {
+    left: 10px !important;
+    right: auto !important;
   }
 
   .saic2-panel {
     width: calc(100vw - 20px) !important;
     max-height: calc(100vh - 96px) !important;
     border-radius: 18px !important;
+  }
+
+  .saic2.pos-right .saic2-panel {
+    margin-left: auto !important;
+  }
+
+  .saic2.pos-left .saic2-panel {
+    margin-right: auto !important;
   }
 
   .saic2-log {
