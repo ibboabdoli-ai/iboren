@@ -115,7 +115,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             src={serviceChatWidgetSrc}
             data-client-id="iboren"
             data-api-base={serviceChatApiBase}
-            async
+            defer
           />
         </ThemeProvider>
       </body>
