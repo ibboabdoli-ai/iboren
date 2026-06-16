@@ -8,11 +8,11 @@ const securityHeaders = [
       "frame-ancestors 'self'",
       "object-src 'none'",
       "form-action 'self'",
-      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://vercel.live https://*.vercel.app https://maps.googleapis.com https://maps.gstatic.com",
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://vercel.live https://*.vercel.app https://maps.googleapis.com https://maps.gstatic.com https://chat.proffera.se",
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data: blob: https: *.supabase.co *.googleusercontent.com",
       "font-src 'self' data:",
-      "connect-src 'self' https://*.supabase.co https://api.resend.com https://vercel.live https://*.vercel.app https://maps.googleapis.com https://maps.gstatic.com wss://*.supabase.co",
+      "connect-src 'self' https://*.supabase.co https://api.resend.com https://vercel.live https://*.vercel.app https://maps.googleapis.com https://maps.gstatic.com https://chat.proffera.se wss://*.supabase.co",
       "frame-src 'self' https://*.supabase.co https://accounts.google.com https://www.linkedin.com https://login.microsoftonline.com",
       "upgrade-insecure-requests"
     ].join("; ")
