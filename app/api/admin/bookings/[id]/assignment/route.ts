@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { brandedTextEmail } from "../../../../../lib/email/html";
 
 export const runtime = "nodejs";
 
@@ -88,17 +89,17 @@ function buildCleanerCancellationEmailText(params: { booking: BookingRow; employ
   ].join("\n");
 }
 
-async function sendEmail(params: { apiKey: string; from: string; to: string; replyTo?: string; subject: string; text: string }) {
+async function sendEmail(params: { apiKey: string; from: string; to: string; replyTo?: string; subject: string; text: string; html?: string }) {
   return fetch(EMAIL_ENDPOINT, {
     method: "POST",
     headers: { [HEADER_NAME]: `${TOKEN_WORD} ${params.apiKey}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ from: params.from, to: [params.to], reply_to: params.replyTo, subject: params.subject, text: params.text })
+    body: JSON.stringify({ from: params.from, to: [params.to], reply_to: params.replyTo, subject: params.subject, text: params.text, ...(params.html ? { html: params.html } : {}) })
   });
 }
 
 function wait(ms: number) { return new Promise<"timeout">((resolve) => setTimeout(() => resolve("timeout"), ms)); }
 
-async function sendCleanerEmail(params: { toEmail: string; subject: string; text: string }): Promise<EmailResult> {
+async function sendCleanerEmail(params: { toEmail: string; subject: string; text: string; html?: string }): Promise<EmailResult> {
   const resendApiKey = process.env.RESEND_API_KEY;
   const fromEmail = process.env.BOOKING_FROM_EMAIL || "Iboren <onboarding@resend.dev>";
   const replyTo = process.env.BOOKING_TO_EMAIL || "hej@iboren.se";
@@ -108,17 +109,19 @@ async function sendCleanerEmail(params: { toEmail: string; subject: string; text
     console.info("IBOREN_CLEANER_EMAIL", { to: toEmail, subject: params.subject, text: params.text });
     return { sent: false, skipped: true, reason: "missing_resend_api_key" };
   }
-  const emailResult = await Promise.race([sendEmail({ apiKey: resendApiKey, from: fromEmail, to: toEmail, replyTo, subject: params.subject, text: params.text }), wait(EMAIL_WAIT_LIMIT_MS)]);
+  const emailResult = await Promise.race([sendEmail({ apiKey: resendApiKey, from: fromEmail, to: toEmail, replyTo, subject: params.subject, text: params.text, html: params.html }), wait(EMAIL_WAIT_LIMIT_MS)]);
   if (emailResult === "timeout") return { sent: false, skipped: false, reason: "timeout" };
   return { sent: emailResult.ok, skipped: false, reason: emailResult.ok ? null : "resend_error" };
 }
 
 async function notifyAssignedCleaner(params: { booking: BookingRow; employee: EmployeeRow; note: string | null }) {
-  return sendCleanerEmail({ toEmail: params.employee.email, subject: `Iboren: New assigned job · ${params.booking.service}`, text: buildCleanerAssignmentEmailText(params) });
+  const text = buildCleanerAssignmentEmailText(params);
+  return sendCleanerEmail({ toEmail: params.employee.email, subject: `Iboren: New assigned job · ${params.booking.service}`, text, html: brandedTextEmail({ language: "en", title: "New assigned job", preheader: "You have been assigned a cleaning job in Iboren.", intro: "You have been assigned a cleaning job in Iboren.", nextStepTitle: "Next step", nextStepText: "Log in to your cleaner panel to accept or decline the job.", text, cta: { href: "https://iboren.se/cleaner", label: "Open cleaner panel" } }) });
 }
 
 async function notifyCancelledCleaner(params: { booking: BookingRow; employee: EmployeeRow }) {
-  return sendCleanerEmail({ toEmail: params.employee.email, subject: `Iboren: Assigned job removed · ${params.booking.service}`, text: buildCleanerCancellationEmailText(params) });
+  const text = buildCleanerCancellationEmailText(params);
+  return sendCleanerEmail({ toEmail: params.employee.email, subject: `Iboren: Assigned job removed · ${params.booking.service}`, text, html: brandedTextEmail({ language: "en", title: "Assigned job removed", preheader: "An assigned Iboren job has been removed from your cleaner panel.", intro: "This cleaning job has been removed from your Iboren cleaner panel.", nextStepTitle: "Next step", nextStepText: "You do not need to take action on this job anymore.", text, cta: { href: "https://iboren.se/cleaner", label: "Open cleaner panel" } }) });
 }
 
 async function verifyAdmin(request: Request) {

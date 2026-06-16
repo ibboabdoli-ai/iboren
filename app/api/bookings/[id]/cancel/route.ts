@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { brandedTextEmail } from "../../../../lib/email/html";
 
 export const runtime = "nodejs";
 
@@ -124,7 +125,7 @@ function buildCustomerCancelText(booking: CancelledBooking) {
   ].join("\n");
 }
 
-async function sendEmail(params: { apiKey: string; from: string; to: string; replyTo?: string; subject: string; text: string }) {
+async function sendEmail(params: { apiKey: string; from: string; to: string; replyTo?: string; subject: string; text: string; html?: string }) {
   return fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: { Authorization: `Bearer ${params.apiKey}`, "Content-Type": "application/json" },
@@ -133,7 +134,8 @@ async function sendEmail(params: { apiKey: string; from: string; to: string; rep
       to: [params.to],
       reply_to: params.replyTo,
       subject: params.subject,
-      text: params.text
+      text: params.text,
+      ...(params.html ? { html: params.html } : {})
     })
   });
 }
@@ -191,13 +193,23 @@ export async function PATCH(request: Request, { params }: { params: { id: string
       text: buildAdminCancelText(booking, auth.user.email)
     });
 
+    const customerText = buildCustomerCancelText(booking);
     const customerEmail = booking.customer_email ? sendEmail({
       apiKey: resendApiKey,
       from: fromEmail,
       to: booking.customer_email,
       replyTo: toEmail,
       subject: `Din bokning hos Iboren är avbokad · ${booking.service || "Bokning"}`,
-      text: buildCustomerCancelText(booking)
+      text: customerText,
+      html: brandedTextEmail({
+        language: "sv",
+        title: "Din bokning är avbokad",
+        preheader: "Din bokningsförfrågan hos Iboren är avbokad.",
+        intro: "Din bokningsförfrågan hos Iboren är nu avbokad.",
+        nextStepTitle: "Nästa steg",
+        nextStepText: "Om detta inte stämmer kan du svara på mejlet eller kontakta Iboren.",
+        text: customerText
+      })
     }) : Promise.resolve(null);
 
     const emailResult = await Promise.race([

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { brandedTextEmail } from "../../../../../../lib/email/html";
 
 export const runtime = "nodejs";
 
@@ -63,8 +64,8 @@ async function loadEmployees(supabase: AdminClient, employeeIds: string[]) {
   return data || [];
 }
 
-async function sendEmail(params: { apiKey: string; from: string; to: string; replyTo?: string; subject: string; text: string }) {
-  return fetch(EMAIL_ENDPOINT, { method: "POST", headers: { [HEADER_NAME]: `${TOKEN_WORD} ${params.apiKey}`, "Content-Type": "application/json" }, body: JSON.stringify({ from: params.from, to: [params.to], reply_to: params.replyTo, subject: params.subject, text: params.text }) });
+async function sendEmail(params: { apiKey: string; from: string; to: string; replyTo?: string; subject: string; text: string; html?: string }) {
+  return fetch(EMAIL_ENDPOINT, { method: "POST", headers: { [HEADER_NAME]: `${TOKEN_WORD} ${params.apiKey}`, "Content-Type": "application/json" }, body: JSON.stringify({ from: params.from, to: [params.to], reply_to: params.replyTo, subject: params.subject, text: params.text, ...(params.html ? { html: params.html } : {}) }) });
 }
 
 function notSelectedEmailText(params: { booking: BookingRow; employee: EmployeeRow }) {
@@ -93,7 +94,9 @@ async function notifyNotSelected(params: { booking: BookingRow; employee: Employ
   if (!apiKey) return { to, sent: false, skipped: true, reason: "missing_resend_api_key" };
   const from = process.env.BOOKING_FROM_EMAIL || "Iboren <onboarding@resend.dev>";
   const replyTo = process.env.BOOKING_TO_EMAIL || "hej@iboren.se";
-  const emailResult = await Promise.race([sendEmail({ apiKey, from, to, replyTo, subject: `Iboren: Job offer closed · ${params.booking.service}`, text: notSelectedEmailText(params) }), wait(EMAIL_WAIT_LIMIT_MS)]);
+  const text = notSelectedEmailText(params);
+  const html = brandedTextEmail({ language: "en", title: "Job offer closed", preheader: "This Iboren job offer has been closed by admin.", intro: "This Iboren job offer has been closed by admin.", nextStepTitle: "Next step", nextStepText: "You do not need to take action on this offer anymore.", text, cta: { href: "https://iboren.se/cleaner", label: "Open cleaner panel" } });
+  const emailResult = await Promise.race([sendEmail({ apiKey, from, to, replyTo, subject: `Iboren: Job offer closed · ${params.booking.service}`, text, html }), wait(EMAIL_WAIT_LIMIT_MS)]);
   if (emailResult === "timeout") return { to, sent: false, skipped: false, reason: "timeout" };
   return { to, sent: emailResult.ok, skipped: false, reason: emailResult.ok ? null : "resend_error" };
 }

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { getBookingStatusLocale } from "./statusLocale";
+import { brandedTextEmail } from "../../../../lib/email/html";
 
 export const runtime = "nodejs";
 
@@ -112,6 +113,21 @@ function statusEmailContent(status: string, booking: BookingRow) {
   return null;
 }
 
+function statusEmailHtml(status: string, booking: BookingRow, text: string) {
+  const language = getBookingStatusLocale(booking.notes) === "en" ? "en" : "sv";
+  const isConfirmed = status === "confirmed";
+  const isCompleted = status === "completed";
+  return brandedTextEmail({
+    language,
+    title: language === "en" ? isConfirmed ? "Your booking is confirmed" : isCompleted ? "Thank you for choosing Iboren" : "Your booking has been cancelled" : isConfirmed ? "Din bokning är bekräftad" : isCompleted ? "Tack för att du valde Iboren" : "Din bokning är avbokad",
+    preheader: language === "en" ? "Your Iboren booking status has been updated." : "Status för din bokning hos Iboren har uppdaterats.",
+    intro: language === "en" ? "Your Iboren booking status has been updated." : "Status för din bokning hos Iboren har uppdaterats.",
+    nextStepTitle: language === "en" ? "Next step" : "Nästa steg",
+    nextStepText: language === "en" ? "Review the summary below and contact Iboren if anything is incorrect." : "Kontrollera sammanfattningen nedan och kontakta Iboren om något inte stämmer.",
+    text
+  });
+}
+
 function getEmailConfig() {
   const resendApiKey = process.env.RESEND_API_KEY || "";
   const fromEmail = process.env.BOOKING_FROM_EMAIL || (process.env.NODE_ENV === "production" ? "" : DEV_SENDER);
@@ -132,7 +148,7 @@ async function sendStatusEmail(status: string, booking: BookingRow) {
   const response = await fetch(EMAIL_ENDPOINT, {
     method: "POST",
     headers: { [AUTH_HEADER]: `${TOKEN_PREFIX} ${emailConfig.resendApiKey}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ from: emailConfig.fromEmail, to: [toEmail], reply_to: emailConfig.replyTo, subject: content.subject, text: content.text })
+    body: JSON.stringify({ from: emailConfig.fromEmail, to: [toEmail], reply_to: emailConfig.replyTo, subject: content.subject, text: content.text, html: statusEmailHtml(status, booking, content.text) })
   });
 
   if (!response.ok) {

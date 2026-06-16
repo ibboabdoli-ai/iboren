@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { brandedTextEmail } from "../../../../../lib/email/html";
 
 export const runtime = "nodejs";
 
@@ -56,8 +57,8 @@ async function loadEmployee(supabase: AdminClient, employeeId: string) {
   if (error) throw error;
   return data;
 }
-async function sendEmail(params: { apiKey: string; from: string; to: string; replyTo?: string; subject: string; text: string }) {
-  return fetch(EMAIL_ENDPOINT, { method: "POST", headers: { [HEADER_NAME]: `${TOKEN_WORD} ${params.apiKey}`, "Content-Type": "application/json" }, body: JSON.stringify({ from: params.from, to: [params.to], reply_to: params.replyTo, subject: params.subject, text: params.text }) });
+async function sendEmail(params: { apiKey: string; from: string; to: string; replyTo?: string; subject: string; text: string; html?: string }) {
+  return fetch(EMAIL_ENDPOINT, { method: "POST", headers: { [HEADER_NAME]: `${TOKEN_WORD} ${params.apiKey}`, "Content-Type": "application/json" }, body: JSON.stringify({ from: params.from, to: [params.to], reply_to: params.replyTo, subject: params.subject, text: params.text, ...(params.html ? { html: params.html } : {}) }) });
 }
 
 function offerEmailText(params: { booking: BookingRow; employee: EmployeeRow; note: string | null }) {
@@ -68,19 +69,25 @@ function confirmedEmailText(params: { booking: BookingRow; employee: EmployeeRow
   const { booking, employee } = params;
   return [`Hi ${employee.name || "there"},`, "", "Admin has confirmed you for this Iboren job.", "Please save the job in your calendar and complete it in the cleaner panel after the work is done.", "", `Service: ${booking.service}`, `Area: ${booking.area}`, `Address: ${booking.address || "-"}`, `Date: ${booking.preferred_date || "-"}`, `Time window: ${booking.time_window || "-"}`, "", "Cleaner panel: https://iboren.se/cleaner", "", "Best regards,", "Iboren"].join("\n");
 }
-async function sendCleanerEmail(params: { toEmail: string; subject: string; text: string }): Promise<EmailResult> {
+async function sendCleanerEmail(params: { toEmail: string; subject: string; text: string; html?: string }): Promise<EmailResult> {
   const resendApiKey = process.env.RESEND_API_KEY;
   const fromEmail = process.env.BOOKING_FROM_EMAIL || "Iboren <onboarding@resend.dev>";
   const replyTo = process.env.BOOKING_TO_EMAIL || "hej@iboren.se";
   const toEmail = params.toEmail.trim().toLowerCase();
   if (!isValidEmail(toEmail)) return { sent: false, skipped: true, reason: "invalid_cleaner_email" };
   if (!resendApiKey) { console.info("IBOREN_CLEANER_EMAIL", { to: toEmail, subject: params.subject, text: params.text }); return { sent: false, skipped: true, reason: "missing_resend_api_key" }; }
-  const emailResult = await Promise.race([sendEmail({ apiKey: resendApiKey, from: fromEmail, to: toEmail, replyTo, subject: params.subject, text: params.text }), wait(EMAIL_WAIT_LIMIT_MS)]);
+  const emailResult = await Promise.race([sendEmail({ apiKey: resendApiKey, from: fromEmail, to: toEmail, replyTo, subject: params.subject, text: params.text, html: params.html }), wait(EMAIL_WAIT_LIMIT_MS)]);
   if (emailResult === "timeout") return { sent: false, skipped: false, reason: "timeout" };
   return { sent: emailResult.ok, skipped: false, reason: emailResult.ok ? null : "resend_error" };
 }
-async function notifyOffer(params: { booking: BookingRow; employee: EmployeeRow; note: string | null }) { return sendCleanerEmail({ toEmail: params.employee.email, subject: `Iboren: New job offer · ${params.booking.service}`, text: offerEmailText(params) }); }
-async function notifyConfirmed(params: { booking: BookingRow; employee: EmployeeRow }) { return sendCleanerEmail({ toEmail: params.employee.email, subject: `Iboren: Job confirmed · ${params.booking.service}`, text: confirmedEmailText(params) }); }
+async function notifyOffer(params: { booking: BookingRow; employee: EmployeeRow; note: string | null }) {
+  const text = offerEmailText(params);
+  return sendCleanerEmail({ toEmail: params.employee.email, subject: `Iboren: New job offer · ${params.booking.service}`, text, html: brandedTextEmail({ language: "en", title: "New job offer", preheader: "You have received a new Iboren job offer.", intro: "You have received a new Iboren job offer.", nextStepTitle: "Next step", nextStepText: "Log in to your cleaner panel to accept or decline the offer.", text, cta: { href: "https://iboren.se/cleaner", label: "Open cleaner panel" } }) });
+}
+async function notifyConfirmed(params: { booking: BookingRow; employee: EmployeeRow }) {
+  const text = confirmedEmailText(params);
+  return sendCleanerEmail({ toEmail: params.employee.email, subject: `Iboren: Job confirmed · ${params.booking.service}`, text, html: brandedTextEmail({ language: "en", title: "Job confirmed", preheader: "Admin has confirmed you for this Iboren job.", intro: "Admin has confirmed you for this Iboren job.", nextStepTitle: "Next step", nextStepText: "Save the job and complete it in the cleaner panel after the work is done.", text, cta: { href: "https://iboren.se/cleaner", label: "Open cleaner panel" } }) });
+}
 
 async function getOffers(supabase: AdminClient, bookingId: string) {
   const { data: assignments, error } = await supabase.from("booking_assignments").select("id, booking_id, employee_id, assigned_by, status, note, created_at, updated_at").eq("booking_id", bookingId).in("status", ACTIVE_STATUSES).order("updated_at", { ascending: false }).returns<AssignmentRow[]>();

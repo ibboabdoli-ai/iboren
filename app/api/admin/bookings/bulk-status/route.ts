@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { getBookingStatusLocale } from "../[id]/statusLocale";
+import { brandedTextEmail } from "../../../../lib/email/html";
 
 export const runtime = "nodejs";
 
@@ -173,11 +174,21 @@ async function sendBulkSummaryEmail(status: AllowedStatus, bookings: BookingRow[
   if (!resendApiKey) return { sent: false, skipped: true, reason: "missing_resend_api_key" };
 
   const content = buildBulkSummaryEmail(status, sorted);
+  const language = getBookingStatusLocale(first?.notes || null) === "en" ? "en" : "sv";
+  const html = brandedTextEmail({
+    language,
+    title: language === "en" ? "Your recurring cleaning has been updated" : "Din återkommande städning har uppdaterats",
+    preheader: language === "en" ? "Iboren has updated your planned recurring cleaning visits." : "Iboren har uppdaterat dina planerade återkommande städningar.",
+    intro: language === "en" ? "Iboren has updated your planned recurring cleaning visits." : "Iboren har uppdaterat dina planerade återkommande städningar.",
+    nextStepTitle: language === "en" ? "Next step" : "Nästa steg",
+    nextStepText: language === "en" ? "Review the planned visits below and contact Iboren if anything is incorrect." : "Kontrollera de planerade besöken nedan och kontakta Iboren om något inte stämmer.",
+    text: content.text
+  });
   const emailResult = await Promise.race([
     fetch(EMAIL_ENDPOINT, {
       method: "POST",
       headers: { Authorization: `Bearer ${resendApiKey}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ from: fromEmail, to: [toEmail], reply_to: replyTo, subject: content.subject, text: content.text })
+      body: JSON.stringify({ from: fromEmail, to: [toEmail], reply_to: replyTo, subject: content.subject, text: content.text, html })
     }),
     wait(EMAIL_WAIT_LIMIT_MS)
   ]);
