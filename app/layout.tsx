@@ -1,5 +1,4 @@
 import type { Metadata, Viewport } from "next";
-import Script from "next/script";
 import StructuredData from "./StructuredData";
 import BookingMobilePolish from "./BookingMobilePolish";
 import GoogleAddressEnhancer from "./GoogleAddressEnhancer";
@@ -111,12 +110,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <ProfileAccessLinks />
           <BookingNumberUiEnhancer />
           {children}
-          <Script
+          <script
             id="iboren-proffera-chat"
             src={serviceChatWidgetSrc}
             data-client-id="iboren"
             data-api-base={serviceChatApiBase}
-            strategy="afterInteractive"
+            async
           />
         </ThemeProvider>
       </body>
