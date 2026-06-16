@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient, User } from "@supabase/supabase-js";
 import { generateBookingNumber } from "../../lib/bookingNumber";
 import { publicRequestSnapshotLines } from "../../lib/publicRequestEmailSnapshot";
+import { brandedTextEmail } from "../../lib/email/html";
 
 export const runtime = "nodejs";
 
@@ -376,8 +377,8 @@ async function saveRecurringBookings(payload: NormalizedBookingPayload, auth: Au
   return { first, results, created, duplicates, dates };
 }
 
-async function sendEmail(params: { apiKey: string; from: string; to: string; replyTo?: string; subject: string; text: string }) {
-  const response = await fetch(EMAIL_ENDPOINT, { method: "POST", headers: { [AUTH_HEADER]: `${TOKEN_PREFIX} ${params.apiKey}`, "Content-Type": "application/json" }, body: JSON.stringify({ from: params.from, to: [params.to], reply_to: params.replyTo, subject: params.subject, text: params.text }) });
+async function sendEmail(params: { apiKey: string; from: string; to: string; replyTo?: string; subject: string; text: string; html?: string }) {
+  const response = await fetch(EMAIL_ENDPOINT, { method: "POST", headers: { [AUTH_HEADER]: `${TOKEN_PREFIX} ${params.apiKey}`, "Content-Type": "application/json" }, body: JSON.stringify({ from: params.from, to: [params.to], reply_to: params.replyTo, subject: params.subject, text: params.text, ...(params.html ? { html: params.html } : {}) }) });
   if (!response.ok) throw new Error(`Email delivery failed with status ${response.status}.`);
   return response;
 }
@@ -426,13 +427,22 @@ export async function POST(request: Request) {
     const adminSubject = buildAdminSubject(payload, language);
     const customerText = buildCustomerText(payload, firstBooking, language, recurring);
     const customerSubject = buildCustomerSubject(payload, language);
+    const customerHtml = brandedTextEmail({
+      language,
+      title: language === "en" ? "Iboren has received your booking request" : "Iboren har tagit emot din bokningsförfrågan",
+      preheader: language === "en" ? "Your booking request has been saved. Iboren will confirm time and price before it becomes binding." : "Din bokningsförfrågan är sparad. Iboren bekräftar tid och pris innan den blir bindande.",
+      intro: language === "en" ? "Thank you. Iboren has received your cleaning request." : "Tack. Iboren har tagit emot din städförfrågan.",
+      nextStepTitle: language === "en" ? "Next step" : "Nästa steg",
+      nextStepText: language === "en" ? "Iboren reviews your request and confirms final price and time before the booking becomes binding." : "Iboren granskar din förfrågan och bekräftar slutligt pris och tid innan bokningen blir bindande.",
+      text: customerText
+    });
 
     let adminEmailResult: EmailDeliveryResult = "not_configured";
     let customerEmailResult: EmailDeliveryResult = "not_configured";
 
     if (resendApiKey && fromEmail) {
       const adminEmail = sendEmail({ apiKey: resendApiKey, from: fromEmail, to: toEmail, replyTo: payload.email, subject: adminSubject, text: adminText });
-      const customerEmail = sendEmail({ apiKey: resendApiKey, from: fromEmail, to: payload.email, replyTo: toEmail, subject: customerSubject, text: customerText });
+      const customerEmail = sendEmail({ apiKey: resendApiKey, from: fromEmail, to: payload.email, replyTo: toEmail, subject: customerSubject, text: customerText, html: customerHtml });
       [adminEmailResult, customerEmailResult] = await Promise.all([emailDeliveryResult(adminEmail), emailDeliveryResult(customerEmail)]);
     } else if (resendApiKey && !fromEmail) {
       console.error("IBOREN_BOOKING_EMAIL_CONFIG_MISSING", { missing: "BOOKING_FROM_EMAIL" });

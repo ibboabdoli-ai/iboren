@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { brandedTextEmail } from "../../lib/email/html";
 
 export const runtime = "nodejs";
 
@@ -18,6 +19,7 @@ type EmailParams = {
   replyTo?: string;
   subject: string;
   text: string;
+  html?: string;
   attachments?: Array<{ filename: string; content: string }>;
 };
 
@@ -62,6 +64,7 @@ async function sendEmail(params: EmailParams) {
       reply_to: params.replyTo,
       subject: params.subject,
       text: params.text,
+      ...(params.html ? { html: params.html } : {}),
       ...(params.attachments?.length ? { attachments: params.attachments } : {})
     })
   });
@@ -152,6 +155,16 @@ export async function POST(request: Request) {
     "Vänliga hälsningar,",
     "Iboren"
   ].join("\n");
+  const applicantHtml = brandedTextEmail({
+    language: "sv",
+    title: "Iboren har tagit emot din ansökan",
+    preheader: "Tack för din intresseanmälan till Iboren.",
+    intro: "Tack för din intresseanmälan till Iboren.",
+    nextStepTitle: "Nästa steg",
+    nextStepText: "Vi går igenom din ansökan och återkommer om din profil matchar kommande uppdrag.",
+    text: applicantText,
+    cta: { href: "mailto:hej@iboren.se", label: "Kontakta Iboren" }
+  });
 
   const attachments = cv ? [await buildAttachment(cv)] : [];
 
@@ -171,7 +184,8 @@ export async function POST(request: Request) {
     to: email,
     replyTo: toEmail,
     subject: "Iboren har tagit emot din ansökan",
-    text: applicantText
+    text: applicantText,
+    html: applicantHtml
   });
 
   const results = await Promise.allSettled([adminEmail, applicantEmail]);

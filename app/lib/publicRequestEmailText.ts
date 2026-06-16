@@ -1,4 +1,5 @@
 import { displayArea, greetingName, publicRequestSnapshotLines } from "./publicRequestEmailSnapshot";
+import { brandedEmailLayout, type EmailRow } from "./email/html";
 
 type Language = "sv" | "en";
 
@@ -80,38 +81,6 @@ function requestReferenceLines(id: string, language: Language, bookingNumber?: s
     bookingNumber ? `Bokningsnummer: ${bookingNumber}` : null,
     includeReceivedStatus ? "Status: Förfrågan mottagen" : null
   ].filter(Boolean) as string[];
-}
-
-function escapeHtml(value: unknown) {
-  return String(value ?? "")
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;");
-}
-
-function summaryRow(label: string, value: string) {
-  return `
-    <tr>
-      <td style="padding:12px 0;border-bottom:1px solid #e3ebe5;color:#5e6b64;font-size:14px;line-height:20px;vertical-align:top;width:38%;">${escapeHtml(label)}</td>
-      <td style="padding:12px 0;border-bottom:1px solid #e3ebe5;color:#173b2d;font-size:15px;line-height:22px;font-weight:600;vertical-align:top;">${escapeHtml(value || "-")}</td>
-    </tr>`;
-}
-
-function snapshotHtml(lines: string[]) {
-  const cleanLines = lines.map((line) => line.trim()).filter(Boolean);
-  if (!cleanLines.length) return "";
-
-  return `
-    <div style="margin:24px 0 0 0;padding:18px 20px;background:#f4f8f5;border:1px solid #dce8df;border-radius:18px;">
-      ${cleanLines
-        .map((line) => {
-          const isHeading = line.endsWith(":");
-          return `<p style="margin:${isHeading ? "14px 0 6px 0" : "0 0 6px 0"};color:${isHeading ? "#173b2d" : "#33443b"};font-size:${isHeading ? "15px" : "14px"};line-height:21px;font-weight:${isHeading ? "700" : "400"};">${escapeHtml(line)}</p>`;
-        })
-        .join("")}
-    </div>`;
 }
 
 export function buildPublicRequestAdminEmail(payload: PublicEmailPayload, id: string, language: Language, saved: boolean, bookingNumber?: string | null) {
@@ -244,155 +213,60 @@ export function buildPublicRequestCustomerEmailHtml(payload: PublicEmailPayload,
   const timeWindow = language === "en" ? english(payload.timeWindow) : payload.timeWindow;
   const customerType = language === "en" ? english(payload.customerType) : payload.customerType;
   const rutText = customerRutText(payload, language);
-  const rows: Array<[string, string]> = [];
+  const rows: EmailRow[] =
+    language === "en"
+      ? [
+          { label: "Request ID", value: id },
+          ...(bookingNumber ? [{ label: "Booking number", value: bookingNumber }] : []),
+          { label: "Status", value: "Request received" },
+          { label: "Service", value: service },
+          { label: "Area", value: area },
+          { label: "Address", value: payload.address },
+          { label: "Size", value: `${payload.size} sqm` },
+          { label: "Frequency", value: frequency },
+          { label: "Date", value: payload.date },
+          { label: "Time", value: timeWindow },
+          { label: "Customer type", value: customerType },
+          { label: "RUT", value: rutText.replace(/^RUT:\s*/i, "") }
+        ]
+      : [
+          { label: "Förfrågnings-ID", value: id },
+          ...(bookingNumber ? [{ label: "Bokningsnummer", value: bookingNumber }] : []),
+          { label: "Status", value: "Förfrågan mottagen" },
+          { label: "Tjänst", value: service },
+          { label: "Område", value: area },
+          { label: "Adress", value: payload.address },
+          { label: "Storlek", value: `${payload.size} kvm` },
+          { label: "Frekvens", value: frequency },
+          { label: "Datum", value: payload.date },
+          { label: "Tid", value: timeWindow },
+          { label: "Kundtyp", value: customerType },
+          { label: "RUT", value: rutText.replace(/^RUT:\s*/i, "") }
+        ];
 
   if (language === "en") {
-    rows.push(
-      ["Request ID", id],
-      ...(bookingNumber ? [["Booking number", bookingNumber] as [string, string]] : []),
-      ["Status", "Request received"],
-      ["Service", service],
-      ["Area", area],
-      ["Address", payload.address],
-      ["Size", `${payload.size} sqm`],
-      ["Frequency", frequency],
-      ["Date", payload.date],
-      ["Time", timeWindow],
-      ["Customer type", customerType],
-      ["RUT", rutText.replace(/^RUT:\s*/i, "")]
-    );
-
-    return `<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width,initial-scale=1">
-    <meta name="x-apple-disable-message-reformatting">
-    <title>Iboren has received your cleaning request</title>
-  </head>
-  <body style="margin:0;padding:0;background:#eef3ef;font-family:Arial,Helvetica,sans-serif;">
-    <div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent;">Iboren has received your cleaning request. We always confirm time and price before the booking becomes binding.</div>
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#eef3ef;">
-      <tr>
-        <td align="center" style="padding:24px 12px;">
-          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:640px;background:#ffffff;border-radius:24px;overflow:hidden;border:1px solid #dbe7df;">
-            <tr>
-              <td style="padding:34px 28px;background:#dfeae2;text-align:center;">
-                <div style="font-size:34px;line-height:38px;font-weight:800;letter-spacing:0.08em;color:#12372a;">IBOREN</div>
-                <div style="margin-top:8px;font-size:13px;line-height:18px;font-weight:700;letter-spacing:0.14em;color:#456255;text-transform:uppercase;">Cleaning in Södertälje & Stockholm</div>
-              </td>
-            </tr>
-            <tr>
-              <td style="padding:34px 28px 28px 28px;">
-                <h1 style="margin:0 0 14px 0;color:#12372a;font-size:30px;line-height:36px;">Hi${escapeHtml(greetingName(payload.name))},</h1>
-                <p style="margin:0 0 16px 0;color:#26362f;font-size:17px;line-height:26px;">Thank you. Iboren has received your cleaning request.</p>
-                <p style="margin:0 0 22px 0;color:#47584f;font-size:15px;line-height:24px;">We always confirm time and price before the booking becomes binding.</p>
-
-                <div style="padding:16px 18px;background:#f7faf7;border-left:4px solid #12372a;border-radius:14px;margin:0 0 24px 0;">
-                  <p style="margin:0;color:#173b2d;font-size:15px;line-height:23px;font-weight:700;">Next step</p>
-                  <p style="margin:6px 0 0 0;color:#33443b;font-size:15px;line-height:23px;">We review your request and contact you with final price and available time.</p>
-                </div>
-
-                <h2 style="margin:0 0 12px 0;color:#12372a;font-size:21px;line-height:28px;">Your summary</h2>
-                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">
-                  ${rows.map(([label, value]) => summaryRow(label, value)).join("")}
-                </table>
-
-                ${snapshotHtml(snapshot)}
-
-                <div style="margin:28px 0 0 0;text-align:center;">
-                  <a href="mailto:hej@iboren.se" style="display:inline-block;background:#12372a;color:#ffffff;text-decoration:none;border-radius:999px;padding:14px 24px;font-size:15px;line-height:20px;font-weight:700;">Contact Iboren</a>
-                </div>
-
-                <p style="margin:24px 0 0 0;color:#5e6b64;font-size:13px;line-height:20px;">If anything is incorrect, you can reply to this email or contact us at hej@iboren.se.</p>
-              </td>
-            </tr>
-            <tr>
-              <td style="padding:24px 28px;background:#dfeae2;text-align:center;">
-                <p style="margin:0;color:#12372a;font-size:15px;line-height:22px;font-weight:700;">Iboren</p>
-                <p style="margin:6px 0 0 0;color:#456255;font-size:13px;line-height:20px;">Cleaning services in Södertälje and Stockholm</p>
-                <p style="margin:10px 0 0 0;color:#456255;font-size:13px;line-height:20px;">hej@iboren.se · iboren.se</p>
-              </td>
-            </tr>
-          </table>
-        </td>
-      </tr>
-    </table>
-  </body>
-</html>`;
+    return brandedEmailLayout({
+      language,
+      title: `Hi${greetingName(payload.name)},`,
+      preheader: "Iboren has received your cleaning request. We always confirm time and price before the booking becomes binding.",
+      intro: "Thank you. Iboren has received your cleaning request.",
+      nextStepTitle: "Next step",
+      nextStepText: "We review your request and contact you with final price and available time.",
+      rows,
+      sections: snapshot.length ? [{ lines: snapshot }] : undefined,
+      cta: { href: "mailto:hej@iboren.se", label: "Contact Iboren" }
+    });
   }
 
-  rows.push(
-    ["Förfrågnings-ID", id],
-    ...(bookingNumber ? [["Bokningsnummer", bookingNumber] as [string, string]] : []),
-    ["Status", "Förfrågan mottagen"],
-    ["Tjänst", service],
-    ["Område", area],
-    ["Adress", payload.address],
-    ["Storlek", `${payload.size} kvm`],
-    ["Frekvens", frequency],
-    ["Datum", payload.date],
-    ["Tid", timeWindow],
-    ["Kundtyp", customerType],
-    ["RUT", rutText.replace(/^RUT:\s*/i, "")]
-  );
-
-  return `<!doctype html>
-<html lang="sv">
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width,initial-scale=1">
-    <meta name="x-apple-disable-message-reformatting">
-    <title>Iboren har tagit emot din städförfrågan</title>
-  </head>
-  <body style="margin:0;padding:0;background:#eef3ef;font-family:Arial,Helvetica,sans-serif;">
-    <div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent;">Iboren har tagit emot din städförfrågan. Vi bekräftar alltid tid och pris innan bokningen blir bindande.</div>
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#eef3ef;">
-      <tr>
-        <td align="center" style="padding:24px 12px;">
-          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:640px;background:#ffffff;border-radius:24px;overflow:hidden;border:1px solid #dbe7df;">
-            <tr>
-              <td style="padding:34px 28px;background:#dfeae2;text-align:center;">
-                <div style="font-size:34px;line-height:38px;font-weight:800;letter-spacing:0.08em;color:#12372a;">IBOREN</div>
-                <div style="margin-top:8px;font-size:13px;line-height:18px;font-weight:700;letter-spacing:0.14em;color:#456255;text-transform:uppercase;">Städning i Södertälje & Stockholm</div>
-              </td>
-            </tr>
-            <tr>
-              <td style="padding:34px 28px 28px 28px;">
-                <h1 style="margin:0 0 14px 0;color:#12372a;font-size:30px;line-height:36px;">Hej${escapeHtml(greetingName(payload.name))},</h1>
-                <p style="margin:0 0 16px 0;color:#26362f;font-size:17px;line-height:26px;">Tack. Iboren har tagit emot din städförfrågan.</p>
-                <p style="margin:0 0 22px 0;color:#47584f;font-size:15px;line-height:24px;">Vi bekräftar alltid tid och pris innan bokningen blir bindande.</p>
-
-                <div style="padding:16px 18px;background:#f7faf7;border-left:4px solid #12372a;border-radius:14px;margin:0 0 24px 0;">
-                  <p style="margin:0;color:#173b2d;font-size:15px;line-height:23px;font-weight:700;">Nästa steg</p>
-                  <p style="margin:6px 0 0 0;color:#33443b;font-size:15px;line-height:23px;">Vi granskar din förfrågan och återkommer med slutligt pris och möjlig tid.</p>
-                </div>
-
-                <h2 style="margin:0 0 12px 0;color:#12372a;font-size:21px;line-height:28px;">Din sammanfattning</h2>
-                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">
-                  ${rows.map(([label, value]) => summaryRow(label, value)).join("")}
-                </table>
-
-                ${snapshotHtml(snapshot)}
-
-                <div style="margin:28px 0 0 0;text-align:center;">
-                  <a href="mailto:hej@iboren.se" style="display:inline-block;background:#12372a;color:#ffffff;text-decoration:none;border-radius:999px;padding:14px 24px;font-size:15px;line-height:20px;font-weight:700;">Kontakta Iboren</a>
-                </div>
-
-                <p style="margin:24px 0 0 0;color:#5e6b64;font-size:13px;line-height:20px;">Om något inte stämmer kan du svara på det här mejlet eller kontakta oss på hej@iboren.se.</p>
-              </td>
-            </tr>
-            <tr>
-              <td style="padding:24px 28px;background:#dfeae2;text-align:center;">
-                <p style="margin:0;color:#12372a;font-size:15px;line-height:22px;font-weight:700;">Iboren</p>
-                <p style="margin:6px 0 0 0;color:#456255;font-size:13px;line-height:20px;">Städtjänster i Södertälje och Stockholm</p>
-                <p style="margin:10px 0 0 0;color:#456255;font-size:13px;line-height:20px;">hej@iboren.se · iboren.se</p>
-              </td>
-            </tr>
-          </table>
-        </td>
-      </tr>
-    </table>
-  </body>
-</html>`;
+  return brandedEmailLayout({
+    language,
+    title: `Hej${greetingName(payload.name)},`,
+    preheader: "Iboren har tagit emot din städförfrågan. Vi bekräftar alltid tid och pris innan bokningen blir bindande.",
+    intro: "Tack. Iboren har tagit emot din städförfrågan.",
+    nextStepTitle: "Nästa steg",
+    nextStepText: "Vi granskar din förfrågan och återkommer med slutligt pris och möjlig tid.",
+    rows,
+    sections: snapshot.length ? [{ lines: snapshot }] : undefined,
+    cta: { href: "mailto:hej@iboren.se", label: "Kontakta Iboren" }
+  });
 }
