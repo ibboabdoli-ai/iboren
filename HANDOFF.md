@@ -97,6 +97,12 @@ Pending tax/accounting verification:
 
 ## Current project status
 
+### Chat widget integration
+
+- Current public chat widget source should be `https://chat.proffera.se/widget.js?v=20260616-4`.
+- The widget is loaded in `app/layout.tsx` with `data-client-id="iboren"` and `data-api-base="https://chat.proffera.se"`.
+- Legacy Service AI Chat assets should not be loaded by the public site.
+
 ### Calculator and booking flow
 
 Completed:
