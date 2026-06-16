@@ -30,10 +30,8 @@ import "./site-visual-polish.css";
 const title = "Iboren – Städning i Södertälje och Stockholm";
 const description = "Skicka bokningsförfrågan för hemstädning, flyttstädning, kontorsstädning och fönsterputs med Iboren. Prisindikation, RUT-information och snabb återkoppling i Södertälje och Stockholm.";
 const previewImage = "/og-image.png";
-const serviceAiChatApiBase = "https://service-ai-chat.vercel.app";
-const serviceAiChatWidgetSrc = `${serviceAiChatApiBase}/widget-v2.js?v=59b1`;
-const serviceAiChatGuardSrc = `${serviceAiChatApiBase}/widget-v2-guard.js?v=59b1`;
-const serviceAiChatMobileCssSrc = `${serviceAiChatApiBase}/widget-mobile-polish.css?v=59b1`;
+const serviceChatApiBase = "https://chat.proffera.se";
+const serviceChatWidgetSrc = `${serviceChatApiBase}/widget.js?v=20260616-4`;
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://iboren.se"),
@@ -90,7 +88,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           }}
         />
         <link rel="preload" as="image" href="/cinematic/03-home-after.webp" fetchPriority="high" />
-        <link rel="stylesheet" href={serviceAiChatMobileCssSrc} />
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -115,15 +112,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <BookingNumberUiEnhancer />
           {children}
           <Script
-            id="iboren-service-ai-chat-guard"
-            src={serviceAiChatGuardSrc}
-            strategy="afterInteractive"
-          />
-          <Script
-            id="iboren-service-ai-chat"
-            src={serviceAiChatWidgetSrc}
+            id="iboren-proffera-chat"
+            src={serviceChatWidgetSrc}
             data-client-id="iboren"
-            data-api-base={serviceAiChatApiBase}
+            data-api-base={serviceChatApiBase}
             strategy="afterInteractive"
           />
         </ThemeProvider>
