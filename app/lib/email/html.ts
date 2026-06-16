@@ -16,7 +16,7 @@ export type EmailCta = {
 };
 
 export const EMAIL_LOGO_URL = "https://iboren.se/email/iboren-email-logo.png";
-export const EMAIL_HERO_URL = "https://iboren.se/email/iboren-email-hero-cleaning.png";
+export const EMAIL_HERO_URL = "https://iboren.se/email/iboren-email-hero-cleaning.png?v=20260616-4";
 
 export function escapeHtml(value: unknown) {
   return String(value ?? "")
