@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { generateBookingNumber } from "../../lib/bookingNumber";
 import { checkPersistentRateLimit, getClientIp } from "../../lib/rateLimit";
-import { buildPublicRequestAdminEmail, buildPublicRequestCustomerEmail } from "../../lib/publicRequestEmailText";
+import { buildPublicRequestAdminEmail, buildPublicRequestCustomerEmail, buildPublicRequestCustomerEmailHtml } from "../../lib/publicRequestEmailText";
 
 export const runtime = "nodejs";
 
@@ -260,8 +260,17 @@ function buildCustomerSubject(language: Language) {
   return language === "en" ? "Iboren has received your cleaning request" : "Iboren har tagit emot din städförfrågan";
 }
 
-async function sendEmail(params: { apiKey: string; from: string; to: string; replyTo?: string; subject: string; text: string }) {
-  return fetch(EMAIL_ENDPOINT, { method: "POST", headers: { [AUTH_HEADER]: `${TOKEN_PREFIX} ${params.apiKey}`, "Content-Type": "application/json" }, body: JSON.stringify({ from: params.from, to: [params.to], reply_to: params.replyTo, subject: params.subject, text: params.text }) });
+async function sendEmail(params: { apiKey: string; from: string; to: string; replyTo?: string; subject: string; text: string; html?: string }) {
+  const emailBody = {
+    from: params.from,
+    to: [params.to],
+    reply_to: params.replyTo,
+    subject: params.subject,
+    text: params.text,
+    ...(params.html ? { html: params.html } : {})
+  };
+
+  return fetch(EMAIL_ENDPOINT, { method: "POST", headers: { [AUTH_HEADER]: `${TOKEN_PREFIX} ${params.apiKey}`, "Content-Type": "application/json" }, body: JSON.stringify(emailBody) });
 }
 
 function wait(ms: number) {
@@ -299,6 +308,7 @@ async function sendBookingEmails(params: { payload: NormalizedPublicBooking; id:
   const emailConfig = getEmailConfig();
   const adminText = buildPublicRequestAdminEmail(params.payload, params.id, params.language, params.saved, params.bookingNumber);
   const customerText = buildPublicRequestCustomerEmail(params.payload, params.id, params.language, params.bookingNumber);
+  const customerHtml = buildPublicRequestCustomerEmailHtml(params.payload, params.id, params.language, params.bookingNumber);
 
   if (!emailConfig.configured) {
     console.warn("IBOREN_PUBLIC_REQUEST_EMAIL_NOT_CONFIGURED", { requestId: params.id, bookingNumber: params.bookingNumber, hasApiKey: Boolean(emailConfig.apiKey), hasFromEmail: Boolean(emailConfig.fromEmail) });
@@ -307,7 +317,7 @@ async function sendBookingEmails(params: { payload: NormalizedPublicBooking; id:
   }
 
   const adminEmail = sendEmail({ apiKey: emailConfig.apiKey, from: emailConfig.fromEmail, to: emailConfig.toEmail, replyTo: params.payload.email, subject: buildAdminSubject(params.payload, params.language), text: adminText });
-  const customerEmail = sendEmail({ apiKey: emailConfig.apiKey, from: emailConfig.fromEmail, to: params.payload.email, replyTo: emailConfig.toEmail, subject: buildCustomerSubject(params.language), text: customerText });
+  const customerEmail = sendEmail({ apiKey: emailConfig.apiKey, from: emailConfig.fromEmail, to: params.payload.email, replyTo: emailConfig.toEmail, subject: buildCustomerSubject(params.language), text: customerText, html: customerHtml });
   const emailResult = await Promise.race([Promise.allSettled([adminEmail, customerEmail]), wait(EMAIL_WAIT_LIMIT_MS)]);
 
   if (emailResult === "timeout") {
