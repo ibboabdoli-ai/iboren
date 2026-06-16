@@ -40,6 +40,7 @@ export async function GET() {
           <div style={{ position: "absolute", left: 116, top: 407, width: 968, height: 5, borderRadius: 999, background: "#d6e4da" }} />
           <div style={{ position: "absolute", left: 764, top: 126, width: 36, height: 36, display: "flex", background: "#12372a", transform: "rotate(45deg)", borderRadius: 8 }} />
           <div style={{ position: "absolute", left: 826, top: 180, width: 24, height: 24, display: "flex", background: "#456255", transform: "rotate(45deg)", borderRadius: 7 }} />
+          <div style={{ position: "absolute", left: 104, bottom: 82, display: "flex", alignItems: "center", justifyContent: "center", padding: "20px 34px 22px", borderRadius: 24, background: "#12372a", boxShadow: "0 20px 44px rgba(18,55,42,0.24)", color: "#ffffff", fontSize: 52, fontWeight: 800, letterSpacing: "0.02em", lineHeight: 1 }}>Iboren</div>
         </div>
       </div>
     ),
