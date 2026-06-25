@@ -1,33 +1,7 @@
-# Phase 4F public booking dry-run plan
+# Obsolete accidental file
 
-Goal: allow the mobile app to test public booking payloads safely before real submit is enabled.
+This file was added directly to `main` by mistake during Phase 4F planning.
 
-Safety requirements:
+Do not use this file as the active implementation plan.
 
-- `dryRun=true` validates and normalizes the request.
-- `dryRun=true` must not save to Supabase.
-- `dryRun=true` must not generate a booking number.
-- `dryRun=true` must not send admin or customer email.
-- Real submit path must stay unchanged.
-
-Implementation target:
-
-- `app/api/public-booking-request/route.ts`
-
-Expected dry-run response:
-
-```json
-{
-  "ok": true,
-  "dryRun": true,
-  "saved": false,
-  "emailStatus": {
-    "adminSent": false,
-    "customerSent": false,
-    "configured": false,
-    "dryRun": true
-  },
-  "payload": {},
-  "message": "Dry-run godkänd. Ingen bokning har sparats och inga mejl har skickats."
-}
-```
+A proper dry-run implementation must be done on a separate work branch and pull request after local project path and validation commands are confirmed.
