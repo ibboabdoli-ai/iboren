@@ -43,6 +43,7 @@ type PublicBookingPayload = {
   customerType?: string;
   rutRequested?: boolean | string;
   language?: string;
+  dryRun?: boolean | string;
   website?: string;
   companyWebsite?: string;
   homepage?: string;
@@ -190,6 +191,10 @@ function validatePublicBooking(payload: NormalizedPublicBooking, language: Langu
 
 function hasHoneypotValue(json: PublicBookingPayload) {
   return Boolean(firstFilled(json.website, json.companyWebsite, json.homepage, json.url));
+}
+
+function isDryRunRequest(json: PublicBookingPayload) {
+  return json.dryRun === true || sanitize(json.dryRun).toLowerCase() === "true";
 }
 
 function getAdminClient() {
@@ -350,6 +355,17 @@ export async function POST(request: Request) {
 
     validatePublicBooking(payload, language);
     if (!/^\S+@\S+\.\S+$/.test(payload.email)) return NextResponse.json({ ok: false, message: "Invalid email address." }, { status: 400 });
+
+    if (isDryRunRequest(json)) {
+      return NextResponse.json({
+        ok: true,
+        dryRun: true,
+        saved: false,
+        emailStatus: { adminSent: false, customerSent: false, configured: false, dryRun: true },
+        payload,
+        message: message(language, "Dry-run godkänd. Ingen bokning har sparats och inga mejl har skickats.", "Dry-run approved. No booking was saved and no emails were sent.")
+      });
+    }
 
     const rateLimit = await checkPersistentRateLimit({
       supabase: getAdminClient(),
