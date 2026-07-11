@@ -19,9 +19,42 @@ const frames = [
 ];
 
 const services = [
-  { icon: Home, title: "Hemstädning", href: "/hemstadning", price: "från 255 kr/tim efter RUT", body: "För återkommande eller enstaka städning hemma." },
-  { icon: Truck, title: "Flyttstädning", href: "/flyttstadning", price: "pris efter yta", body: "För flytt, överlämning och tydlig checklista." },
-  { icon: Building2, title: "Kontorsstädning", href: "/kontorsstadning", price: "skräddarsydd offert", body: "För företag, lokaler och återkommande service." }
+  {
+    icon: Home,
+    title: "Hemstädning",
+    href: "/hemstadning",
+    price: "från 255 kr/tim efter RUT",
+    body: "För återkommande eller enstaka städning hemma.",
+    image: "/cinematic/03-home-after.webp",
+    details: ["Kök & badrum", "Dammsugning", "Återkommande tider"]
+  },
+  {
+    icon: Truck,
+    title: "Flyttstädning",
+    href: "/flyttstadning",
+    price: "pris efter yta",
+    body: "För flytt, överlämning och tydlig checklista.",
+    image: "/cinematic/02-home-cleaner.webp",
+    details: ["Tydlig checklista", "Kök & badrum", "Inför överlämning"]
+  },
+  {
+    icon: Building2,
+    title: "Kontorsstädning",
+    href: "/kontorsstadning",
+    price: "skräddarsydd offert",
+    body: "För företag, lokaler och återkommande service.",
+    image: "/cinematic/06-office-after.webp",
+    details: ["Arbetsytor", "Mötesrum", "Gemensamma ytor"]
+  },
+  {
+    icon: CheckCircle2,
+    title: "Fönsterputs",
+    href: "/fonsterputs",
+    price: "skräddarsydd offert",
+    body: "För fönster, glasytor och extra städning.",
+    image: "/cinematic/03-home-after.webp",
+    details: ["Fönster & glasytor", "Hem & kontor", "Tydlig offert"]
+  }
 ];
 
 function getSupabase() {
@@ -97,7 +130,62 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section id="services" className="bg-night py-24 md:py-32"><div className="luxe-container"><p className="text-[11px] font-bold uppercase tracking-[.38em] text-gold">I / Tjänster</p><h2 className="display mt-4 max-w-4xl text-5xl font-normal uppercase leading-[.9] text-porcelain md:text-7xl">Städtjänster för hem och företag.</h2><div className="mt-12 grid gap-5 md:grid-cols-3">{services.map((service, index) => { const Icon = service.icon; return <Link href={service.href} key={service.title} className="iboren-card-glass iboren-card-glass-hover group relative overflow-hidden rounded-[2rem] p-7"><div className="mb-20 flex items-start justify-between"><div className="iboren-gold-accent grid h-14 w-14 place-items-center rounded-full border border-gold/30 bg-gold/10"><Icon size={25} /></div><span className="iboren-gold-accent rounded-full border border-gold/20 px-3 py-1 text-[10px] font-bold uppercase tracking-[.2em]">{service.price}</span></div><p className="iboren-text-muted-dark mb-3 text-[11px] font-bold uppercase tracking-[.28em]">0{index + 1}</p><h3 className="display text-4xl font-normal uppercase text-porcelain">{service.title}</h3><p className="iboren-text-muted-dark mt-4 leading-7">{service.body}</p></Link>; })}</div></div></section>
+      <section id="services" className="bg-night py-24 md:py-32">
+        <div className="luxe-container">
+          <p className="text-[11px] font-bold uppercase tracking-[.38em] text-gold">I / Tjänster</p>
+          <h2 className="display mt-4 max-w-4xl text-5xl font-normal uppercase leading-[.9] text-porcelain md:text-7xl">Städtjänster för hem och företag.</h2>
+          <div className="mt-12 grid gap-5 md:grid-cols-2 xl:grid-cols-4">
+            {services.map((service, index) => {
+              const Icon = service.icon;
+
+              return (
+                <Link
+                  href={service.href}
+                  key={service.title}
+                  className="iboren-card-glass iboren-card-glass-hover group relative min-h-[27rem] overflow-hidden rounded-[2rem] border border-gold/15"
+                >
+                  <img
+                    src={service.image}
+                    alt=""
+                    loading="lazy"
+                    decoding="async"
+                    className="absolute inset-0 h-full w-full object-cover opacity-45 transition duration-700 group-hover:scale-105 group-hover:opacity-60"
+                  />
+                  <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(2,5,4,.12)_0%,rgba(2,5,4,.62)_46%,rgba(2,5,4,.96)_100%)]" />
+                  <div className="relative flex h-full flex-col p-7">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="iboren-gold-accent grid h-14 w-14 shrink-0 place-items-center rounded-full border border-gold/30 bg-night/45 backdrop-blur-sm">
+                        <Icon size={25} />
+                      </div>
+                      <span className="iboren-gold-accent max-w-[10rem] rounded-full border border-gold/20 bg-night/45 px-3 py-1 text-right text-[10px] font-bold uppercase tracking-[.16em] backdrop-blur-sm">
+                        {service.price}
+                      </span>
+                    </div>
+                    <div className="mt-auto">
+                      <div className="mb-5 flex items-center justify-between gap-4">
+                        <p className="iboren-gold-accent text-[11px] font-bold uppercase tracking-[.28em]">0{index + 1}</p>
+                        <span className="text-[10px] font-bold uppercase tracking-[.2em] text-porcelain/72 transition group-hover:text-gold">
+                          Läs mer <span aria-hidden="true">↗</span>
+                        </span>
+                      </div>
+                      <h3 className="display text-4xl font-normal uppercase text-porcelain">{service.title}</h3>
+                      <p className="iboren-text-muted-dark mt-4 max-w-[28ch] leading-7">{service.body}</p>
+                      <ul className="mt-6 grid gap-2 border-t border-porcelain/15 pt-5 text-xs font-semibold text-porcelain/82">
+                        {service.details.map((detail) => (
+                          <li key={detail} className="flex items-center gap-2">
+                            <CheckCircle2 size={14} strokeWidth={2.5} className="shrink-0 text-gold" />
+                            <span>{detail}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+      </section>
 
       <section id="process" className="iboren-section-dark py-24 md:py-32"><div className="luxe-container"><p className="iboren-gold-accent text-[11px] font-bold uppercase tracking-[.38em]">II / Så fungerar det</p><h2 className="display mt-4 max-w-4xl text-5xl font-normal uppercase leading-[.9] text-porcelain md:text-7xl">Fyra steg. En tydlig förfrågan.</h2><div className="mt-12 grid gap-4 md:grid-cols-4">{["Välj tjänst", "Fyll i plats", "Se sammanfattning", "Skicka förfrågan"].map((item, i) => <article key={item} className="process-card iboren-card-glass iboren-card-glass-hover min-w-0 rounded-[2rem] p-6"><div className="mb-10 flex items-center justify-between"><span className="iboren-gold-accent display text-4xl">0{i + 1}</span><CheckCircle2 className="iboren-gold-accent" /></div><h3 className="display font-normal uppercase text-porcelain">{item}</h3><p className="iboren-text-muted-dark mt-4 text-sm leading-7">Ett enkelt steg som gör bokningsunderlaget tydligare och lättare att följa upp.</p></article>)}</div></div></section>
 
