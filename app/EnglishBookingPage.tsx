@@ -2,7 +2,7 @@
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { Building2, CheckCircle2, Home, LocateFixed, Mail, Menu, ShieldCheck, Truck, UserRound, X } from "lucide-react";
+import { BadgeCheck, Building2, Calculator, CheckCircle2, Home, LocateFixed, Mail, MapPin, Menu, ShieldCheck, Truck, UserRound, X } from "lucide-react";
 import { createClient, type User } from "@supabase/supabase-js";
 
 type Option = { value: string; label: string };
@@ -134,6 +134,29 @@ const services = [
     body: "For windows, glass surfaces and add-on cleaning.",
     image: "/service-cards/window-cleaning.webp",
     details: ["Windows & glass", "Homes & offices", "Clear quote"]
+  }
+];
+
+const trustPoints = [
+  {
+    icon: Calculator,
+    title: "Clear price indication",
+    body: "See a price estimate before you send your request."
+  },
+  {
+    icon: ShieldCheck,
+    title: "RUT deduction",
+    body: "For private services when the RUT conditions are fulfilled."
+  },
+  {
+    icon: MapPin,
+    title: "Local focus",
+    body: "We receive requests in Södertälje and Stockholm."
+  },
+  {
+    icon: BadgeCheck,
+    title: "Non-binding request",
+    body: "Time, scope and final price are confirmed before booking."
   }
 ];
 
@@ -428,6 +451,23 @@ export default function EnglishBookingPage() {
                   </div>
                 </Link>
               );
+            })}
+          </div>
+        </div>
+      </section>
+
+      <section aria-labelledby="trust-heading" className="relative overflow-hidden bg-[#111411] py-20 md:py-28">
+        <div aria-hidden="true" className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_8%_20%,rgba(212,165,116,.12),transparent_28%),radial-gradient(circle_at_88%_78%,rgba(212,165,116,.08),transparent_26%)]" />
+        <div className="luxe-container relative">
+          <p className="text-[11px] font-bold uppercase tracking-[.38em] text-gold">II / Why Iboren</p>
+          <div className="mt-4 flex flex-col justify-between gap-5 lg:flex-row lg:items-end">
+            <h2 id="trust-heading" className="display max-w-4xl text-5xl font-normal uppercase leading-[.9] text-porcelain md:text-7xl">Clear from the first step.</h2>
+            <p className="max-w-md text-sm leading-7 text-porcelain/65">A clear basis before anything becomes binding.</p>
+          </div>
+          <div className="mt-12 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            {trustPoints.map((point, index) => {
+              const Icon = point.icon;
+              return <article key={point.title} className="iboren-card-glass iboren-card-glass-hover relative overflow-hidden rounded-[2rem] border border-gold/15 p-6"><div className="mb-10 flex items-start justify-between gap-4"><div className="grid h-12 w-12 place-items-center rounded-full border border-gold/30 bg-gold/10 text-gold"><Icon size={22} /></div><span className="text-[10px] font-bold uppercase tracking-[.24em] text-gold/70">0{index + 1}</span></div><h3 className="display text-3xl font-normal uppercase text-porcelain">{point.title}</h3><p className="mt-4 max-w-[30ch] leading-7 text-porcelain/65">{point.body}</p></article>;
             })}
           </div>
         </div>

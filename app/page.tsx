@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { Building2, CheckCircle2, Home, Truck } from "lucide-react";
+import { BadgeCheck, Building2, Calculator, CheckCircle2, Home, MapPin, ShieldCheck, Truck } from "lucide-react";
 import { createClient, User } from "@supabase/supabase-js";
 import HomeBookingCta from "./components/home/HomeBookingCta";
 import HomeHeader from "./components/home/HomeHeader";
@@ -54,6 +54,29 @@ const services = [
     body: "För fönster, glasytor och extra städning.",
     image: "/service-cards/window-cleaning.webp",
     details: ["Fönster & glasytor", "Hem & kontor", "Tydlig offert"]
+  }
+];
+
+const trustPoints = [
+  {
+    icon: Calculator,
+    title: "Tydlig prisbild",
+    body: "Se en prisuppskattning innan du skickar din förfrågan."
+  },
+  {
+    icon: ShieldCheck,
+    title: "RUT-avdrag",
+    body: "För privata tjänster när villkoren för RUT är uppfyllda."
+  },
+  {
+    icon: MapPin,
+    title: "Lokalt fokus",
+    body: "Vi tar emot förfrågningar i Södertälje och Stockholm."
+  },
+  {
+    icon: BadgeCheck,
+    title: "Ingen bindning direkt",
+    body: "Tid, omfattning och slutpris bekräftas innan bokning."
   }
 ];
 
@@ -187,7 +210,34 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section id="process" className="iboren-section-dark py-24 md:py-32"><div className="luxe-container"><p className="iboren-gold-accent text-[11px] font-bold uppercase tracking-[.38em]">II / Så fungerar det</p><h2 className="display mt-4 max-w-4xl text-5xl font-normal uppercase leading-[.9] text-porcelain md:text-7xl">Fyra steg. En tydlig förfrågan.</h2><div className="mt-12 grid gap-4 md:grid-cols-4">{["Välj tjänst", "Fyll i plats", "Se sammanfattning", "Skicka förfrågan"].map((item, i) => <article key={item} className="process-card iboren-card-glass iboren-card-glass-hover min-w-0 rounded-[2rem] p-6"><div className="mb-10 flex items-center justify-between"><span className="iboren-gold-accent display text-4xl">0{i + 1}</span><CheckCircle2 className="iboren-gold-accent" /></div><h3 className="display font-normal uppercase text-porcelain">{item}</h3><p className="iboren-text-muted-dark mt-4 text-sm leading-7">Ett enkelt steg som gör bokningsunderlaget tydligare och lättare att följa upp.</p></article>)}</div></div></section>
+      <section aria-labelledby="trust-heading" className="relative overflow-hidden bg-[#111411] py-20 md:py-28">
+        <div aria-hidden="true" className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_8%_20%,rgba(212,165,116,.12),transparent_28%),radial-gradient(circle_at_88%_78%,rgba(212,165,116,.08),transparent_26%)]" />
+        <div className="luxe-container relative">
+          <p className="text-[11px] font-bold uppercase tracking-[.38em] text-gold">II / Varför Iboren</p>
+          <div className="mt-4 flex flex-col justify-between gap-5 lg:flex-row lg:items-end">
+            <h2 id="trust-heading" className="display max-w-4xl text-5xl font-normal uppercase leading-[.9] text-porcelain md:text-7xl">Tydligt från första steget.</h2>
+            <p className="max-w-md text-sm leading-7 text-porcelain/65">Du får en klar grund innan något blir bindande.</p>
+          </div>
+          <div className="mt-12 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            {trustPoints.map((point, index) => {
+              const Icon = point.icon;
+
+              return (
+                <article key={point.title} className="iboren-card-glass iboren-card-glass-hover relative overflow-hidden rounded-[2rem] border border-gold/15 p-6">
+                  <div className="mb-10 flex items-start justify-between gap-4">
+                    <div className="grid h-12 w-12 place-items-center rounded-full border border-gold/30 bg-gold/10 text-gold"><Icon size={22} /></div>
+                    <span className="text-[10px] font-bold uppercase tracking-[.24em] text-gold/70">0{index + 1}</span>
+                  </div>
+                  <h3 className="display text-3xl font-normal uppercase text-porcelain">{point.title}</h3>
+                  <p className="mt-4 max-w-[30ch] leading-7 text-porcelain/65">{point.body}</p>
+                </article>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      <section id="process" className="iboren-section-dark py-24 md:py-32"><div className="luxe-container"><p className="iboren-gold-accent text-[11px] font-bold uppercase tracking-[.38em]">III / Så fungerar det</p><h2 className="display mt-4 max-w-4xl text-5xl font-normal uppercase leading-[.9] text-porcelain md:text-7xl">Fyra steg. En tydlig förfrågan.</h2><div className="mt-12 grid gap-4 md:grid-cols-4">{["Välj tjänst", "Fyll i plats", "Se sammanfattning", "Skicka förfrågan"].map((item, i) => <article key={item} className="process-card iboren-card-glass iboren-card-glass-hover min-w-0 rounded-[2rem] p-6"><div className="mb-10 flex items-center justify-between"><span className="iboren-gold-accent display text-4xl">0{i + 1}</span><CheckCircle2 className="iboren-gold-accent" /></div><h3 className="display font-normal uppercase text-porcelain">{item}</h3><p className="iboren-text-muted-dark mt-4 text-sm leading-7">Ett enkelt steg som gör bokningsunderlaget tydligare och lättare att följa upp.</p></article>)}</div></div></section>
 
       <HomeBookingCta user={user} />
 
