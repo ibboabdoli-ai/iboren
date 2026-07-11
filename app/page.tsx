@@ -25,7 +25,7 @@ const services = [
     href: "/hemstadning",
     price: "från 255 kr/tim efter RUT",
     body: "För återkommande eller enstaka städning hemma.",
-    image: "/cinematic/03-home-after.webp",
+    image: "/service-cards/home-cleaning.webp",
     details: ["Kök & badrum", "Dammsugning", "Återkommande tider"]
   },
   {
@@ -34,7 +34,7 @@ const services = [
     href: "/flyttstadning",
     price: "pris efter yta",
     body: "För flytt, överlämning och tydlig checklista.",
-    image: "/cinematic/02-home-cleaner.webp",
+    image: "/service-cards/move-out-cleaning.webp",
     details: ["Tydlig checklista", "Kök & badrum", "Inför överlämning"]
   },
   {
@@ -43,7 +43,7 @@ const services = [
     href: "/kontorsstadning",
     price: "skräddarsydd offert",
     body: "För företag, lokaler och återkommande service.",
-    image: "/cinematic/06-office-after.webp",
+    image: "/service-cards/office-cleaning.webp",
     details: ["Arbetsytor", "Mötesrum", "Gemensamma ytor"]
   },
   {
@@ -52,7 +52,7 @@ const services = [
     href: "/fonsterputs",
     price: "skräddarsydd offert",
     body: "För fönster, glasytor och extra städning.",
-    image: "/cinematic/03-home-after.webp",
+    image: "/service-cards/window-cleaning.webp",
     details: ["Fönster & glasytor", "Hem & kontor", "Tydlig offert"]
   }
 ];
