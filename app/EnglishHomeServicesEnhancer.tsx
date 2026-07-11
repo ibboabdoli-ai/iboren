@@ -10,7 +10,7 @@ export default function EnglishHomeServicesEnhancer() {
   const pathname = usePathname() || "";
 
   useEffect(() => {
-    if (pathname !== "/en" && pathname !== "/") return;
+    if (pathname !== "/en") return;
 
     const grid = document.querySelector<HTMLElement>("#services .grid");
     if (!grid) return;
