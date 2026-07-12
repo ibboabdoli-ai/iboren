@@ -34,8 +34,10 @@ export default function FonsterputsPage() {
   return (
     <main className="service-page-dark min-h-screen">
       <FaqStructuredData items={faq} />
-      <section className="service-hero relative overflow-hidden py-20 md:py-28">
-        <div className="luxe-container relative grid gap-10 md:grid-cols-[.95fr_1.05fr] md:items-center">
+      <section className="service-hero relative isolate overflow-hidden py-20 md:py-28">
+        <img src="/service-heroes/window-cleaning.webp" alt="" aria-hidden="true" className="absolute inset-0 h-full w-full object-cover" />
+        <div aria-hidden="true" className="absolute inset-0 bg-[linear-gradient(90deg,rgba(24,25,23,.95)_0%,rgba(24,25,23,.84)_43%,rgba(24,25,23,.48)_100%)]" />
+        <div className="luxe-container relative z-10 grid gap-10 md:grid-cols-[.95fr_1.05fr] md:items-center">
           <div>
             <Link href="/" className="service-back-link mb-10 inline-flex text-sm font-bold">← Tillbaka</Link>
             <p className="service-eyebrow text-xs font-black uppercase tracking-[.32em]">Iboren Services</p>
