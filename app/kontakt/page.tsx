@@ -5,7 +5,13 @@ import { Mail, MapPin, Clock, ArrowRight, CheckCircle2, Phone } from "lucide-rea
 export const metadata: Metadata = {
   title: "Kontakt – Iboren Städning i Södertälje och Stockholm",
   description: "Kontakta Iboren för hemstädning, flyttstädning, kontorsstädning och fönsterputs i Södertälje och Stockholm.",
-  alternates: { canonical: "https://iboren.se/kontakt" }
+  alternates: {
+    canonical: "https://iboren.se/kontakt",
+    languages: {
+      sv: "https://iboren.se/kontakt",
+      en: "https://iboren.se/en/contact",
+    },
+  }
 };
 
 export default function KontaktPage() {
