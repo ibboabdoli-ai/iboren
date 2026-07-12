@@ -4,7 +4,7 @@ import Link from "next/link";
 export const metadata: Metadata = {
   title: "Städguide – Iboren",
   description: "Guider om städning, pris, RUT-avdrag och bokning.",
-  alternates: { canonical: "https://iboren.se/blogg" }
+  alternates: { canonical: "https://iboren.se/blogg", languages: { sv: "https://iboren.se/blogg", en: "https://iboren.se/en/blog" } }
 };
 
 const posts = [
