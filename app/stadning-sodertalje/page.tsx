@@ -5,7 +5,7 @@ import FaqStructuredData from "../FaqStructuredData";
 
 export const metadata: Metadata = {
   title: "Städning i Södertälje – Hemstädning, flyttstädning & kontor | Iboren",
-  description: "Boka städning i Södertälje med Iboren. Skapa en tydlig förfrågan för hemstädning, flyttstädning, kontorsstädning och fönsterputs.",
+  description: "Städning i Södertälje med tydlig prisindikation. Skicka en förfrågan för hemstädning, flyttstädning, kontorsstädning eller fönsterputs med information om RUT-avdrag.",
   keywords: ["städning Södertälje", "hemstädning Södertälje", "flyttstädning Södertälje", "städfirma Södertälje", "kontorsstädning Södertälje", "fönsterputs Södertälje"],
   alternates: {
     canonical: "https://iboren.se/stadning-sodertalje",
@@ -16,7 +16,7 @@ export const metadata: Metadata = {
   },
   openGraph: {
     title: "Städning i Södertälje – Hemstädning, flyttstädning & kontor | Iboren",
-    description: "Boka städning i Södertälje med Iboren. Skapa en tydlig förfrågan för hemstädning, flyttstädning, kontorsstädning och fönsterputs.",
+    description: "Städning i Södertälje med tydlig prisindikation för hemstädning, flyttstädning, kontorsstädning och fönsterputs.",
     url: "https://iboren.se/stadning-sodertalje",
   },
 };
@@ -73,6 +73,11 @@ export default function StadningSodertaljePage() {
 
       <section className="iboren-page-dark py-16">
         <div className="luxe-container max-w-4xl">
+          <div className="iboren-card-glass mb-12 rounded-[2rem] p-7">
+            <p className="iboren-gold-accent text-[11px] font-bold uppercase tracking-[.38em]">Pris och RUT i Södertälje</p>
+            <h2 className="display mt-3 text-4xl font-bold text-porcelain">Se prisindikationen innan du skickar.</h2>
+            <p className="iboren-text-muted-dark mt-4 leading-8">För privat städning visas pris före och efter RUT samt uppskattad tid. Alla privatpriser visas inklusive moms. Iboren bekräftar omfattning, tid och slutpris innan förfrågan blir bindande.</p>
+          </div>
           <p className="iboren-gold-accent text-[11px] font-bold uppercase tracking-[.38em]">FAQ</p>
           <h2 className="display mt-3 text-4xl font-bold text-porcelain md:text-6xl">Vanliga frågor om städning i Södertälje.</h2>
           <div className="mt-10 grid gap-4">
