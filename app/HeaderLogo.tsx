@@ -346,6 +346,7 @@ function createFallbackHeader() {
   const { isEnglish, svHref, enHref } = getLanguageState();
   const navItems = getNavItems(isEnglish);
   const requestHref = isEnglish ? "/en#booking" : "/#booking";
+  const loginHref = isEnglish ? "/en/login" : "/login";
 
   const header = document.createElement("header");
   header.id = "iboren-global-nav";
@@ -365,7 +366,7 @@ function createFallbackHeader() {
       <div class="iboren-fallback-actions flex items-center gap-3 text-sm font-black uppercase tracking-[.12em]">
         <a href="${svHref}" class="rounded-full px-3 py-2 ${!isEnglish ? "bg-gold text-night" : "text-porcelain/72 hover:text-gold"}">SV</a>
         <a href="${enHref}" class="rounded-full px-3 py-2 ${isEnglish ? "bg-gold text-night" : "text-porcelain/72 hover:text-gold"}">EN</a>
-        <a href="/login" class="hidden rounded-full border border-gold/30 px-4 py-2 text-porcelain/80 hover:text-gold sm:inline-flex">${isEnglish ? "Log in" : "Logga in"}</a>
+        <a href="${loginHref}" class="hidden rounded-full border border-gold/30 px-4 py-2 text-porcelain/80 hover:text-gold sm:inline-flex">${isEnglish ? "Log in" : "Logga in"}</a>
         <a href="${requestHref}" class="iboren-fallback-cta hidden rounded-full bg-gold px-4 py-2 text-night sm:inline-flex">${isEnglish ? "Send request" : "Skicka förfrågan"}</a>
         <button type="button" class="iboren-menu-button" aria-label="${isEnglish ? "Open menu" : "Öppna meny"}" aria-controls="iboren-global-menu" aria-expanded="false"><span class="iboren-menu-line"></span></button>
       </div>
@@ -373,7 +374,7 @@ function createFallbackHeader() {
     <div id="iboren-global-menu" hidden>
       <div class="iboren-mobile-menu-inner">
         ${navItems.map(([label, href]) => `<a href="${href}">${label}<span>→</span></a>`).join("")}
-        <a href="/login">${isEnglish ? "Log in" : "Logga in"}<span>→</span></a>
+        <a href="${loginHref}">${isEnglish ? "Log in" : "Logga in"}<span>→</span></a>
         <a href="${requestHref}" class="iboren-mobile-menu-cta">${isEnglish ? "Send request" : "Skicka förfrågan"}</a>
       </div>
     </div>

@@ -365,7 +365,7 @@ export default function EnglishProfilePage() {
           <h1 className="display text-5xl font-bold text-burgundy">Profile</h1>
           <p className="mt-4 leading-8 text-ink/70">You need to log in to see your profile and your booking requests.</p>
           {message && <p className="mt-4 rounded-2xl bg-burgundy/10 p-4 text-sm text-burgundy">{message}</p>}
-          <Link href="/login" className="btn-primary mt-7">Log in</Link>
+          <Link href="/en/login" className="btn-primary mt-7">Log in</Link>
         </section>
       </main>
     );
