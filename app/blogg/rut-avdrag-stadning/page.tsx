@@ -4,7 +4,7 @@ import Link from "next/link";
 export const metadata: Metadata = {
   title: "RUT-avdrag för städning – Iboren",
   description: "Kort guide om RUT-avdrag för städning och hur det påverkar priset.",
-  alternates: { canonical: "https://iboren.se/blogg/rut-avdrag-stadning" }
+  alternates: { canonical: "https://iboren.se/blogg/rut-avdrag-stadning", languages: { sv: "https://iboren.se/blogg/rut-avdrag-stadning", en: "https://iboren.se/en/blog/rut-deduction-cleaning" } }
 };
 
 export default function Page() {

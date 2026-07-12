@@ -45,6 +45,38 @@ const officeFaq: FaqItem[] = [
 ];
 
 const serviceContent: Record<string, PageContent> = {
+  "blog": {
+    title: "Cleaning guides",
+    eyebrow: "Guides",
+    urlPath: "/en/blog",
+    description: "Practical guides about cleaning, prices, RUT deductions and booking requests.",
+    points: ["Home cleaning price guide", "RUT deduction information", "Move-out cleaning checklist"],
+    included: ["Home cleaning prices: what affects the estimate", "RUT deductions for eligible private cleaning services", "A practical checklist before requesting move-out cleaning"]
+  },
+  "blog/home-cleaning-prices": {
+    title: "What does home cleaning cost?",
+    eyebrow: "Price guide",
+    urlPath: "/en/blog/home-cleaning-prices",
+    description: "A short guide to the factors that affect the price of home cleaning and how RUT deductions can affect the customer price.",
+    points: ["Size, rooms and bathrooms", "Frequency and add-ons", "RUT information before confirmation"],
+    included: ["The estimate is affected by the home size, number of bathrooms, pets and selected add-ons", "Recurring cleaning and the requested service scope can affect time and price", "RUT may reduce the labour cost for eligible private customers when conditions are fulfilled"]
+  },
+  "blog/rut-deduction-cleaning": {
+    title: "RUT deduction for cleaning",
+    eyebrow: "RUT guide",
+    urlPath: "/en/blog/rut-deduction-cleaning",
+    description: "A short guide to RUT deductions for cleaning and how they can affect the price indication.",
+    points: ["Eligible private cleaning services", "Labour cost and customer conditions", "Final price confirmed before work starts"],
+    included: ["The price indication can show the total price and estimated customer price after RUT when relevant", "RUT depends on the customer's conditions and the type of service", "The final price is confirmed before the work starts"]
+  },
+  "blog/move-out-checklist": {
+    title: "Move-out cleaning checklist",
+    eyebrow: "Checklist",
+    urlPath: "/en/blog/move-out-checklist",
+    description: "A practical checklist of the details that help Iboren review a move-out cleaning request.",
+    points: ["Size in square metres", "Rooms, bathrooms and add-ons", "Date and contact details"],
+    included: ["Property size in square metres", "Number of rooms and bathrooms", "Preferred date and selected add-ons", "Address and contact details for a clear request"]
+  },
   "jobs": {
     title: "Work with Iboren",
     eyebrow: "Jobs",
@@ -207,6 +239,10 @@ export function generateMetadata({ params }: { params: { slug: string[] } }): Me
   const content = getContent(slug);
   const canonical = `https://iboren.se/en/${slug}`;
   const swedishCounterparts: Record<string, string> = {
+    "blog": "https://iboren.se/blogg",
+    "blog/home-cleaning-prices": "https://iboren.se/blogg/vad-kostar-hemstadning",
+    "blog/rut-deduction-cleaning": "https://iboren.se/blogg/rut-avdrag-stadning",
+    "blog/move-out-checklist": "https://iboren.se/blogg/checklista-infor-flytt",
     "cleaning-sodertalje": "https://iboren.se/stadning-sodertalje",
     "cleaning-stockholm": "https://iboren.se/stadning-stockholm",
     "home-cleaning-stockholm": "https://iboren.se/hemstadning-stockholm",
