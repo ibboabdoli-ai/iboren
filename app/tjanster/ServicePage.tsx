@@ -32,8 +32,10 @@ export default function ServicePage({ service }: { service: ServicePageData }) {
 
   return (
     <main className="service-page-dark min-h-screen">
-      <section className="service-hero relative overflow-hidden py-20 md:py-28">
-        <div className="luxe-container relative grid gap-10 md:grid-cols-[1fr_.9fr] md:items-start">
+      <section className="service-hero relative isolate overflow-hidden py-20 md:py-28">
+        {heroImage && <img src={heroImage.src} alt="" aria-hidden="true" className="absolute inset-0 h-full w-full object-cover" />}
+        {heroImage && <div aria-hidden="true" className="absolute inset-0 bg-[linear-gradient(90deg,rgba(24,25,23,.78)_0%,rgba(24,25,23,.54)_46%,rgba(24,25,23,.18)_100%)]" />}
+        <div className="luxe-container relative z-10 grid gap-10 md:grid-cols-[1fr_.9fr] md:items-start">
           <div>
             <Link href="/tjanster" className="service-back-link mb-10 inline-flex text-sm font-bold">← Alla tjänster</Link>
             <p className="service-eyebrow text-xs font-black uppercase tracking-[.32em]">Tjänst</p>
@@ -46,7 +48,6 @@ export default function ServicePage({ service }: { service: ServicePageData }) {
           </div>
 
           <aside className="service-panel iboren-card-glass iboren-card-glass-hover rounded-[2.5rem] p-8 shadow-luxe backdrop-blur-xl">
-            {heroImage && <img src={heroImage.src} alt={heroImage.alt} className="mb-8 h-52 w-full rounded-[1.5rem] object-cover shadow-soft md:h-56" />}
             <div className="service-icon mb-10 grid h-16 w-16 place-items-center rounded-full"><BadgePercent size={30} /></div>
             <h2 className="display text-4xl font-bold">{isOfficeCleaning ? "Offert och upplägg" : "Pris och RUT"}</h2>
             <p className="mt-5 leading-8">{service.priceText}</p>
