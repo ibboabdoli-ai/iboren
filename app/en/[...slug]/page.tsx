@@ -45,6 +45,9 @@ const officeFaq: FaqItem[] = [
 ];
 
 const serviceContent: Record<string, PageContent> = {
+  "deep-cleaning": { title: "Deep cleaning", eyebrow: "Service", service: "Deep cleaning", urlPath: "/en/deep-cleaning", description: "Deep cleaning for homes that need a more thorough cleaning before the next step.", points: ["Clear request before confirmation", "Scope based on home size and needs", "Suitable as a one-time service"], included: ["A more thorough cleaning based on agreed scope", "Details such as size, rooms and special needs collected in the request", "Final time and price confirmed before work starts"] },
+  "construction-cleaning": { title: "Construction cleaning", eyebrow: "Service", service: "Construction cleaning", urlPath: "/en/construction-cleaning", description: "Construction cleaning for spaces after renovation, project work or building activity.", points: ["For renovated or project spaces", "Clear notes for dust, surfaces and access", "Quote confirmed before work starts"], included: ["Cleaning scope agreed after project or renovation work", "Area, access and special requirements collected in the request", "Final price confirmed before the service starts"] },
+  "viewing-cleaning": { title: "Viewing cleaning", eyebrow: "Service", service: "Viewing cleaning", urlPath: "/en/viewing-cleaning", description: "Viewing cleaning before property viewings, photography or sale.", points: ["For viewings and photography", "Clear scope before confirmation", "Practical date and property details collected"], included: ["Cleaning based on the agreed viewing scope", "Property details and preferred date collected in the request", "Final time and price confirmed before work starts"] },
   "blog": {
     title: "Cleaning guides",
     eyebrow: "Guides",
