@@ -4,7 +4,7 @@ import ServicePage from "../ServicePage";
 export const metadata: Metadata = {
   title: "Byggstädning | Iboren",
   description: "Byggstädning i Södertälje och Stockholm efter renovering eller projekt.",
-  alternates: { canonical: "https://iboren.se/tjanster/byggstadning" }
+  alternates: { canonical: "https://iboren.se/tjanster/byggstadning", languages: { sv: "https://iboren.se/tjanster/byggstadning", en: "https://iboren.se/en/construction-cleaning" } }
 };
 
 export default function Page() {
