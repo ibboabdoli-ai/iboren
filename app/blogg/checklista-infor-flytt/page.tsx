@@ -4,7 +4,7 @@ import Link from "next/link";
 export const metadata: Metadata = {
   title: "Checklista inför flytt – Iboren",
   description: "Praktisk checklista inför bokning av städning vid flytt.",
-  alternates: { canonical: "https://iboren.se/blogg/checklista-infor-flytt" }
+  alternates: { canonical: "https://iboren.se/blogg/checklista-infor-flytt", languages: { sv: "https://iboren.se/blogg/checklista-infor-flytt", en: "https://iboren.se/en/blog/move-out-checklist" } }
 };
 
 const items = ["Yta i kvm", "Antal rum", "Antal badrum", "Datum", "Tillval", "Kontaktuppgifter"];
