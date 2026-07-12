@@ -7,7 +7,13 @@ export const metadata: Metadata = {
   title: "Städning i Södertälje – Hemstädning, flyttstädning & kontor | Iboren",
   description: "Boka städning i Södertälje med Iboren. Skapa en tydlig förfrågan för hemstädning, flyttstädning, kontorsstädning och fönsterputs.",
   keywords: ["städning Södertälje", "hemstädning Södertälje", "flyttstädning Södertälje", "städfirma Södertälje", "kontorsstädning Södertälje", "fönsterputs Södertälje"],
-  alternates: { canonical: "https://iboren.se/stadning-sodertalje" },
+  alternates: {
+    canonical: "https://iboren.se/stadning-sodertalje",
+    languages: {
+      sv: "https://iboren.se/stadning-sodertalje",
+      en: "https://iboren.se/en/cleaning-sodertalje",
+    },
+  },
   openGraph: {
     title: "Städning i Södertälje – Hemstädning, flyttstädning & kontor | Iboren",
     description: "Boka städning i Södertälje med Iboren. Skapa en tydlig förfrågan för hemstädning, flyttstädning, kontorsstädning och fönsterputs.",
