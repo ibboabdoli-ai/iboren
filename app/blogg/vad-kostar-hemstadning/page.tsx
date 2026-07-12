@@ -4,7 +4,7 @@ import Link from "next/link";
 export const metadata: Metadata = {
   title: "Vad kostar hemstädning? – Iboren",
   description: "Guide om vad som påverkar priset för hemstädning och hur RUT-avdrag påverkar kundpriset.",
-  alternates: { canonical: "https://iboren.se/blogg/vad-kostar-hemstadning" }
+  alternates: { canonical: "https://iboren.se/blogg/vad-kostar-hemstadning", languages: { sv: "https://iboren.se/blogg/vad-kostar-hemstadning", en: "https://iboren.se/en/blog/home-cleaning-prices" } }
 };
 
 export default function Page() {
