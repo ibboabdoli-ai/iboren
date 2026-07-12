@@ -5,7 +5,7 @@ import { ArrowRight, Building2, CircleHelp, Home, Sparkles, Truck, Waves } from 
 export const metadata: Metadata = {
   title: "Tjänster – Städning i Södertälje och Stockholm | Iboren",
   description: "Se Iborens städtjänster: hemstädning, flyttstädning, kontorsstädning, fönsterputs, storstädning, byggstädning och visningsstädning.",
-  alternates: { canonical: "https://iboren.se/tjanster" }
+  alternates: { canonical: "https://iboren.se/tjanster", languages: { sv: "https://iboren.se/tjanster", en: "https://iboren.se/en/services" } }
 };
 
 const services = [
