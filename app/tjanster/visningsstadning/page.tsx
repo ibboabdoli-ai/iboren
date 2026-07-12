@@ -4,7 +4,7 @@ import ServicePage from "../ServicePage";
 export const metadata: Metadata = {
   title: "Visningsstädning | Iboren",
   description: "Visningsstädning i Södertälje och Stockholm inför försäljning eller fotografering.",
-  alternates: { canonical: "https://iboren.se/tjanster/visningsstadning" }
+  alternates: { canonical: "https://iboren.se/tjanster/visningsstadning", languages: { sv: "https://iboren.se/tjanster/visningsstadning", en: "https://iboren.se/en/viewing-cleaning" } }
 };
 
 export default function Page() {
