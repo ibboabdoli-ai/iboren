@@ -9,13 +9,25 @@ const svToEn: Record<string, string> = {
   "/jobba-hos-oss": "/en/jobs",
   "/om-iboren": "/en/about",
   "/om-oss": "/en/about",
+  "/kontakt": "/en/contact",
+  "/blogg": "/en/blog",
+  "/blogg/vad-kostar-hemstadning": "/en/blog/home-cleaning-prices",
+  "/blogg/rut-avdrag-stadning": "/en/blog/rut-deduction-cleaning",
+  "/blogg/checklista-infor-flytt": "/en/blog/move-out-checklist",
   "/privacy": "/en/privacy",
   "/terms": "/en/terms",
+  "/login": "/en/login",
+  "/boka-utan-konto": "/en/boka-utan-konto",
+  "/profile": "/en/profile",
   "/cleaner": "/en/cleaner",
   "/hemstadning": "/en/home-cleaning",
   "/flyttstadning": "/en/move-out-cleaning",
   "/kontorsstadning": "/en/office-cleaning",
   "/fonsterputs": "/en/window-cleaning",
+  "/tjanster": "/en/services",
+  "/tjanster/storstadning": "/en/deep-cleaning",
+  "/tjanster/byggstadning": "/en/construction-cleaning",
+  "/tjanster/visningsstadning": "/en/viewing-cleaning",
   "/hemstadning-sodertalje": "/en/home-cleaning-sodertalje",
   "/flyttstadning-sodertalje": "/en/move-out-cleaning-sodertalje",
   "/fonsterputs-sodertalje": "/en/window-cleaning-sodertalje",
@@ -24,6 +36,7 @@ const svToEn: Record<string, string> = {
   "/flyttstadning-stockholm": "/en/move-out-cleaning-stockholm",
   "/fonsterputs-stockholm": "/en/window-cleaning-stockholm",
   "/kontorsstadning-stockholm": "/en/office-cleaning-stockholm",
+  "/stadning-sodertalje": "/en/cleaning-sodertalje",
   "/stadning-stockholm": "/en/cleaning-stockholm"
 };
 
@@ -31,7 +44,10 @@ const tjansterToEn: Record<string, string> = {
   hemstadning: "/en/home-cleaning",
   flyttstadning: "/en/move-out-cleaning",
   kontorsstadning: "/en/office-cleaning",
-  fonsterputs: "/en/window-cleaning"
+  fonsterputs: "/en/window-cleaning",
+  storstadning: "/en/deep-cleaning",
+  byggstadning: "/en/construction-cleaning",
+  visningsstadning: "/en/viewing-cleaning"
 };
 
 const enToSv = Object.fromEntries(Object.entries(svToEn).map(([sv, en]) => [en, sv]));

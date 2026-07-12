@@ -4,7 +4,7 @@ import ServicePage from "../ServicePage";
 export const metadata: Metadata = {
   title: "Storstädning | Iboren",
   description: "Storstädning i Södertälje och Stockholm för hem som behöver en mer omfattande städning.",
-  alternates: { canonical: "https://iboren.se/tjanster/storstadning" }
+  alternates: { canonical: "https://iboren.se/tjanster/storstadning", languages: { sv: "https://iboren.se/tjanster/storstadning", en: "https://iboren.se/en/deep-cleaning" } }
 };
 
 export default function Page() {

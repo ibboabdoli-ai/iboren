@@ -242,6 +242,9 @@ export function generateMetadata({ params }: { params: { slug: string[] } }): Me
   const content = getContent(slug);
   const canonical = `https://iboren.se/en/${slug}`;
   const swedishCounterparts: Record<string, string> = {
+    "deep-cleaning": "https://iboren.se/tjanster/storstadning",
+    "construction-cleaning": "https://iboren.se/tjanster/byggstadning",
+    "viewing-cleaning": "https://iboren.se/tjanster/visningsstadning",
     "blog": "https://iboren.se/blogg",
     "blog/home-cleaning-prices": "https://iboren.se/blogg/vad-kostar-hemstadning",
     "blog/rut-deduction-cleaning": "https://iboren.se/blogg/rut-avdrag-stadning",
@@ -281,5 +284,16 @@ export function generateMetadata({ params }: { params: { slug: string[] } }): Me
 export default function Page({ params }: { params: { slug: string[] } }) {
   const slug = slugFromParams(params);
   const content = getContent(slug);
-  return <EnglishInfoPage {...content} />;
+  const swedishHref = ({
+    "deep-cleaning": "/tjanster/storstadning",
+    "construction-cleaning": "/tjanster/byggstadning",
+    "viewing-cleaning": "/tjanster/visningsstadning",
+    "blog": "/blogg",
+    "blog/home-cleaning-prices": "/blogg/vad-kostar-hemstadning",
+    "blog/rut-deduction-cleaning": "/blogg/rut-avdrag-stadning",
+    "blog/move-out-checklist": "/blogg/checklista-infor-flytt",
+    "cleaning-sodertalje": "/stadning-sodertalje",
+    "home-cleaning-stockholm": "/hemstadning-stockholm",
+  } as Record<string, string>)[slug] || "/";
+  return <EnglishInfoPage {...content} swedishHref={swedishHref} />;
 }
