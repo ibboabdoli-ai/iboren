@@ -44,7 +44,6 @@ export default function FlyttstadningPage() {
             <div className="mt-8 flex flex-col gap-3 sm:flex-row"><Link href="/boka-utan-konto" className="btn-primary">Starta förfrågan <ArrowRight size={18} /></Link><Link href="/stadning-sodertalje" className="btn-secondary">Flyttstädning Södertälje</Link></div>
           </div>
           <aside className="service-panel rounded-[2.5rem] p-8 shadow-luxe">
-            <img src="/service-heroes/move-out-cleaning.webp" alt="Tom och välstädad bostad inför överlämning" className="mb-8 h-52 w-full rounded-[1.5rem] object-cover shadow-soft" />
             <div className="mb-12 flex items-center justify-between"><div className="service-icon grid h-16 w-16 place-items-center rounded-full"><Truck size={31} /></div><span className="rounded-full border px-4 py-2 text-xs font-bold uppercase tracking-[.24em]">Move-out</span></div>
             <h2 className="display text-4xl font-bold">Tydligt underlag inför flyttstädning.</h2>
             <div className="mt-7 grid gap-4">{checklist.map((item) => <p key={item} className="flex gap-3"><CheckCircle2 className="mt-1 h-5 w-5 shrink-0" /> {item}</p>)}</div>

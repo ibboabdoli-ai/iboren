@@ -44,7 +44,6 @@ export default function KontorsstadningPage() {
             <div className="mt-8 flex flex-col gap-3 sm:flex-row"><Link href="/priser#pris-kalkylator" className="btn-primary">Få pris direkt <ArrowRight size={18} /></Link><Link href="/boka-utan-konto" className="btn-secondary">Skicka förfrågan</Link></div>
           </div>
           <div className="service-panel rounded-[2.5rem] p-8 shadow-luxe">
-            <img src="/service-heroes/office-cleaning.webp" alt="Rent och organiserat kontor" className="mb-8 h-52 w-full rounded-[1.5rem] object-cover shadow-soft" />
             <div className="mb-12 flex items-center justify-between"><div className="service-icon grid h-16 w-16 place-items-center rounded-full"><Building2 size={31} /></div><span className="rounded-full border px-4 py-2 text-xs font-bold uppercase tracking-[.24em]">B2B</span></div>
             <h2 className="display text-4xl font-bold">Tydligt serviceunderlag för företag.</h2>
             <div className="mt-7 grid gap-4">{points.map((item) => <p key={item} className="flex gap-3"><CheckCircle2 className="mt-1 h-5 w-5 shrink-0" /> {item}</p>)}</div>

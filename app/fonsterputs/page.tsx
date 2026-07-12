@@ -47,7 +47,6 @@ export default function FonsterputsPage() {
             </div>
           </div>
           <div className="service-panel rounded-[2.5rem] p-8 shadow-luxe backdrop-blur-xl">
-            <img src="/service-heroes/window-cleaning.webp" alt="Klara fönster i ett ljust rum" className="mb-8 h-52 w-full rounded-[1.5rem] object-cover shadow-soft" />
             <div className="mb-16 flex items-center justify-between">
               <div className="service-icon grid h-16 w-16 place-items-center rounded-full"><Waves size={30} /></div>
               <span className="rounded-full border px-4 py-2 text-xs font-bold uppercase tracking-[.24em]">Clear finish</span>

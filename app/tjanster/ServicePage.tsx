@@ -11,6 +11,13 @@ export type ServicePageData = {
 
 export default function ServicePage({ service }: { service: ServicePageData }) {
   const isOfficeCleaning = service.title === "Kontorsstädning";
+  const heroImages: Record<string, { src: string; alt: string }> = {
+    Hemstädning: { src: "/service-heroes/home-cleaning.webp", alt: "Ljust och välstädat hem" },
+    Flyttstädning: { src: "/service-heroes/move-out-cleaning.webp", alt: "Tom och välstädad bostad inför överlämning" },
+    Kontorsstädning: { src: "/service-heroes/office-cleaning.webp", alt: "Rent och organiserat kontor" },
+    Fönsterputs: { src: "/service-heroes/window-cleaning.webp", alt: "Klara fönster i ett ljust rum" }
+  };
+  const heroImage = heroImages[service.title];
   const trustItems = isOfficeCleaning
     ? [
         { title: "Tydlig offert", text: "Vi anpassar upplägg, tider och omfattning efter lokalen och återkommer med en tydlig offert." },
@@ -39,6 +46,7 @@ export default function ServicePage({ service }: { service: ServicePageData }) {
           </div>
 
           <aside className="service-panel iboren-card-glass iboren-card-glass-hover rounded-[2.5rem] p-8 shadow-luxe backdrop-blur-xl">
+            {heroImage && <img src={heroImage.src} alt={heroImage.alt} className="mb-8 h-52 w-full rounded-[1.5rem] object-cover shadow-soft md:h-56" />}
             <div className="service-icon mb-10 grid h-16 w-16 place-items-center rounded-full"><BadgePercent size={30} /></div>
             <h2 className="display text-4xl font-bold">{isOfficeCleaning ? "Offert och upplägg" : "Pris och RUT"}</h2>
             <p className="mt-5 leading-8">{service.priceText}</p>
