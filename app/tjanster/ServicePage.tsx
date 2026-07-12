@@ -11,6 +11,13 @@ export type ServicePageData = {
 
 export default function ServicePage({ service }: { service: ServicePageData }) {
   const isOfficeCleaning = service.title === "Kontorsstädning";
+  const heroImages: Record<string, { src: string; alt: string }> = {
+    Hemstädning: { src: "/service-heroes/home-cleaning.webp", alt: "Ljust och välstädat hem" },
+    Flyttstädning: { src: "/service-heroes/move-out-cleaning.webp", alt: "Tom och välstädad bostad inför överlämning" },
+    Kontorsstädning: { src: "/service-heroes/office-cleaning.webp", alt: "Rent och organiserat kontor" },
+    Fönsterputs: { src: "/service-heroes/window-cleaning.webp", alt: "Klara fönster i ett ljust rum" }
+  };
+  const heroImage = heroImages[service.title];
   const trustItems = isOfficeCleaning
     ? [
         { title: "Tydlig offert", text: "Vi anpassar upplägg, tider och omfattning efter lokalen och återkommer med en tydlig offert." },
@@ -25,8 +32,10 @@ export default function ServicePage({ service }: { service: ServicePageData }) {
 
   return (
     <main className="service-page-dark min-h-screen">
-      <section className="service-hero relative overflow-hidden py-20 md:py-28">
-        <div className="luxe-container relative grid gap-10 md:grid-cols-[1fr_.9fr] md:items-start">
+      <section className="service-hero relative isolate overflow-hidden py-20 md:py-28">
+        {heroImage && <img src={heroImage.src} alt="" aria-hidden="true" className="absolute inset-0 h-full w-full object-cover" />}
+        {heroImage && <div aria-hidden="true" className="absolute inset-0 bg-[linear-gradient(90deg,rgba(24,25,23,.78)_0%,rgba(24,25,23,.54)_46%,rgba(24,25,23,.18)_100%)]" />}
+        <div className="luxe-container relative z-10 grid gap-10 md:grid-cols-[1fr_.9fr] md:items-start">
           <div>
             <Link href="/tjanster" className="service-back-link mb-10 inline-flex text-sm font-bold">← Alla tjänster</Link>
             <p className="service-eyebrow text-xs font-black uppercase tracking-[.32em]">Tjänst</p>

@@ -6,6 +6,7 @@ export type EnglishServiceKey = "home" | "move" | "office" | "windows";
 const serviceContent = {
   home: {
     icon: Home,
+    image: "/service-heroes/home-cleaning.webp",
     title: "Home cleaning",
     kicker: "Iboren services",
     intro: "Send a clear request for home cleaning in Södertälje and Stockholm. Iboren collects address, size, rooms, preferred date, frequency and special requests in one structured flow.",
@@ -34,6 +35,7 @@ const serviceContent = {
   },
   move: {
     icon: Truck,
+    image: "/service-heroes/move-out-cleaning.webp",
     title: "Move-out cleaning",
     kicker: "Moving cleaning",
     intro: "Send a structured request for move-out cleaning. Iboren collects property size, address, date and special requirements so the handover can be planned clearly.",
@@ -62,6 +64,7 @@ const serviceContent = {
   },
   office: {
     icon: Building2,
+    image: "/service-heroes/office-cleaning.webp",
     title: "Office cleaning",
     kicker: "Business cleaning",
     intro: "Send a request for office cleaning in Södertälje and Stockholm. Iboren collects location, area, frequency, preferred time and notes for recurring business cleaning.",
@@ -90,6 +93,7 @@ const serviceContent = {
   },
   windows: {
     icon: Sparkles,
+    image: "/service-heroes/window-cleaning.webp",
     title: "Window cleaning",
     kicker: "Window service",
     intro: "Send a request for window cleaning as a separate service or as an add-on to home, move-out or office cleaning.",
@@ -123,9 +127,10 @@ export function EnglishServicePage({ service }: { service: EnglishServiceKey }) 
   const Icon = item.icon;
   return (
     <main className="min-h-screen bg-[#181917] text-porcelain">
-      <section className="relative overflow-hidden py-20 md:py-28">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_65%_20%,rgba(212,165,116,.22),transparent_32%),radial-gradient(circle_at_15%_70%,rgba(212,165,116,.08),transparent_34%)]" />
-        <div className="luxe-container relative grid gap-10 md:grid-cols-[.95fr_1.05fr] md:items-center">
+      <section className="relative isolate overflow-hidden py-20 md:py-28">
+        <img src={item.image} alt="" aria-hidden="true" className="absolute inset-0 h-full w-full object-cover" />
+        <div aria-hidden="true" className="absolute inset-0 bg-[linear-gradient(90deg,rgba(20,21,18,.95)_0%,rgba(20,21,18,.82)_44%,rgba(20,21,18,.45)_100%)]" />
+        <div className="luxe-container relative z-10 grid gap-10 md:grid-cols-[.95fr_1.05fr] md:items-center">
           <div>
             <Link href="/en" className="mb-10 inline-flex text-sm font-bold text-gold transition hover:text-porcelain">← Back</Link>
             <p className="eyebrow text-gold">{item.kicker}</p>
