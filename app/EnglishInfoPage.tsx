@@ -15,13 +15,14 @@ type Props = {
   priceText?: string;
   rutText?: string;
   faq?: FaqItem[];
+  swedishHref?: string;
 };
 
 function JsonLd({ data }: { data: Record<string, unknown> }) {
   return <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(data).replace(/</g, "\\u003c") }} />;
 }
 
-export default function EnglishInfoPage({ title, eyebrow, description, city, service, urlPath, points, included = [], priceText, rutText, faq = [] }: Props) {
+export default function EnglishInfoPage({ title, eyebrow, description, city, service, urlPath, points, included = [], priceText, rutText, faq = [], swedishHref = "/" }: Props) {
   const absoluteUrl = urlPath ? `https://iboren.se${urlPath}` : "https://iboren.se/en";
   const hasServiceSchema = Boolean(service || city);
   const isOfficeCleaning = service === "Office cleaning";
@@ -90,7 +91,7 @@ export default function EnglishInfoPage({ title, eyebrow, description, city, ser
 
       {faq.length > 0 && <section className="iboren-section-dark py-16"><div className="luxe-container max-w-4xl"><p className="iboren-gold-accent text-[11px] font-bold uppercase tracking-[.38em]">FAQ</p><h2 className="display mt-3 text-4xl font-bold text-porcelain md:text-6xl">Common questions.</h2><div className="mt-10 grid gap-4">{faq.map((item) => <article key={item.q} className="iboren-card-glass iboren-card-glass-hover rounded-[1.5rem] p-6"><h3 className="iboren-gold-accent font-bold">{item.q}</h3><p className="iboren-text-muted-dark mt-2 leading-7">{item.a}</p></article>)}</div></div></section>}
 
-      <section className="iboren-section-dark py-16 text-porcelain"><div className="luxe-container"><h2 className="display max-w-3xl text-4xl font-bold md:text-6xl">Ready to send a booking request?</h2><p className="mt-5 max-w-2xl leading-8 text-porcelain/75">Choose your preferred date and time. Iboren checks availability and gets back to you with confirmation.</p><div className="mt-8 flex flex-col gap-3 sm:flex-row">{hasServiceSchema ? <><Link href="/en/prices#price-calculator" className="inline-flex rounded-full bg-gold px-5 py-3 text-sm font-black uppercase tracking-[.12em] text-ink">Get price directly</Link><Link href="/en/boka-utan-konto" className="inline-flex rounded-full border border-gold/35 px-5 py-3 text-sm font-bold text-gold">Send request</Link></> : <Link href="/en#booking" className="inline-flex rounded-full bg-gold px-5 py-3 text-sm font-black uppercase tracking-[.12em] text-ink">Send request</Link>}<Link href="/" className="inline-flex rounded-full border border-gold/35 px-5 py-3 text-sm font-bold text-gold">Svenska</Link></div></div></section>
+      <section className="iboren-section-dark py-16 text-porcelain"><div className="luxe-container"><h2 className="display max-w-3xl text-4xl font-bold md:text-6xl">Ready to send a booking request?</h2><p className="mt-5 max-w-2xl leading-8 text-porcelain/75">Choose your preferred date and time. Iboren checks availability and gets back to you with confirmation.</p><div className="mt-8 flex flex-col gap-3 sm:flex-row">{hasServiceSchema ? <><Link href="/en/prices#price-calculator" className="inline-flex rounded-full bg-gold px-5 py-3 text-sm font-black uppercase tracking-[.12em] text-ink">Get price directly</Link><Link href="/en/boka-utan-konto" className="inline-flex rounded-full border border-gold/35 px-5 py-3 text-sm font-bold text-gold">Send request</Link></> : <Link href="/en#booking" className="inline-flex rounded-full bg-gold px-5 py-3 text-sm font-black uppercase tracking-[.12em] text-ink">Send request</Link>}<Link href={swedishHref} className="inline-flex rounded-full border border-gold/35 px-5 py-3 text-sm font-bold text-gold">Svenska</Link></div></div></section>
     </main>
   );
 }
