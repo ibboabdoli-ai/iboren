@@ -178,6 +178,21 @@ select:-webkit-autofill:focus {
   -webkit-text-fill-color: rgba(32, 32, 32, 0.45) !important;
 }
 
+/* Public booking form: preserve readable values on its dark field treatment. */
+main:has(#booking-address) form input,
+main:has(#booking-address) form textarea,
+main:has(#booking-address) form select {
+  color: var(--porcelain) !important;
+  -webkit-text-fill-color: var(--porcelain) !important;
+  caret-color: var(--porcelain) !important;
+}
+
+main:has(#booking-address) form input::placeholder,
+main:has(#booking-address) form textarea::placeholder {
+  color: rgba(255, 253, 248, 0.45) !important;
+  -webkit-text-fill-color: rgba(255, 253, 248, 0.45) !important;
+}
+
 /* Keep the booking area inside the viewport on desktop. */
 #booking .luxe-container,
 #booking .luxe-container > *,
