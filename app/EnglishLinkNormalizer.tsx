@@ -8,6 +8,7 @@ const svToEn: Record<string, string> = {
   "/jobb": "/en/jobs",
   "/om-oss": "/en/about",
   "/om-iboren": "/en/about",
+  "/kontakt": "/en/contact",
   "/profile": "/en/profile",
   "/privacy": "/en/privacy",
   "/terms": "/en/terms",
