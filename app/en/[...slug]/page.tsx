@@ -142,6 +142,38 @@ function withCity(base: PageContent, city: "Södertälje" | "Stockholm", title: 
 }
 
 const cityContent: Record<string, PageContent> = {
+  "cleaning-sodertalje": {
+    title: "Cleaning in Södertälje",
+    eyebrow: "Local cleaning services",
+    city: "Södertälje",
+    urlPath: "/en/cleaning-sodertalje",
+    description: "Send a clear cleaning request in Södertälje for home cleaning, move-out cleaning, office cleaning or window cleaning.",
+    points: ["Home and business cleaning", "Clear request before confirmation", "Price indication and RUT information", "Preferred date, address and service details"],
+    included: ["Home cleaning for one-time or recurring needs", "Move-out cleaning before relocation or handover", "Office cleaning based on a business quote", "Window cleaning as a separate service or add-on"],
+    priceText: "Use the price calculator for a first estimate. The final time, scope and price are confirmed before work starts.",
+    rutText: "RUT deductions may apply to eligible private cleaning services. Office cleaning for companies is handled as a business quote.",
+    faq: [
+      { q: "Can I send a cleaning request in Södertälje online?", a: "Yes. Choose the service, add the address and preferred date, and Iboren reviews the request before confirmation." },
+      { q: "Is the request binding immediately?", a: "No. Iboren confirms the time, scope and final price before the request becomes binding." },
+      { q: "Which cleaning services can I request?", a: "You can request home cleaning, move-out cleaning, office cleaning and window cleaning." }
+    ]
+  },
+  "cleaning-stockholm": {
+    title: "Cleaning in Stockholm",
+    eyebrow: "Local cleaning services",
+    city: "Stockholm",
+    urlPath: "/en/cleaning-stockholm",
+    description: "Send a clear cleaning request in Stockholm for home cleaning, move-out cleaning, office cleaning or window cleaning.",
+    points: ["Home and business cleaning", "Clear request before confirmation", "Price indication and RUT information", "Preferred date, address and service details"],
+    included: ["Home cleaning for one-time or recurring needs", "Move-out cleaning before relocation or handover", "Office cleaning based on a business quote", "Window cleaning as a separate service or add-on"],
+    priceText: "Use the price calculator for a first estimate. The final time, scope and price are confirmed before work starts.",
+    rutText: "RUT deductions may apply to eligible private cleaning services. Office cleaning for companies is handled as a business quote.",
+    faq: [
+      { q: "Can I send a cleaning request in Stockholm online?", a: "Yes. Choose the service, add the address and preferred date, and Iboren reviews the request before confirmation." },
+      { q: "Is the request binding immediately?", a: "No. Iboren confirms the time, scope and final price before the request becomes binding." },
+      { q: "Which cleaning services can I request?", a: "You can request home cleaning, move-out cleaning, office cleaning and window cleaning." }
+    ]
+  },
   "home-cleaning-sodertalje": withCity(serviceContent["home-cleaning"], "Södertälje", "Home cleaning in Södertälje", "home-cleaning-sodertalje", "Send a request for home cleaning in Södertälje with preferred date, address, size, frequency and cleaning needs."),
   "move-out-cleaning-sodertalje": withCity(serviceContent["move-out-cleaning"], "Södertälje", "Move-out cleaning in Södertälje", "move-out-cleaning-sodertalje", "Send a request for move-out cleaning in Södertälje. Iboren checks size, condition, access and availability before confirmation."),
   "window-cleaning-sodertalje": withCity(serviceContent["window-cleaning"], "Södertälje", "Window cleaning in Södertälje", "window-cleaning-sodertalje", "Send a request for window cleaning in Södertälje. Price depends on windows, access, floor level and condition."),
@@ -174,23 +206,28 @@ export function generateMetadata({ params }: { params: { slug: string[] } }): Me
   const slug = slugFromParams(params);
   const content = getContent(slug);
   const canonical = `https://iboren.se/en/${slug}`;
-  const isHomeCleaningStockholm = slug === "home-cleaning-stockholm";
+  const swedishCounterparts: Record<string, string> = {
+    "cleaning-sodertalje": "https://iboren.se/stadning-sodertalje",
+    "cleaning-stockholm": "https://iboren.se/stadning-stockholm",
+    "home-cleaning-stockholm": "https://iboren.se/hemstadning-stockholm",
+  };
+  const swedishCounterpart = swedishCounterparts[slug];
 
   return {
     title: `${content.title} | Iboren`,
     description: content.description,
     alternates: {
       canonical,
-      ...(isHomeCleaningStockholm
+      ...(swedishCounterpart
         ? {
             languages: {
               en: canonical,
-              sv: "https://iboren.se/hemstadning-stockholm",
+              sv: swedishCounterpart,
             },
           }
         : {}),
     },
-    ...(isHomeCleaningStockholm
+    ...(swedishCounterpart
       ? {
           openGraph: {
             title: `${content.title} | Iboren`,
