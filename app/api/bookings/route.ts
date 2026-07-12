@@ -119,6 +119,10 @@ function firstFilled(...values: unknown[]) {
   return "";
 }
 
+function hasCompleteName(value: string) {
+  return value.trim().split(/\s+/).filter((part) => part.replace(/[^\p{L}'-]/gu, "").length >= 2).length >= 2;
+}
+
 function english(value: string) {
   return englishLabels[value] || value;
 }
@@ -407,6 +411,10 @@ export async function POST(request: Request) {
     if (missing.length) {
       const readableMissing = missing.map((key) => requiredLabels[key] || key).join(", ");
       return NextResponse.json({ ok: false, missing, message: language === "en" ? `Missing required fields: ${readableMissing}.` : `Saknade obligatoriska fält / Missing required fields: ${readableMissing}.` }, { status: 400 });
+    }
+
+    if (!hasCompleteName(payload.name)) {
+      return NextResponse.json({ ok: false, message: language === "en" ? "Enter both first and last name." : "Ange både förnamn och efternamn." }, { status: 400 });
     }
 
     validateBookingPayload(payload, language);

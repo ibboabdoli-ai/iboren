@@ -5,7 +5,7 @@ import FaqStructuredData from "../../FaqStructuredData";
 
 export const metadata: Metadata = {
   title: "Cleaning in Stockholm | Iboren",
-  description: "Cleaning services in Stockholm with clear price indication and a non-binding request.",
+  description: "Cleaning in Stockholm with a clear price indication for home cleaning, move-out cleaning, office cleaning and window cleaning, including RUT information for eligible private services.",
   alternates: {
     canonical: "https://iboren.se/en/cleaning-stockholm",
     languages: {
@@ -15,7 +15,7 @@ export const metadata: Metadata = {
   },
   openGraph: {
     title: "Cleaning in Stockholm | Iboren",
-    description: "Cleaning services in Stockholm with clear price indication and a non-binding request.",
+    description: "Cleaning in Stockholm with a clear price indication and RUT information for eligible private cleaning services.",
     url: "https://iboren.se/en/cleaning-stockholm",
   },
 };
@@ -72,6 +72,11 @@ export default function CleaningStockholmPage() {
 
       <section className="iboren-page-dark py-16">
         <div className="luxe-container max-w-4xl">
+          <div className="iboren-card-glass mb-12 rounded-[2rem] p-7">
+            <p className="iboren-gold-accent text-[11px] font-bold uppercase tracking-[.38em]">Price and RUT in Stockholm</p>
+            <h2 className="display mt-3 text-4xl font-bold text-porcelain">Review the estimate before sending.</h2>
+            <p className="iboren-text-muted-dark mt-4 leading-8">Private cleaning estimates show the price before and after RUT and the estimated time. Private customer prices include VAT. Iboren confirms the scope, time and final price before the request becomes binding.</p>
+          </div>
           <p className="iboren-gold-accent text-[11px] font-bold uppercase tracking-[.38em]">FAQ</p>
           <h2 className="display mt-3 text-4xl font-bold text-porcelain md:text-6xl">Common questions about cleaning in Stockholm.</h2>
           <div className="mt-10 grid gap-4">
