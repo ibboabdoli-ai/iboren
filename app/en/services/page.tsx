@@ -13,6 +13,9 @@ const services = [
   { icon: Truck, title: "Move-out cleaning", href: "/en/move-out-cleaning", text: "For moving, handover and a clear request." },
   { icon: Building2, title: "Office cleaning", href: "/en/office-cleaning", text: "For companies, offices and recurring service." },
   { icon: Sparkles, title: "Window cleaning", href: "/en/window-cleaning", text: "As a separate service or an add-on to other cleaning." },
+  { icon: Sparkles, title: "Deep cleaning", href: "/en/deep-cleaning", text: "For homes that need a more thorough cleaning." },
+  { icon: Building2, title: "Construction cleaning", href: "/en/construction-cleaning", text: "For spaces after renovation or project work." },
+  { icon: Home, title: "Viewing cleaning", href: "/en/viewing-cleaning", text: "Before viewings, photography or sale." },
 ];
 
 export default function ServicesPage() {
