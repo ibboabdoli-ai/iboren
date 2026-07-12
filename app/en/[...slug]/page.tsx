@@ -242,6 +242,9 @@ export function generateMetadata({ params }: { params: { slug: string[] } }): Me
   const content = getContent(slug);
   const canonical = `https://iboren.se/en/${slug}`;
   const swedishCounterparts: Record<string, string> = {
+    "deep-cleaning": "https://iboren.se/tjanster/storstadning",
+    "construction-cleaning": "https://iboren.se/tjanster/byggstadning",
+    "viewing-cleaning": "https://iboren.se/tjanster/visningsstadning",
     "blog": "https://iboren.se/blogg",
     "blog/home-cleaning-prices": "https://iboren.se/blogg/vad-kostar-hemstadning",
     "blog/rut-deduction-cleaning": "https://iboren.se/blogg/rut-avdrag-stadning",
