@@ -20,6 +20,7 @@ const svToEn: Record<string, string> = {
   "/flyttstadning": "/en/move-out-cleaning",
   "/kontorsstadning": "/en/office-cleaning",
   "/fonsterputs": "/en/window-cleaning",
+  "/tjanster": "/en/services",
   "/hemstadning-sodertalje": "/en/home-cleaning-sodertalje",
   "/flyttstadning-sodertalje": "/en/move-out-cleaning-sodertalje",
   "/fonsterputs-sodertalje": "/en/window-cleaning-sodertalje",
