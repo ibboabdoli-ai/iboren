@@ -34,10 +34,8 @@ export default function KontorsstadningPage() {
   return (
     <main className="service-page-dark min-h-screen">
       <FaqStructuredData items={faq} />
-      <section className="service-hero relative isolate overflow-hidden py-20 md:py-28">
-        <img src="/service-heroes/office-cleaning.webp" alt="" aria-hidden="true" className="absolute inset-0 z-0 block h-full w-full object-cover" />
-        <div aria-hidden="true" className="absolute inset-0 z-10 bg-[linear-gradient(90deg,rgba(24,25,23,.76)_0%,rgba(24,25,23,.52)_43%,rgba(24,25,23,.18)_100%)]" />
-        <div className="luxe-container relative z-20 grid gap-10 md:grid-cols-[.95fr_1.05fr] md:items-center">
+      <section className="service-hero relative overflow-hidden py-20 md:py-28">
+        <div className="luxe-container relative grid gap-10 md:grid-cols-[.95fr_1.05fr] md:items-center">
           <div>
             <Link href="/" className="service-back-link mb-10 inline-flex text-sm font-bold">← Tillbaka</Link>
             <p className="service-eyebrow text-xs font-black uppercase tracking-[.32em]">Iboren Business</p>
@@ -46,6 +44,7 @@ export default function KontorsstadningPage() {
             <div className="mt-8 flex flex-col gap-3 sm:flex-row"><Link href="/priser#pris-kalkylator" className="btn-primary">Få pris direkt <ArrowRight size={18} /></Link><Link href="/boka-utan-konto" className="btn-secondary">Skicka förfrågan</Link></div>
           </div>
           <div className="service-panel rounded-[2.5rem] p-8 shadow-luxe">
+            <img src="/service-heroes/office-cleaning.webp" alt="Rent och organiserat kontor" className="mb-8 h-52 w-full rounded-[1.5rem] object-cover shadow-soft" />
             <div className="mb-12 flex items-center justify-between"><div className="service-icon grid h-16 w-16 place-items-center rounded-full"><Building2 size={31} /></div><span className="rounded-full border px-4 py-2 text-xs font-bold uppercase tracking-[.24em]">B2B</span></div>
             <h2 className="display text-4xl font-bold">Tydligt serviceunderlag för företag.</h2>
             <div className="mt-7 grid gap-4">{points.map((item) => <p key={item} className="flex gap-3"><CheckCircle2 className="mt-1 h-5 w-5 shrink-0" /> {item}</p>)}</div>

@@ -34,10 +34,8 @@ export default function HemstadningPage() {
   return (
     <main className="service-page-dark min-h-screen">
       <FaqStructuredData items={faq} />
-      <section className="service-hero relative isolate overflow-hidden py-20 md:py-28">
-        <img src="/service-heroes/home-cleaning.webp" alt="" aria-hidden="true" className="absolute inset-0 z-0 block h-full w-full object-cover" />
-        <div aria-hidden="true" className="absolute inset-0 z-10 bg-[linear-gradient(90deg,rgba(24,25,23,.76)_0%,rgba(24,25,23,.52)_43%,rgba(24,25,23,.18)_100%)]" />
-        <div className="luxe-container relative z-20 grid gap-10 md:grid-cols-[.95fr_1.05fr] md:items-center">
+      <section className="service-hero relative overflow-hidden py-20 md:py-28">
+        <div className="luxe-container relative grid gap-10 md:grid-cols-[.95fr_1.05fr] md:items-center">
           <div>
             <Link href="/" className="service-back-link mb-10 inline-flex text-sm font-bold">← Tillbaka</Link>
             <p className="service-eyebrow text-xs font-black uppercase tracking-[.32em]">Iboren Services</p>
@@ -49,6 +47,7 @@ export default function HemstadningPage() {
             </div>
           </div>
           <div className="service-panel rounded-[2.5rem] p-8 shadow-luxe backdrop-blur-xl">
+            <img src="/service-heroes/home-cleaning.webp" alt="Ljust och välstädat hem" className="mb-8 h-52 w-full rounded-[1.5rem] object-cover shadow-soft" />
             <div className="mb-16 flex items-center justify-between">
               <div className="service-icon grid h-16 w-16 place-items-center rounded-full"><Home size={30} /></div>
               <span className="rounded-full border px-4 py-2 text-xs font-bold uppercase tracking-[.24em]">RUT-ready</span>
