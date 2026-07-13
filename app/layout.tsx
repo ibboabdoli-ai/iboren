@@ -15,6 +15,7 @@ import AdminOperationsQuickLink from "./AdminOperationsQuickLink";
 import ProfileAccessLinks from "./ProfileAccessLinks";
 import BookingNumberUiEnhancer from "./BookingNumberUiEnhancer";
 import ThemeProvider from "./components/theme/ThemeProvider";
+import TextCleanup from "./TextCleanup";
 import "./globals.css";
 import "./premium-hover.css";
 import "./booking-date-mobile-fix.css";
@@ -109,6 +110,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <AdminOperationsQuickLink />
           <ProfileAccessLinks />
           <BookingNumberUiEnhancer />
+          <TextCleanup />
           {children}
           <script
             id="iboren-proffera-chat"
