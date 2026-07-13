@@ -209,6 +209,10 @@ function normalizeAreaValue(value: string) {
   return value;
 }
 
+function hasCompleteName(value: string) {
+  return value.trim().split(/\s+/).filter((part) => part.replace(/[^\p{L}'-]/gu, "").length >= 2).length >= 2;
+}
+
 function extractPostalCodeFromAddress(value: string) {
   const match = value.match(/\b(\d{3})\s?(\d{2})\b/);
   return match ? `${match[1]} ${match[2]}` : "";
@@ -434,6 +438,11 @@ export default function UnifiedBookingFormCore({ language, variant = "page" }: U
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (!hasCompleteName(draft.name)) {
+      setStatus("error");
+      setMessage(language === "sv" ? "Ange både förnamn och efternamn." : "Enter both first and last name.");
+      return;
+    }
     setStatus("loading");
     setMessage(t.sending);
     try {
