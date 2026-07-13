@@ -55,7 +55,7 @@ export default function PrivacyPage() {
       <article className="luxe-container max-w-4xl rounded-[2rem] bg-porcelain p-7 shadow-lg md:p-10">
         <Link href="/" className="text-sm font-semibold text-burgundy">← Tillbaka till startsidan</Link>
         <p className="eyebrow mt-10">Iboren · Juridiskt</p>
-        <h1 className="display mt-4 text-5xl font-bold leading-[0.9] text-burgundy md:text-7xl">Integritetspolicy</h1>
+        <h1 className="display mt-4 break-words text-4xl font-bold leading-[0.95] text-burgundy sm:text-5xl md:text-7xl">Integritetspolicy</h1>
         <p className="mt-5 text-sm font-semibold text-ink/50">Senast uppdaterad: 13 juli 2026</p>
         <div className="mt-8 rounded-2xl border border-burgundy/10 bg-cream p-5 text-sm leading-7 text-ink/65">
           Denna sida beskriver hur Iboren behandlar personuppgifter i samband med webbplatsen, prisberäknaren, konto, bokningsförfrågningar och e-postkommunikation.
