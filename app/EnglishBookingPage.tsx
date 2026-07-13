@@ -387,7 +387,7 @@ export default function EnglishBookingPage() {
             <Link href="/en/about" className="rounded-full px-3 py-2 transition hover:bg-gold/10 hover:text-gold">About us</Link>
             <Link href="/" className="rounded-full px-3 py-2 transition hover:bg-gold/10 hover:text-gold">SV</Link>
             <Link href="/en" className="rounded-full bg-gold/10 px-3 py-2 text-gold">EN</Link>
-            <Link href={user ? "/profile" : "/login"} className="inline-flex items-center gap-2 rounded-full px-3 py-2 transition hover:bg-gold/10 hover:text-gold"><UserRound size={17} /> {user ? "My profile" : "Log in"}</Link>
+            <Link href={user ? "/en/profile" : "/en/login"} className="inline-flex items-center gap-2 rounded-full px-3 py-2 transition hover:bg-gold/10 hover:text-gold"><UserRound size={17} /> {user ? "My profile" : "Log in"}</Link>
             <Link href="/en/boka-utan-konto" className="rounded-full border border-gold/40 bg-gold px-5 py-3 text-night transition hover:bg-porcelain">Send request</Link>
           </div>
           <button type="button" aria-label={menuOpen ? "Close menu" : "Open menu"} aria-expanded={menuOpen} aria-controls="english-mobile-menu" onClick={() => setMenuOpen(!menuOpen)} className="grid h-11 w-11 place-items-center rounded-full border border-gold/25 bg-porcelain/5 text-gold transition hover:bg-gold/10 xl:hidden">{menuOpen ? <X size={19} /> : <Menu size={19} />}</button>
@@ -401,7 +401,7 @@ export default function EnglishBookingPage() {
               <Link href="/en/jobs" onClick={() => setMenuOpen(false)} className="rounded-2xl px-4 py-3 font-semibold">Work with us</Link>
               <Link href="/en/about" onClick={() => setMenuOpen(false)} className="rounded-2xl px-4 py-3 font-semibold">About us</Link>
               <Link href="/" onClick={() => setMenuOpen(false)} className="rounded-2xl px-4 py-3 font-semibold">Svenska</Link>
-              <Link href={user ? "/profile" : "/login"} onClick={() => setMenuOpen(false)} className="rounded-2xl px-4 py-3 font-semibold">{user ? "My profile" : "Log in"}</Link>
+              <Link href={user ? "/en/profile" : "/en/login"} onClick={() => setMenuOpen(false)} className="rounded-2xl px-4 py-3 font-semibold">{user ? "My profile" : "Log in"}</Link>
               <Link href="/en/boka-utan-konto" onClick={() => setMenuOpen(false)} className="mt-2 rounded-full bg-gold px-5 py-4 text-center text-sm font-bold text-night">Send request</Link>
             </div>
           </div>
