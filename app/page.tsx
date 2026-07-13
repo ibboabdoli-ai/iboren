@@ -7,6 +7,7 @@ import { createClient, User } from "@supabase/supabase-js";
 import HomeBookingCta from "./components/home/HomeBookingCta";
 import HomeHeader from "./components/home/HomeHeader";
 import HomeHero from "./components/home/HomeHero";
+import ReviewShowcase from "./components/reviews/ReviewShowcase";
 // UnifiedBookingFormCore removed from this page to avoid rendering the embedded form on the Swedish homepage
 
 const frames = [
@@ -236,6 +237,8 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+
+      <ReviewShowcase language="sv" />
 
       <section id="process" className="iboren-section-dark py-24 md:py-32"><div className="luxe-container"><p className="iboren-gold-accent text-[11px] font-bold uppercase tracking-[.38em]">III / Så fungerar det</p><h2 className="display mt-4 max-w-4xl text-5xl font-normal uppercase leading-[.9] text-porcelain md:text-7xl">Fyra steg. En tydlig förfrågan.</h2><div className="mt-12 grid gap-4 md:grid-cols-4">{["Välj tjänst", "Fyll i plats", "Se sammanfattning", "Skicka förfrågan"].map((item, i) => <article key={item} className="process-card iboren-card-glass iboren-card-glass-hover min-w-0 rounded-[2rem] p-6"><div className="mb-10 flex items-center justify-between"><span className="iboren-gold-accent display text-4xl">0{i + 1}</span><CheckCircle2 className="iboren-gold-accent" /></div><h3 className="display font-normal uppercase text-porcelain">{item}</h3><p className="iboren-text-muted-dark mt-4 text-sm leading-7">Ett enkelt steg som gör bokningsunderlaget tydligare och lättare att följa upp.</p></article>)}</div></div></section>
 
