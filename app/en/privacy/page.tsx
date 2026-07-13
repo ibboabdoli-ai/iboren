@@ -7,7 +7,7 @@ export const metadata: Metadata = {
 };
 
 const sections = [
-  ["1. Who is responsible?", "Iboren, a sole trader with organisation number 890718-3373, is responsible for personal data submitted through the website, price calculator, booking forms, profile and email contact. The public contact location is Södertälje, Sweden. Contact: hej@iboren.se."],
+  ["1. Who is responsible?", "Iboren is responsible for personal data submitted through the website, price calculator, booking forms, profile and email contact. The public contact location is Södertälje, Sweden. Contact: hej@iboren.se."],
   ["2. What data is collected?", "We may process name, email address, phone number, address, service, property details, preferred date and time, price-estimate details and messages you provide when using the calculator or sending a booking request."],
   ["3. Why is the data used?", "The data is used to prepare price estimates, receive and manage booking requests, send confirmation emails, contact you about a request and, when applicable, show requests in your profile."],
   ["4. Login and location", "If you sign in through a supported provider, basic account details such as name and email may be used to connect requests to your profile. Location sharing is optional and is used only to help suggest an address or area."],
