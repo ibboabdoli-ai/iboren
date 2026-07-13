@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { getBookingStatusLocale } from "./statusLocale";
 import { brandedTextEmail } from "../../../../lib/email/html";
+import { createReviewInvitation, sendReviewInvitation } from "../../../../lib/reviews";
 
 export const runtime = "nodejs";
 
@@ -214,6 +215,11 @@ export async function PATCH(request: Request, { params }: { params: { id: string
     return NextResponse.json({ ok: false, message: "Kunde inte uppdatera bokningen just nu." }, { status: 500 });
   }
 
+  let review = { sent: false, skipped: true };
+  if (shouldSendStatusEmail && update.status === "completed") {
+    const invitation = await createReviewInvitation(admin.supabase, data);
+    if (invitation?.created) review = await sendReviewInvitation(data, invitation.token);
+  }
   const email = shouldSendStatusEmail && update.status ? await sendStatusEmail(update.status, data) : { sent: false, skipped: true };
-  return NextResponse.json({ ok: true, booking: data, email });
+  return NextResponse.json({ ok: true, booking: data, email, review });
 }
