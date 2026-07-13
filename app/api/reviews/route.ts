@@ -2,6 +2,10 @@ import { NextResponse } from "next/server";
 import { getReviewAdminClient } from "../../lib/reviews";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
+const noStoreHeaders = { "Cache-Control": "no-store, max-age=0" };
 
 function publicName(value: unknown) {
   const firstName = String(value || "").replace(/[<>]/g, "").trim().split(/\s+/)[0] || "";
@@ -10,7 +14,7 @@ function publicName(value: unknown) {
 
 export async function GET() {
   const supabase = getReviewAdminClient();
-  if (!supabase) return NextResponse.json({ ok: false, reviews: [] }, { status: 503 });
+  if (!supabase) return NextResponse.json({ ok: false, reviews: [] }, { status: 503, headers: noStoreHeaders });
   const { data, error } = await supabase
     .from("booking_reviews")
     .select("rating, comment, customer_name, language, moderated_at")
@@ -20,7 +24,7 @@ export async function GET() {
     .limit(12);
   if (error) {
     console.warn("IBOREN_PUBLIC_REVIEWS_LOAD_FAILED", { code: error.code });
-    return NextResponse.json({ ok: false, reviews: [] }, { status: 503 });
+    return NextResponse.json({ ok: false, reviews: [] }, { status: 503, headers: noStoreHeaders });
   }
   const reviews = (data || []).map((review) => ({
     rating: Number(review.rating),
@@ -29,5 +33,5 @@ export async function GET() {
     language: review.language === "en" ? "en" : "sv"
   }));
   const averageRating = reviews.length ? Number((reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length).toFixed(1)) : null;
-  return NextResponse.json({ ok: true, averageRating, count: reviews.length, reviews });
+  return NextResponse.json({ ok: true, averageRating, count: reviews.length, reviews }, { headers: noStoreHeaders });
 }
