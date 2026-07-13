@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { createReviewInvitation, sendReviewInvitation } from "../../../../../lib/reviews";
 
 export const runtime = "nodejs";
 
@@ -13,7 +14,7 @@ type StaffRole = typeof STAFF_ROLES[number];
 type AllowedStatus = typeof ALLOWED_STATUSES[number];
 type EmployeeRow = { id: string; email: string; name: string; phone: string | null; role: StaffRole; active: boolean };
 type AssignmentRow = { id: string; booking_id: string; employee_id: string; assigned_by: string | null; status: string; note: string | null; created_at: string; updated_at: string };
-type BookingRow = { id: string; service: string; area: string; address: string | null; preferred_date: string | null; time_window: string | null; customer_name: string; customer_email: string; customer_phone: string | null; status: string | null };
+type BookingRow = { id: string; service: string; area: string; address: string | null; preferred_date: string | null; time_window: string | null; customer_name: string; customer_email: string; customer_phone: string | null; notes: string | null; status: string | null };
 
 function getAdminClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -51,7 +52,7 @@ async function verifyStaff(request: Request) {
 }
 
 async function loadBooking(supabase: AdminClient, bookingId: string) {
-  const { data } = await supabase.from("bookings").select("id, service, area, address, preferred_date, time_window, customer_name, customer_email, customer_phone, status").eq("id", bookingId).maybeSingle<BookingRow>();
+  const { data } = await supabase.from("bookings").select("id, service, area, address, preferred_date, time_window, customer_name, customer_email, customer_phone, notes, status").eq("id", bookingId).maybeSingle<BookingRow>();
   return data || null;
 }
 
@@ -100,6 +101,16 @@ export async function PATCH(request: Request, { params }: { params: { assignment
   let bookingCompleted = false;
   if (status === "completed") {
     try { bookingCompleted = await syncBookingCompleted(staff.supabase, updatedAssignment.booking_id); } catch (error) { console.warn("IBOREN_BOOKING_STATUS_SYNC_FAILED", error); }
+  }
+
+  if (bookingCompleted) {
+    try {
+      const booking = await loadBooking(staff.supabase, updatedAssignment.booking_id);
+      if (booking) {
+        const invitation = await createReviewInvitation(staff.supabase, booking);
+        if (invitation?.created) await sendReviewInvitation(booking, invitation.token);
+      }
+    } catch (error) { console.warn("IBOREN_REVIEW_INVITATION_AFTER_CLEANER_COMPLETION_FAILED", error); }
   }
 
   try { await sendAdminEmail({ assignment: updatedAssignment, employee: staff.employee, booking: await loadBooking(staff.supabase, updatedAssignment.booking_id), status }); } catch (error) { console.warn("IBOREN_CLEANER_STATUS_EMAIL_FAILED", error); }
