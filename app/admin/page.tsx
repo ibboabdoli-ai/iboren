@@ -376,6 +376,11 @@ export default function AdminPage() {
             <h2 className="display text-3xl font-bold">Profile</h2>
             <p className="mt-2 text-sm font-bold text-ink/55">Open customer profile view and booking overview.</p>
           </Link>
+          <Link href="/admin/reviews" className="rounded-[1.5rem] bg-porcelain p-5 text-burgundy shadow-soft ring-1 ring-burgundy/10 transition hover:-translate-y-0.5">
+            <CheckCircle2 className="mb-4 h-6 w-6" />
+            <h2 className="display text-3xl font-bold">Kundomdömen</h2>
+            <p className="mt-2 text-sm font-bold text-ink/55">Godkänn eller avvisa inskickade kundomdömen.</p>
+          </Link>
         </div>
 
         <AdminRoleManager getToken={getToken} />
