@@ -28,11 +28,11 @@ const englishLocalLinks = [
 ];
 
 const keywordLinks = [
-  { href: "/stadning-sodertalje", label: "Hemstädning Södertälje" },
-  { href: "/stadning-sodertalje", label: "Flyttstädning Södertälje" },
+  { href: "/hemstadning-sodertalje", label: "Hemstädning Södertälje" },
+  { href: "/flyttstadning-sodertalje", label: "Flyttstädning Södertälje" },
   { href: "/stadning-sodertalje", label: "Städfirma Södertälje" },
-  { href: "/stadning-sodertalje", label: "Fönsterputs Södertälje" },
-  { href: "/stadning-stockholm", label: "Kontorsstädning Stockholm" },
+  { href: "/fonsterputs-sodertalje", label: "Fönsterputs Södertälje" },
+  { href: "/kontorsstadning-stockholm", label: "Kontorsstädning Stockholm" },
   { href: "/stadning-stockholm", label: "Städfirma Stockholm" }
 ];
 
