@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getReviewAdminClient } from "../../../lib/reviews";
+import { getReviewAdminClient, isReviewExpired } from "../../../lib/reviews";
 
 export const runtime = "nodejs";
 
@@ -12,24 +12,25 @@ async function loadReview(token: string) {
   if (!supabase) return { error: "configuration" as const };
   const { data, error } = await supabase
     .from("booking_reviews")
-    .select("id, token, status, rating, comment, language, booking:bookings(service, area)")
+    .select("id, token, status, rating, comment, language, expires_at, booking:bookings(service, area)")
     .eq("token", token)
     .maybeSingle();
   if (error) return { error: "database" as const };
   if (!data) return { error: "not_found" as const };
+  if (isReviewExpired(data.expires_at)) return { error: "expired" as const };
   return { supabase, review: data };
 }
 
 export async function GET(_request: Request, { params }: { params: { token: string } }) {
   const loaded = await loadReview(params.token);
-  if ("error" in loaded) return NextResponse.json({ ok: false, message: "Review link not found." }, { status: loaded.error === "not_found" ? 404 : 503 });
+  if ("error" in loaded) return NextResponse.json({ ok: false, message: loaded.error === "expired" ? "This review link has expired." : "Review link not found." }, { status: loaded.error === "expired" ? 410 : loaded.error === "not_found" ? 404 : 503 });
   const booking = Array.isArray(loaded.review.booking) ? loaded.review.booking[0] : loaded.review.booking;
   return NextResponse.json({ ok: true, review: { status: loaded.review.status, rating: loaded.review.rating, language: loaded.review.language, service: booking?.service || "", area: booking?.area || "" } });
 }
 
 export async function POST(request: Request, { params }: { params: { token: string } }) {
   const loaded = await loadReview(params.token);
-  if ("error" in loaded) return NextResponse.json({ ok: false, message: "Review link not found." }, { status: loaded.error === "not_found" ? 404 : 503 });
+  if ("error" in loaded) return NextResponse.json({ ok: false, message: loaded.error === "expired" ? "This review link has expired." : "Review link not found." }, { status: loaded.error === "expired" ? 410 : loaded.error === "not_found" ? 404 : 503 });
   if (loaded.review.status !== "pending") return NextResponse.json({ ok: false, message: "This review has already been submitted." }, { status: 409 });
   const body = await request.json().catch(() => null) as { rating?: unknown; comment?: unknown } | null;
   const rating = Number(body?.rating);
