@@ -4,7 +4,6 @@ import type { User } from "@supabase/supabase-js";
 import { Menu, UserRound, X } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
-import { trackSiteEvent } from "../../lib/analytics";
 
 type Props = {
   user: User | null;
@@ -26,14 +25,14 @@ export default function HomeHeader({ user }: Props) {
         <div className="hidden items-center gap-2 text-sm font-semibold text-porcelain/68 xl:flex">
           <a href="#services" className={desktopLinkClass}>Tjänster</a>
           <Link href="/priser" className={desktopLinkClass}>Priser</Link>
-          <Link href="/boka-utan-konto" onClick={() => trackSiteEvent("booking_cta_click")} className={desktopLinkClass}>Boka</Link>
+          <Link href="/boka-utan-konto" data-site-analytics-event="booking_cta_click" className={desktopLinkClass}>Boka</Link>
           <Link href="/jobb" className={desktopLinkClass}>Jobba hos oss</Link>
           <Link href="/om-iboren" className={desktopLinkClass}>Om oss</Link>
           <Link href="/en" className={desktopLinkClass}>EN</Link>
           <Link href={user ? "/profile" : "/login"} className={`inline-flex items-center gap-2 ${desktopLinkClass}`}>
             <UserRound size={17} /> {user ? "Min profil" : "Logga in"}
           </Link>
-          <Link href="/priser#pris-kalkylator" onClick={() => trackSiteEvent("quote_cta_click")} className="rounded-full border border-gold/40 bg-gold px-5 py-3 text-night transition hover:bg-porcelain">
+          <Link href="/priser#pris-kalkylator" data-site-analytics-event="quote_cta_click" className="rounded-full border border-gold/40 bg-gold px-5 py-3 text-night transition hover:bg-porcelain">
             Få pris direkt
           </Link>
         </div>
@@ -55,14 +54,14 @@ export default function HomeHeader({ user }: Props) {
           <div className="mx-auto grid max-w-sm gap-2 pt-2 text-porcelain">
             <a href="#services" onClick={() => setMenuOpen(false)} className={mobileLinkClass}>Tjänster</a>
             <Link href="/priser" onClick={() => setMenuOpen(false)} className={mobileLinkClass}>Priser</Link>
-            <Link href="/boka-utan-konto" onClick={() => { setMenuOpen(false); trackSiteEvent("booking_cta_click"); }} className={mobileLinkClass}>Boka</Link>
+            <Link href="/boka-utan-konto" data-site-analytics-event="booking_cta_click" onClick={() => setMenuOpen(false)} className={mobileLinkClass}>Boka</Link>
             <Link href="/jobb" onClick={() => setMenuOpen(false)} className={mobileLinkClass}>Jobba hos oss</Link>
             <Link href="/om-iboren" onClick={() => setMenuOpen(false)} className={mobileLinkClass}>Om oss</Link>
             <Link href="/en" onClick={() => setMenuOpen(false)} className={mobileLinkClass}>English</Link>
             <Link href={user ? "/profile" : "/login"} onClick={() => setMenuOpen(false)} className={mobileLinkClass}>
               {user ? "Min profil" : "Logga in"}
             </Link>
-            <Link href="/priser#pris-kalkylator" onClick={() => { setMenuOpen(false); trackSiteEvent("quote_cta_click"); }} className="mt-2 rounded-full bg-gold px-5 py-4 text-center text-sm font-bold text-night transition hover:bg-porcelain">
+            <Link href="/priser#pris-kalkylator" data-site-analytics-event="quote_cta_click" onClick={() => setMenuOpen(false)} className="mt-2 rounded-full bg-gold px-5 py-4 text-center text-sm font-bold text-night transition hover:bg-porcelain">
               Få pris direkt
             </Link>
           </div>
