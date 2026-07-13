@@ -4,6 +4,7 @@ export const metadata: Metadata = {
   title: "Iboren Supervisor",
   applicationName: "Iboren Supervisor",
   manifest: "/api/pwa-manifest?start=/supervisor",
+  robots: { index: false, follow: false, nocache: true },
   appleWebApp: {
     capable: true,
     title: "Iboren Supervisor",
