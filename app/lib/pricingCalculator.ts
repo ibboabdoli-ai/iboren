@@ -35,12 +35,20 @@ export type PricingEstimateInput = {
   kitchen: PricingYesNo;
   selectedAddOns: PricingAddOn[];
   useRut: boolean;
+  /**
+   * Reserved for future material, travel, equipment or administrative costs.
+   * These amounts must never receive a RUT deduction.
+   */
+  nonRutAmount?: number;
 };
 
 export type PricingEstimate = {
   title: string;
   beforeRut: number;
   afterRut: number;
+  rutEligibleLaborBeforeRut: number;
+  nonRutAmount: number;
+  rutDeduction: number;
   hours?: number;
   monthly?: boolean;
   addOnsBeforeRut: number;
@@ -202,10 +210,26 @@ function applyWorkloadPriceFloor(input: PricingEstimateInput, calculatedBeforeRu
   return Math.max(calculatedBeforeRut, safetyFloor, serviceMinimumBeforeRut(input));
 }
 
+function priceWithRut(input: PricingEstimateInput, laborBeforeRut: number, nonRutAmount = input.nonRutAmount ?? 0) {
+  // The current service model only prices cleaning labour. Keeping this split
+  // explicit prevents future non-labour charges from being RUT-discounted.
+  const nonRut = Math.max(0, nonRutAmount);
+  const rutEligibleLaborBeforeRut = input.service === "Kontorsstädning" ? 0 : laborBeforeRut;
+  const rutDeduction = input.useRut ? rutEligibleLaborBeforeRut * 0.5 : 0;
+  const beforeRut = laborBeforeRut + nonRut;
+
+  return {
+    beforeRut,
+    afterRut: beforeRut - rutDeduction,
+    rutEligibleLaborBeforeRut,
+    nonRutAmount: nonRut,
+    rutDeduction,
+  };
+}
+
 export function estimatePrice(input: PricingEstimateInput): PricingEstimate {
   const selectedAddOns = input.service === "Kontorsstädning" ? [] : input.service === "Fönsterputs" ? input.selectedAddOns.filter((item) => item !== "Fönsterputs") : input.selectedAddOns;
   const addOnsBeforeRut = selectedAddOns.reduce((sum, item) => sum + addOnBeforeRutPrice(item), 0);
-  const rutFactor = input.useRut ? 0.5 : 1;
   const complexity = conditionMultiplier(input.condition);
   const access = accessMultiplier(input);
   const displayHours = workloadHours(input, selectedAddOns);
@@ -224,8 +248,8 @@ export function estimatePrice(input: PricingEstimateInput): PricingEstimate {
     const hourlyBeforeRut = input.frequency === "Engång" ? 590 : 520;
     const subtotal = priceHours * hourlyBeforeRut * (1 - frequencyDiscount(input.frequency)) + addOnsBeforeRut;
     const calculatedBeforeRut = Math.max(input.frequency === "Engång" ? 1180 : 1040, subtotal * access);
-    const beforeRut = applyWorkloadPriceFloor(input, calculatedBeforeRut, displayHours);
-    return { title: "Uppskattat pris för hemstädning", beforeRut, afterRut: beforeRut * rutFactor, hours: displayHours, addOnsBeforeRut, riskLevel: riskLevel(input), factors, note: "Prisindikation baserad på yta, badrum, rum, skick, åtkomst, frekvens och tillval. Slutligt pris bekräftas innan förfrågan blir bindande." };
+    const price = priceWithRut(input, applyWorkloadPriceFloor(input, calculatedBeforeRut, displayHours));
+    return { title: "Uppskattat pris för hemstädning", ...price, hours: displayHours, addOnsBeforeRut, riskLevel: riskLevel(input), factors, note: "Prisindikation baserad på yta, badrum, rum, skick, åtkomst, frekvens och tillval. Slutligt pris bekräftas innan förfrågan blir bindande." };
   }
 
   if (input.service === "Flyttstädning") {
@@ -233,16 +257,16 @@ export function estimatePrice(input: PricingEstimateInput): PricingEstimate {
     const bathroomAddonBeforeRut = Math.max(0, input.bathrooms - 1) * 400;
     const furnishedFactor = input.furnished === "Möblerad" ? 1.2 : 1;
     const calculatedBeforeRut = Math.max(2900, (input.sqm * perSqm + bathroomAddonBeforeRut + addOnsBeforeRut) * complexity * furnishedFactor * access);
-    const beforeRut = applyWorkloadPriceFloor(input, calculatedBeforeRut, displayHours);
-    return { title: "Uppskattat pris för flyttstädning", beforeRut, afterRut: beforeRut * rutFactor, hours: displayHours, addOnsBeforeRut, riskLevel: riskLevel(input), factors: [...factors, input.furnished], note: "Flyttstädning påverkas starkt av skick, om bostaden är tömd, fönster, balkong och åtkomst. Större eller mycket smutsiga objekt bör alltid kontrolleras manuellt." };
+    const price = priceWithRut(input, applyWorkloadPriceFloor(input, calculatedBeforeRut, displayHours));
+    return { title: "Uppskattat pris för flyttstädning", ...price, hours: displayHours, addOnsBeforeRut, riskLevel: riskLevel(input), factors: [...factors, input.furnished], note: "Flyttstädning påverkas starkt av skick, om bostaden är tömd, fönster, balkong och åtkomst. Större eller mycket smutsiga objekt bör alltid kontrolleras manuellt." };
   }
 
   if (input.service === "Storstädning") {
     const petHours = input.pets === "Ja" ? 0.35 : 0;
     const priceHours = Math.max(3, input.sqm / 27 + Math.max(0, input.bathrooms - 1) * 0.45 + petHours) * complexity;
     const calculatedBeforeRut = Math.max(1770, (priceHours * 590 + addOnsBeforeRut) * access);
-    const beforeRut = applyWorkloadPriceFloor(input, calculatedBeforeRut, displayHours);
-    return { title: "Uppskattat pris för storstädning", beforeRut, afterRut: beforeRut * rutFactor, hours: displayHours, addOnsBeforeRut, riskLevel: riskLevel(input), factors, note: "Storstädning räknas med högre tidsåtgång än återkommande hemstädning eftersom bostadens skick påverkar mer." };
+    const price = priceWithRut(input, applyWorkloadPriceFloor(input, calculatedBeforeRut, displayHours));
+    return { title: "Uppskattat pris för storstädning", ...price, hours: displayHours, addOnsBeforeRut, riskLevel: riskLevel(input), factors, note: "Storstädning räknas med högre tidsåtgång än återkommande hemstädning eftersom bostadens skick påverkar mer." };
   }
 
   if (input.service === "Kontorsstädning") {
@@ -251,13 +275,14 @@ export function estimatePrice(input: PricingEstimateInput): PricingEstimate {
     const hoursPerVisit = Math.max(1.5, input.sqm / 60 + Math.max(0, input.officeToilets) * 0.2 + kitchenHours + (input.access === "Svår åtkomst" ? 0.15 : 0));
     const hourly = input.weekend === "Ja" ? 560 : 520;
     const monthly = Math.max(1500, hoursPerVisit * visitsPerMonth * hourly);
-    return { title: "Prisindikation för kontorsstädning", beforeRut: monthly, afterRut: monthly, hours: hoursPerVisit, monthly: true, addOnsBeforeRut: 0, riskLevel: riskLevel(input), factors: [...factors, `${input.officeVisits} besök/vecka`, `${input.officeToilets} toaletter`, input.kitchen === "Ja" ? "Kök/pentry" : ""].filter(Boolean), note: "Kontorsstädning visas som månadsindikation exklusive RUT. Slutlig offert bör bekräftas efter access, larm, nyckelhantering och städomfattning." };
+    const price = priceWithRut(input, monthly);
+    return { title: "Prisindikation för kontorsstädning", ...price, hours: hoursPerVisit, monthly: true, addOnsBeforeRut: 0, riskLevel: riskLevel(input), factors: [...factors, `${input.officeVisits} besök/vecka`, `${input.officeToilets} toaletter`, input.kitchen === "Ja" ? "Kök/pentry" : ""].filter(Boolean), note: "Kontorsstädning visas som månadsindikation exklusive RUT. Slutlig offert bör bekräftas efter access, larm, nyckelhantering och städomfattning." };
   }
 
   const sideFactor = input.windowSide === "Båda sidor" ? 1 : 0.65;
   const balconyExtra = input.balconyGlass === "Stor" ? 1200 : input.balconyGlass === "Liten" ? 700 : 0;
   const windowBase = input.windows * 85 * sideFactor + balconyExtra;
   const calculatedBeforeRut = Math.max(1390, (windowBase + addOnsBeforeRut) * access);
-  const beforeRut = applyWorkloadPriceFloor(input, calculatedBeforeRut, displayHours);
-  return { title: "Uppskattat pris för fönsterputs", beforeRut, afterRut: beforeRut * rutFactor, hours: displayHours, addOnsBeforeRut, riskLevel: riskLevel(input), factors: [...factors, `${input.windows} fönster`, input.windowSide, input.balconyGlass !== "Nej" ? `Inglasad balkong: ${input.balconyGlass}` : ""].filter(Boolean), note: "Fönsterputs beräknas främst på antal fönster, sida/sidor, balkongglas och åtkomst. Höga våningar eller svår åtkomst kräver manuell kontroll." };
+  const price = priceWithRut(input, applyWorkloadPriceFloor(input, calculatedBeforeRut, displayHours));
+  return { title: "Uppskattat pris för fönsterputs", ...price, hours: displayHours, addOnsBeforeRut, riskLevel: riskLevel(input), factors: [...factors, `${input.windows} fönster`, input.windowSide, input.balconyGlass !== "Nej" ? `Inglasad balkong: ${input.balconyGlass}` : ""].filter(Boolean), note: "Fönsterputs beräknas främst på antal fönster, sida/sidor, balkongglas och åtkomst. Höga våningar eller svår åtkomst kräver manuell kontroll." };
 }
