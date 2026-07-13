@@ -1,6 +1,6 @@
 import type { User } from "@supabase/supabase-js";
 import { Mail, ShieldCheck } from "lucide-react";
-import Link from "next/link";
+import AnalyticsBookingLink from "./AnalyticsBookingLink";
 
 type Props = {
   user: User | null;
@@ -25,7 +25,7 @@ export default function HomeBookingCta({ user }: Props) {
             <h3 className="text-2xl font-bold text-porcelain">Beräkna pris direkt</h3>
             <p className="iboren-text-muted-dark mt-3">Få en tydlig prisindikation först. När allt ser rätt ut kan du fortsätta till en ej bindande bokningsförfrågan.</p>
             <div className="mt-6 flex flex-wrap items-center gap-3">
-              <Link href="/priser#pris-kalkylator" className="btn-primary">Få pris direkt</Link>
+              <AnalyticsBookingLink />
             </div>
           </div>
         </div>
