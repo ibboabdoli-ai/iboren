@@ -4,6 +4,7 @@ import { FormEvent, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { BadgeCheck, Building2, Calculator, CheckCircle2, Home, LocateFixed, Mail, MapPin, Menu, ShieldCheck, Truck, UserRound, X } from "lucide-react";
 import { createClient, type User } from "@supabase/supabase-js";
+import ReviewShowcase from "./components/reviews/ReviewShowcase";
 
 type Option = { value: string; label: string };
 
@@ -472,6 +473,8 @@ export default function EnglishBookingPage() {
           </div>
         </div>
       </section>
+
+      <ReviewShowcase language="en" />
 
       <section id="booking" className="bg-ink py-24 text-porcelain md:py-32">
         <div className="luxe-container grid gap-10 lg:grid-cols-[.82fr_1.18fr]">
