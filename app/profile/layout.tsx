@@ -13,7 +13,8 @@ export const metadata: Metadata = {
   description,
   applicationName: "Iboren Kund",
   manifest: "/api/pwa-manifest?start=/profile",
-  alternates: { canonical: "https://iboren.se/profile" }
+  alternates: { canonical: "https://iboren.se/profile" },
+  robots: { index: false, follow: false, nocache: true }
 };
 
 export default function ProfileLayout({ children }: { children: ReactNode }) {
