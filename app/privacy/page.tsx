@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 const sections = [
   {
     title: "1. Vem ansvarar för personuppgifterna?",
-    body: "Iboren, enskild näringsidkare med organisationsnummer 890718-3373, ansvarar för behandlingen av personuppgifter som lämnas via webbplatsen, prisberäknaren, bokningsformulär, konto/profil och e-postkontakt. Verksamheten har sin offentliga kontaktort i Södertälje, Sweden. Kontakt: hej@iboren.se."
+    body: "Iboren ansvarar för behandlingen av personuppgifter som lämnas via webbplatsen, prisberäknaren, bokningsformulär, konto/profil och e-postkontakt. Verksamheten har sin offentliga kontaktort i Södertälje, Sweden. Kontakt: hej@iboren.se."
   },
   {
     title: "2. Vilka uppgifter samlas in?",
