@@ -14,6 +14,7 @@ import AdminBookingNotesFormatter from "./AdminBookingNotesFormatter";
 import AdminOperationsQuickLink from "./AdminOperationsQuickLink";
 import ProfileAccessLinks from "./ProfileAccessLinks";
 import BookingNumberUiEnhancer from "./BookingNumberUiEnhancer";
+import SiteAnalyticsTracker from "./components/analytics/SiteAnalyticsTracker";
 import ThemeProvider from "./components/theme/ThemeProvider";
 import "./globals.css";
 import "./premium-hover.css";
@@ -95,6 +96,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         <ThemeProvider>
           <StructuredData />
+          <SiteAnalyticsTracker />
           <GoogleAddressEnhancer />
           <BookingFormValidationEnhancer />
           <BookingAddressStreetNumberGuard />
