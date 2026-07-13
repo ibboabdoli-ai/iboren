@@ -7,7 +7,7 @@ export const metadata: Metadata = {
 };
 
 const sections = [
-  ["1. About Iboren", "Iboren is a sole trader with organisation number 890718-3373 and public contact location in Södertälje, Sweden. The website helps customers create and send cleaning-service booking requests."],
+  ["1. About Iboren", "Iboren has its public contact location in Södertälje, Sweden. The website helps customers create and send cleaning-service booking requests."],
   ["2. Requests and confirmation", "A submitted request is not a confirmed booking. Iboren confirms the time, scope, final price and practical conditions before a booking becomes binding."],
   ["3. Customer information", "You are responsible for providing accurate details, including address, contact details, property size, access, preferred date and special requests. Incomplete or incorrect details can affect price, timing or the ability to carry out the service."],
   ["4. Price and RUT", "Website prices are estimates unless stated otherwise. The final scope, price and any RUT deduction are confirmed before work starts. Extra services and practical conditions can affect price and duration."],
