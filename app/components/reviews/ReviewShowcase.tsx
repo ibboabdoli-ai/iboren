@@ -8,7 +8,7 @@ type ReviewResponse = { averageRating: number | null; count: number; reviews: Re
 export default function ReviewShowcase({ language }: { language: "sv" | "en" }) {
   const [data, setData] = useState<ReviewResponse | null>(null);
   useEffect(() => {
-    fetch("/api/reviews").then((response) => response.ok ? response.json() : null).then((result) => {
+    fetch("/api/reviews", { cache: "no-store" }).then((response) => response.ok ? response.json() : null).then((result) => {
       if (result?.ok && result.count) setData(result);
     }).catch(() => undefined);
   }, []);
