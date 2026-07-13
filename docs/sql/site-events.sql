@@ -1,4 +1,5 @@
 -- Iboren: privacy-safe website analytics (no names, emails, phones, IP addresses or form values)
+-- Run once in Supabase SQL Editor before testing the preview.
 create table if not exists public.site_events (
   id bigint generated always as identity primary key,
   event_name text not null check (event_name in ('page_view', 'quote_cta_click', 'booking_cta_click')),
