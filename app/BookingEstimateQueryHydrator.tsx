@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { usePathname } from "next/navigation";
 
 type Language = "sv" | "en";
 
@@ -146,7 +147,11 @@ function findBookingForm() {
 }
 
 export default function BookingEstimateQueryHydrator() {
+  const pathname = usePathname();
+  const isBookingPage = pathname === "/boka-utan-konto" || pathname === "/en/boka-utan-konto";
+
   useEffect(() => {
+    if (!isBookingPage) return;
     const params = new URLSearchParams(window.location.search);
     if (params.get("estimate") !== "1") return;
 
@@ -163,7 +168,7 @@ export default function BookingEstimateQueryHydrator() {
     }, 250);
 
     return () => window.clearInterval(timer);
-  }, []);
+  }, [isBookingPage, pathname]);
 
   return null;
 }
