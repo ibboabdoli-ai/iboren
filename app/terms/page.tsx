@@ -2,14 +2,14 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "Terms – Iboren",
-  description: "Villkor för användning av Iboren och bokningsförfrågningar."
+  title: "Villkor – Iboren",
+  description: "Villkor för användning av Iborens webbplats och bokningsförfrågningar."
 };
 
 const sections = [
   {
     title: "1. Om tjänsten",
-    body: "Iboren är en digital bokningsyta för att skapa och skicka bokningsförfrågningar för städtjänster. Webbplatsen hjälper kunden att lämna tydliga uppgifter om tjänst, plats, storlek, datum och praktiska detaljer."
+    body: "Iboren har offentlig kontaktort i Södertälje, Sweden och erbjuder en digital bokningsyta för att skapa och skicka bokningsförfrågningar för städtjänster. Webbplatsen hjälper kunden att lämna tydliga uppgifter om tjänst, plats, storlek, datum och praktiska detaljer."
   },
   {
     title: "2. Bokningsförfrågan och bekräftelse",
@@ -54,9 +54,9 @@ export default function TermsPage() {
     <main className="min-h-screen bg-cream py-16 text-ink">
       <article className="luxe-container max-w-4xl rounded-[2rem] bg-porcelain p-7 shadow-lg md:p-10">
         <Link href="/" className="text-sm font-semibold text-burgundy">← Tillbaka till startsidan</Link>
-        <p className="eyebrow mt-10">Iboren · Terms</p>
-        <h1 className="display mt-4 text-5xl font-bold leading-[0.9] text-burgundy md:text-7xl">Terms of Use</h1>
-        <p className="mt-5 text-sm font-semibold text-ink/50">Senast uppdaterad: 19 maj 2026</p>
+        <p className="eyebrow mt-10">Iboren · Juridiskt</p>
+        <h1 className="display mt-4 break-words text-4xl font-bold leading-[0.95] text-burgundy sm:text-5xl md:text-7xl">Villkor</h1>
+        <p className="mt-5 text-sm font-semibold text-ink/50">Senast uppdaterad: 13 juli 2026</p>
         <div className="mt-8 rounded-2xl border border-burgundy/10 bg-cream p-5 text-sm leading-7 text-ink/65">
           Dessa villkor gäller användning av Iborens webbplats och digitala bokningsflöde.
         </div>
