@@ -11,6 +11,7 @@ type ReviewBooking = {
 };
 
 type ReviewInvitation = { token: string; created: boolean };
+const REVIEW_LINK_LIFETIME_DAYS = 45;
 
 const EMAIL_ENDPOINT = ["https://api.re", "send.com/emails"].join("");
 const AUTH_HEADER = ["Author", "ization"].join("");
@@ -57,6 +58,7 @@ export async function createReviewInvitation(supabase: SupabaseClient, booking: 
       customer_name: clean(booking.customer_name, 120) || null,
       customer_email: email,
       language: languageFor(booking.notes),
+      expires_at: new Date(Date.now() + REVIEW_LINK_LIFETIME_DAYS * 24 * 60 * 60 * 1000).toISOString(),
       status: "pending"
     })
     .select("token")
@@ -71,6 +73,10 @@ export async function createReviewInvitation(supabase: SupabaseClient, booking: 
 
 export function reviewUrl(token: string, language: "sv" | "en") {
   return `${siteUrl()}/review/${encodeURIComponent(token)}${language === "en" ? "?lang=en" : ""}`;
+}
+
+export function isReviewExpired(expiresAt: string | null | undefined) {
+  return Boolean(expiresAt && new Date(expiresAt).getTime() <= Date.now());
 }
 
 export async function sendReviewInvitation(booking: ReviewBooking, token: string) {

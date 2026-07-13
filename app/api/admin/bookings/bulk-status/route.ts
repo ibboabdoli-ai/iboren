@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { getBookingStatusLocale } from "../[id]/statusLocale";
 import { brandedTextEmail } from "../../../../lib/email/html";
+import { createReviewInvitation, sendReviewInvitation } from "../../../../lib/reviews";
 
 export const runtime = "nodejs";
 
@@ -196,6 +197,23 @@ async function sendBulkSummaryEmail(status: AllowedStatus, bookings: BookingRow[
   return { sent: emailResult.ok, skipped: false, reason: emailResult.ok ? null : "resend_error" };
 }
 
+async function sendBulkReviewInvitations(supabase: NonNullable<ReturnType<typeof getAdminClient>>, bookings: BookingRow[]) {
+  const oneBookingPerCustomer = new Map<string, BookingRow>();
+  for (const booking of sortByDate(bookings).reverse()) {
+    const email = cleanText(booking.customer_email || "").toLowerCase();
+    if (email && !oneBookingPerCustomer.has(email)) oneBookingPerCustomer.set(email, booking);
+  }
+  let sent = 0;
+  for (const booking of oneBookingPerCustomer.values()) {
+    const invitation = await createReviewInvitation(supabase, booking);
+    if (invitation?.created) {
+      const result = await sendReviewInvitation(booking, invitation.token);
+      if (result.sent) sent += 1;
+    }
+  }
+  return sent;
+}
+
 export async function PATCH(request: Request) {
   const admin = await verifyAdmin(request);
   if (!admin.ok) return NextResponse.json({ ok: false, message: admin.message }, { status: admin.status });
@@ -232,5 +250,9 @@ export async function PATCH(request: Request) {
     console.warn("IBOREN_BULK_SUMMARY_EMAIL_FAILED", error);
     email = { sent: false, skipped: false, reason: "exception" };
   }
-  return NextResponse.json({ ok: true, status, updatedIds, count: updatedIds.length, email });
+  let reviewInvitations = 0;
+  if (status === "completed") {
+    try { reviewInvitations = await sendBulkReviewInvitations(admin.supabase, updatedBookings); } catch (error) { console.warn("IBOREN_BULK_REVIEW_INVITATIONS_FAILED", error); }
+  }
+  return NextResponse.json({ ok: true, status, updatedIds, count: updatedIds.length, email, reviewInvitations });
 }
