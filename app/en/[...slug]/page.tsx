@@ -251,7 +251,14 @@ export function generateMetadata({ params }: { params: { slug: string[] } }): Me
     "blog/move-out-checklist": "https://iboren.se/blogg/checklista-infor-flytt",
     "cleaning-sodertalje": "https://iboren.se/stadning-sodertalje",
     "cleaning-stockholm": "https://iboren.se/stadning-stockholm",
+    "home-cleaning-sodertalje": "https://iboren.se/hemstadning-sodertalje",
     "home-cleaning-stockholm": "https://iboren.se/hemstadning-stockholm",
+    "move-out-cleaning-sodertalje": "https://iboren.se/flyttstadning-sodertalje",
+    "move-out-cleaning-stockholm": "https://iboren.se/flyttstadning-stockholm",
+    "window-cleaning-sodertalje": "https://iboren.se/fonsterputs-sodertalje",
+    "window-cleaning-stockholm": "https://iboren.se/fonsterputs-stockholm",
+    "office-cleaning-sodertalje": "https://iboren.se/kontorsstadning-sodertalje",
+    "office-cleaning-stockholm": "https://iboren.se/kontorsstadning-stockholm",
   };
   const swedishCounterpart = swedishCounterparts[slug];
 
@@ -293,7 +300,15 @@ export default function Page({ params }: { params: { slug: string[] } }) {
     "blog/rut-deduction-cleaning": "/blogg/rut-avdrag-stadning",
     "blog/move-out-checklist": "/blogg/checklista-infor-flytt",
     "cleaning-sodertalje": "/stadning-sodertalje",
+    "cleaning-stockholm": "/stadning-stockholm",
+    "home-cleaning-sodertalje": "/hemstadning-sodertalje",
     "home-cleaning-stockholm": "/hemstadning-stockholm",
+    "move-out-cleaning-sodertalje": "/flyttstadning-sodertalje",
+    "move-out-cleaning-stockholm": "/flyttstadning-stockholm",
+    "window-cleaning-sodertalje": "/fonsterputs-sodertalje",
+    "window-cleaning-stockholm": "/fonsterputs-stockholm",
+    "office-cleaning-sodertalje": "/kontorsstadning-sodertalje",
+    "office-cleaning-stockholm": "/kontorsstadning-stockholm",
   } as Record<string, string>)[slug] || "/";
   return <EnglishInfoPage {...content} swedishHref={swedishHref} />;
 }
