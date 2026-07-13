@@ -2,14 +2,14 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "Privacy Policy – Iboren",
-  description: "Privacy och GDPR-information för Iboren."
+  title: "Integritetspolicy – Iboren",
+  description: "Information om hur Iboren behandlar personuppgifter i samband med bokningsförfrågningar och kontakt."
 };
 
 const sections = [
   {
     title: "1. Vem ansvarar för personuppgifterna?",
-    body: "Iboren ansvarar för behandlingen av personuppgifter som lämnas via webbplatsen, prisberäknaren, bokningsformulär, konto/profil och e-postkontakt. Kontakt: hej@iboren.se."
+    body: "Iboren, enskild näringsidkare med organisationsnummer 890718-3373, ansvarar för behandlingen av personuppgifter som lämnas via webbplatsen, prisberäknaren, bokningsformulär, konto/profil och e-postkontakt. Verksamheten har sin offentliga kontaktort i Södertälje, Sweden. Kontakt: hej@iboren.se."
   },
   {
     title: "2. Vilka uppgifter samlas in?",
@@ -54,9 +54,9 @@ export default function PrivacyPage() {
     <main className="min-h-screen bg-cream py-16 text-ink">
       <article className="luxe-container max-w-4xl rounded-[2rem] bg-porcelain p-7 shadow-lg md:p-10">
         <Link href="/" className="text-sm font-semibold text-burgundy">← Tillbaka till startsidan</Link>
-        <p className="eyebrow mt-10">Iboren · Privacy</p>
-        <h1 className="display mt-4 text-5xl font-bold leading-[0.9] text-burgundy md:text-7xl">Privacy Policy</h1>
-        <p className="mt-5 text-sm font-semibold text-ink/50">Senast uppdaterad: 28 maj 2026</p>
+        <p className="eyebrow mt-10">Iboren · Juridiskt</p>
+        <h1 className="display mt-4 text-5xl font-bold leading-[0.9] text-burgundy md:text-7xl">Integritetspolicy</h1>
+        <p className="mt-5 text-sm font-semibold text-ink/50">Senast uppdaterad: 13 juli 2026</p>
         <div className="mt-8 rounded-2xl border border-burgundy/10 bg-cream p-5 text-sm leading-7 text-ink/65">
           Denna sida beskriver hur Iboren behandlar personuppgifter i samband med webbplatsen, prisberäknaren, konto, bokningsförfrågningar och e-postkommunikation.
         </div>
