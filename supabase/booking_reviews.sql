@@ -1,4 +1,5 @@
 -- Run once in the Supabase SQL editor before enabling review invitations.
+-- Keep this file with the project as the source of truth for the review table.
 -- Review rows are private by default; only server routes using the service-role key access them.
 create table if not exists public.booking_reviews (
   id uuid primary key default gen_random_uuid(),
