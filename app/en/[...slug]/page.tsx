@@ -209,7 +209,27 @@ const cityContent: Record<string, PageContent> = {
       { q: "Which cleaning services can I request?", a: "You can request home cleaning, move-out cleaning, office cleaning and window cleaning." }
     ]
   },
-  "home-cleaning-sodertalje": withCity(serviceContent["home-cleaning"], "Södertälje", "Home cleaning in Södertälje", "home-cleaning-sodertalje", "Send a request for home cleaning in Södertälje with preferred date, address, size, frequency and cleaning needs."),
+  "home-cleaning-sodertalje": {
+    ...withCity(serviceContent["home-cleaning"], "Södertälje", "Home cleaning in Södertälje", "home-cleaning-sodertalje", "Home cleaning in Södertälje for apartments, houses and townhouses. Send your preferred date, address, size, frequency and cleaning needs for a clear request."),
+    points: [
+      "For homes in Södertälje",
+      "One-time or recurring cleaning",
+      "Price indication before confirmation",
+      "RUT information for eligible private customers"
+    ],
+    included: [
+      "Everyday cleaning based on the scope you choose",
+      "Kitchen and bathroom cleaning according to the request details",
+      "Optional add-ons such as oven, fridge/freezer, balcony and window cleaning",
+      "Time, scope and final price confirmed before work starts"
+    ],
+    priceText: "For home cleaning in Södertälje, the estimate is based on home size, bathrooms, frequency and selected add-ons. The final price is confirmed before the request becomes a booking.",
+    faq: [
+      { q: "Can I request one-time or recurring home cleaning in Södertälje?", a: "Yes. Include your preferred frequency and date in the request so Iboren can review the details and availability." },
+      { q: "What details should I include for home cleaning in Södertälje?", a: "Add the address, home size, number of bathrooms, preferred date, frequency and any add-ons you would like included." },
+      { q: "When is my home cleaning request confirmed?", a: "The request is reviewed first. Time, scope and final price are confirmed before the booking becomes binding." }
+    ]
+  },
   "move-out-cleaning-sodertalje": withCity(serviceContent["move-out-cleaning"], "Södertälje", "Move-out cleaning in Södertälje", "move-out-cleaning-sodertalje", "Send a request for move-out cleaning in Södertälje. Iboren checks size, condition, access and availability before confirmation."),
   "window-cleaning-sodertalje": withCity(serviceContent["window-cleaning"], "Södertälje", "Window cleaning in Södertälje", "window-cleaning-sodertalje", "Send a request for window cleaning in Södertälje. Price depends on windows, access, floor level and condition."),
   "office-cleaning-sodertalje": withCity(serviceContent["office-cleaning"], "Södertälje", "Office cleaning in Södertälje", "office-cleaning-sodertalje", "Request office cleaning in Södertälje for workplaces, offices and recurring business cleaning needs."),
