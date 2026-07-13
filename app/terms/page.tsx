@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 const sections = [
   {
     title: "1. Om tjänsten",
-    body: "Iboren är en enskild näringsidkare med organisationsnummer 890718-3373 och offentlig kontaktort i Södertälje, Sweden. Iboren erbjuder en digital bokningsyta för att skapa och skicka bokningsförfrågningar för städtjänster. Webbplatsen hjälper kunden att lämna tydliga uppgifter om tjänst, plats, storlek, datum och praktiska detaljer."
+    body: "Iboren har offentlig kontaktort i Södertälje, Sweden och erbjuder en digital bokningsyta för att skapa och skicka bokningsförfrågningar för städtjänster. Webbplatsen hjälper kunden att lämna tydliga uppgifter om tjänst, plats, storlek, datum och praktiska detaljer."
   },
   {
     title: "2. Bokningsförfrågan och bekräftelse",
