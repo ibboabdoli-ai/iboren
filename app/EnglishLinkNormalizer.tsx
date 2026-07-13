@@ -4,8 +4,10 @@ import { useEffect } from "react";
 import { usePathname } from "next/navigation";
 
 const svToEn: Record<string, string> = {
+  "/": "/en",
   "/priser": "/en/prices",
   "/jobb": "/en/jobs",
+  "/jobba-hos-oss": "/en/jobs",
   "/om-oss": "/en/about",
   "/om-iboren": "/en/about",
   "/kontakt": "/en/contact",
@@ -14,6 +16,9 @@ const svToEn: Record<string, string> = {
   "/blogg/rut-avdrag-stadning": "/en/blog/rut-deduction-cleaning",
   "/blogg/checklista-infor-flytt": "/en/blog/move-out-checklist",
   "/profile": "/en/profile",
+  "/login": "/en/login",
+  "/boka-utan-konto": "/en/boka-utan-konto",
+  "/cleaner": "/en/cleaner",
   "/privacy": "/en/privacy",
   "/terms": "/en/terms",
   "/hemstadning": "/en/home-cleaning",
@@ -21,6 +26,10 @@ const svToEn: Record<string, string> = {
   "/kontorsstadning": "/en/office-cleaning",
   "/fonsterputs": "/en/window-cleaning",
   "/tjanster": "/en/services",
+  "/tjanster/hemstadning": "/en/home-cleaning",
+  "/tjanster/flyttstadning": "/en/move-out-cleaning",
+  "/tjanster/kontorsstadning": "/en/office-cleaning",
+  "/tjanster/fonsterputs": "/en/window-cleaning",
   "/tjanster/storstadning": "/en/deep-cleaning",
   "/tjanster/byggstadning": "/en/construction-cleaning",
   "/tjanster/visningsstadning": "/en/viewing-cleaning",
@@ -40,14 +49,12 @@ function isEnglishRoute(pathname: string) {
 
 function normalizeHref(href: string) {
   if (!href || href.startsWith("#") || href.startsWith("mailto:") || href.startsWith("tel:")) return href;
-  if (href === "/") return "/";
+  const parsed = new URL(href, window.location.origin);
+  if (parsed.origin !== window.location.origin) return href;
 
-  const parsed = href.startsWith("http") ? new URL(href) : null;
-  const target = parsed ? `${parsed.pathname}${parsed.hash}` : href;
-  const [path, hash = ""] = target.split("#");
-  const normalized = path.endsWith("/") && path !== "/" ? path.slice(0, -1) : path;
+  const normalized = parsed.pathname.endsWith("/") && parsed.pathname !== "/" ? parsed.pathname.slice(0, -1) : parsed.pathname;
   const mapped = svToEn[normalized];
-  return mapped ? `${mapped}${hash ? `#${hash}` : ""}` : href;
+  return mapped ? `${mapped}${parsed.search}${parsed.hash}` : href;
 }
 
 function shouldAllowSwedishLink(anchor: HTMLAnchorElement) {
