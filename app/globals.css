@@ -166,24 +166,36 @@ select:-webkit-autofill:focus {
 #booking input, #booking textarea, #booking select {
   min-width: 0;
   max-width: 100%;
-  background: var(--porcelain) !important;
-  color: var(--ink) !important;
-  -webkit-text-fill-color: var(--ink) !important;
-  caret-color: var(--ink) !important;
+  background: #181917 !important;
+  color: var(--porcelain) !important;
+  -webkit-text-fill-color: var(--porcelain) !important;
+  caret-color: var(--porcelain) !important;
   font-size: 16px;
   opacity: 1 !important;
 }
 #booking input::placeholder, #booking textarea::placeholder {
-  color: rgba(32, 32, 32, 0.45) !important;
-  -webkit-text-fill-color: rgba(32, 32, 32, 0.45) !important;
+  color: rgba(255, 253, 248, 0.45) !important;
+  -webkit-text-fill-color: rgba(255, 253, 248, 0.45) !important;
 }
 
 /* Public booking form: preserve readable values on its dark field treatment. */
 main:has(#booking-address) form input,
 main:has(#booking-address) form textarea,
 main:has(#booking-address) form select {
+  background: #181917 !important;
   color: var(--porcelain) !important;
   -webkit-text-fill-color: var(--porcelain) !important;
+  caret-color: var(--porcelain) !important;
+}
+
+main:has(#booking-address) form input:-webkit-autofill,
+main:has(#booking-address) form input:-webkit-autofill:hover,
+main:has(#booking-address) form input:-webkit-autofill:focus,
+main:has(#booking-address) form textarea:-webkit-autofill,
+main:has(#booking-address) form textarea:-webkit-autofill:hover,
+main:has(#booking-address) form textarea:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--porcelain) !important;
+  box-shadow: 0 0 0 1000px #181917 inset !important;
   caret-color: var(--porcelain) !important;
 }
 
