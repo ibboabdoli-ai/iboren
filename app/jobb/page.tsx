@@ -55,6 +55,7 @@ export default function JobbPage() {
           <form onSubmit={submit} className="service-panel rounded-[2rem] p-6 shadow-luxe md:p-8">
             <div className="mb-7"><p className="service-eyebrow text-xs font-black uppercase tracking-[.28em]">Ansökan</p><h2 className="display mt-2 text-4xl font-bold">Intresseanmälan</h2></div>
             <div className="grid gap-4">
+              <div className="sr-only" aria-hidden="true"><label htmlFor="job-website">Webbplats</label><input id="job-website" name="website" type="text" tabIndex={-1} autoComplete="off" /></div>
               <div className="grid gap-4 sm:grid-cols-2">
                 <Field label="Namn" name="name" required />
                 <Field label="E-post" name="email" type="email" required />

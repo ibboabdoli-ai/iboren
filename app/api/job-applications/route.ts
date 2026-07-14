@@ -1,9 +1,13 @@
 import { NextResponse } from "next/server";
+import { createClient } from "@supabase/supabase-js";
 import { brandedTextEmail } from "../../lib/email/html";
+import { checkPersistentRateLimit, getClientIp } from "../../lib/rateLimit";
 
 export const runtime = "nodejs";
 
 const MAX_CV_SIZE_BYTES = 5 * 1024 * 1024;
+const RATE_LIMIT_WINDOW_MS = 30 * 60 * 1000;
+const RATE_LIMIT_MAX = 3;
 const allowedCvTypes = new Set([
   "application/pdf",
   "application/msword",
@@ -46,6 +50,13 @@ function getFileExtension(fileName: string) {
   return fileName.split(".").pop()?.toLowerCase() || "";
 }
 
+function getAdminClient() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !serviceKey) return null;
+  return createClient(url, serviceKey, { auth: { persistSession: false, autoRefreshToken: false } });
+}
+
 async function buildAttachment(file: File) {
   const arrayBuffer = await file.arrayBuffer();
   return {
@@ -74,6 +85,7 @@ export async function POST(request: Request) {
   const formData = await request.formData().catch(() => null);
   if (!formData) return NextResponse.json({ ok: false, message: "Ogiltig ansökan." }, { status: 400 });
 
+  const website = clean(getString(formData, "website"), 200);
   const name = clean(getString(formData, "name"));
   const email = clean(getString(formData, "email")).toLowerCase();
   const phone = clean(getString(formData, "phone"));
@@ -91,6 +103,11 @@ export async function POST(request: Request) {
   const message = clean(getString(formData, "message"), 3000);
   const cv = getCvFile(formData);
 
+  // Hidden field for bots. Answer as if accepted, but never send an email.
+  if (website) {
+    return NextResponse.json({ ok: true, message: "Tack! Din ansökan är skickad." });
+  }
+
   if (!name || !validEmail(email) || !phone || !area) {
     return NextResponse.json({ ok: false, message: "Fyll i namn, e-post, telefon och område." }, { status: 400 });
   }
@@ -104,6 +121,21 @@ export async function POST(request: Request) {
     if (!allowedCvExtensions.has(extension) || (cv.type && !allowedCvTypes.has(cv.type))) {
       return NextResponse.json({ ok: false, message: "CV måste vara PDF, DOC, DOCX eller TXT." }, { status: 400 });
     }
+  }
+
+  const rateLimit = await checkPersistentRateLimit({
+    supabase: getAdminClient(),
+    route: "job-applications",
+    keyParts: [getClientIp(request), email],
+    limit: RATE_LIMIT_MAX,
+    windowMs: RATE_LIMIT_WINDOW_MS,
+    failClosedInProduction: true
+  });
+  if (!rateLimit.allowed) {
+    return NextResponse.json(
+      { ok: false, message: "För många ansökningar på kort tid. Försök igen senare." },
+      { status: 429, headers: { "Retry-After": String(rateLimit.retryAfterSeconds || 60) } }
+    );
   }
 
   const resendApiKey = process.env.RESEND_API_KEY;

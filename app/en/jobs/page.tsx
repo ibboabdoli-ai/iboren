@@ -13,6 +13,7 @@ type Status = "idle" | "loading" | "success" | "error";
 function normalizeJobMessage(message: string) {
   if (message.includes("Kunde inte skicka ansökan")) return "Could not send the application.";
   if (message.includes("Tack! Din ansökan är skickad")) return "Thank you. Your application has been sent.";
+  if (message.includes("För många ansökningar")) return "Too many applications in a short time. Please try again later.";
   return message;
 }
 
@@ -63,6 +64,7 @@ export default function EnglishJobsPage() {
           <form onSubmit={submit} className="service-panel rounded-[2rem] border border-burgundy/10 bg-porcelain p-6 shadow-luxe md:p-8">
             <div className="mb-7"><p className="text-xs font-black uppercase tracking-[.28em] text-burgundy">Application</p><h2 className="display mt-2 text-4xl font-bold text-burgundy">Interest application</h2></div>
             <div className="grid gap-4">
+              <div className="sr-only" aria-hidden="true"><label htmlFor="job-website">Website</label><input id="job-website" name="website" type="text" tabIndex={-1} autoComplete="off" /></div>
               <div className="grid gap-4 sm:grid-cols-2">
                 <Field label="Name" name="name" required />
                 <Field label="Email" name="email" type="email" required />
