@@ -50,7 +50,10 @@ const tjansterToEn: Record<string, string> = {
   visningsstadning: "/en/viewing-cleaning"
 };
 
-const enToSv = Object.fromEntries(Object.entries(svToEn).map(([sv, en]) => [en, sv]));
+const enToSv: Record<string, string> = {
+  ...Object.fromEntries(Object.entries(svToEn).map(([sv, en]) => [en, sv])),
+  ...Object.fromEntries(Object.entries(tjansterToEn).map(([slug, en]) => [en, `/tjanster/${slug}`]))
+};
 const safeTop = "env(safe-area-inset-top, 0px)";
 const safeRight = "env(safe-area-inset-right, 0px)";
 const styleId = "iboren-safe-nav-style";

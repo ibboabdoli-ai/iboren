@@ -3,6 +3,56 @@
 import { useEffect } from "react";
 import ProfileLanguageSwitch from "./ProfileLanguageSwitch";
 
+const svToEn: Record<string, string> = {
+  "/": "/en",
+  "/priser": "/en/prices",
+  "/jobb": "/en/jobs",
+  "/jobba-hos-oss": "/en/jobs",
+  "/om-iboren": "/en/about",
+  "/om-oss": "/en/about",
+  "/kontakt": "/en/contact",
+  "/blogg": "/en/blog",
+  "/blogg/vad-kostar-hemstadning": "/en/blog/home-cleaning-prices",
+  "/blogg/rut-avdrag-stadning": "/en/blog/rut-deduction-cleaning",
+  "/blogg/checklista-infor-flytt": "/en/blog/move-out-checklist",
+  "/privacy": "/en/privacy",
+  "/terms": "/en/terms",
+  "/login": "/en/login",
+  "/boka-utan-konto": "/en/boka-utan-konto",
+  "/profile": "/en/profile",
+  "/cleaner": "/en/cleaner",
+  "/hemstadning": "/en/home-cleaning",
+  "/flyttstadning": "/en/move-out-cleaning",
+  "/kontorsstadning": "/en/office-cleaning",
+  "/fonsterputs": "/en/window-cleaning",
+  "/tjanster": "/en/services",
+  "/hemstadning-sodertalje": "/en/home-cleaning-sodertalje",
+  "/flyttstadning-sodertalje": "/en/move-out-cleaning-sodertalje",
+  "/fonsterputs-sodertalje": "/en/window-cleaning-sodertalje",
+  "/kontorsstadning-sodertalje": "/en/office-cleaning-sodertalje",
+  "/hemstadning-stockholm": "/en/home-cleaning-stockholm",
+  "/flyttstadning-stockholm": "/en/move-out-cleaning-stockholm",
+  "/fonsterputs-stockholm": "/en/window-cleaning-stockholm",
+  "/kontorsstadning-stockholm": "/en/office-cleaning-stockholm",
+  "/stadning-sodertalje": "/en/cleaning-sodertalje",
+  "/stadning-stockholm": "/en/cleaning-stockholm"
+};
+
+const tjansterToEn: Record<string, string> = {
+  hemstadning: "/en/home-cleaning",
+  flyttstadning: "/en/move-out-cleaning",
+  kontorsstadning: "/en/office-cleaning",
+  fonsterputs: "/en/window-cleaning",
+  storstadning: "/en/deep-cleaning",
+  byggstadning: "/en/construction-cleaning",
+  visningsstadning: "/en/viewing-cleaning"
+};
+
+const enToSv: Record<string, string> = {
+  ...Object.fromEntries(Object.entries(svToEn).map(([sv, en]) => [en, sv])),
+  ...Object.fromEntries(Object.entries(tjansterToEn).map(([slug, en]) => [en, `/tjanster/${slug}`]))
+};
+
 function currentPath() {
   return window.location.pathname.endsWith("/") && window.location.pathname !== "/" ? window.location.pathname.slice(0, -1) : window.location.pathname;
 }
@@ -13,11 +63,13 @@ function isEnglishPath() {
 
 function languageTarget() {
   const pathname = currentPath();
-  if (pathname === "/boka-utan-konto") return "/en/boka-utan-konto";
-  if (pathname === "/en/boka-utan-konto") return "/boka-utan-konto";
-  if (pathname === "/profile") return "/en/profile";
-  if (pathname === "/en/profile") return "/profile";
-  return isEnglishPath() ? "/" : "/en";
+
+  if (pathname.startsWith("/tjanster/")) {
+    const slug = pathname.split("/").filter(Boolean).at(-1) || "";
+    return tjansterToEn[slug] || "/en";
+  }
+
+  return isEnglishPath() ? enToSv[pathname] || "/" : svToEn[pathname] || "/en";
 }
 
 function createMenuLink(label: string, href: string, onClick: () => void) {
