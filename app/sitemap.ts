@@ -65,13 +65,66 @@ const routes = [
   { path: "/en/office-cleaning-stockholm", priority: 0.64, changeFrequency: "monthly" as const }
 ];
 
-export default function sitemap(): MetadataRoute.Sitemap {
-  const now = new Date();
+const languagePairs = [
+  ["", "/en"],
+  ["/priser", "/en/prices"],
+  ["/tjanster", "/en/services"],
+  ["/tjanster/hemstadning", "/en/home-cleaning"],
+  ["/tjanster/flyttstadning", "/en/move-out-cleaning"],
+  ["/tjanster/kontorsstadning", "/en/office-cleaning"],
+  ["/tjanster/fonsterputs", "/en/window-cleaning"],
+  ["/tjanster/storstadning", "/en/deep-cleaning"],
+  ["/tjanster/byggstadning", "/en/construction-cleaning"],
+  ["/tjanster/visningsstadning", "/en/viewing-cleaning"],
+  ["/stadning-sodertalje", "/en/cleaning-sodertalje"],
+  ["/stadning-stockholm", "/en/cleaning-stockholm"],
+  ["/hemstadning-sodertalje", "/en/home-cleaning-sodertalje"],
+  ["/flyttstadning-sodertalje", "/en/move-out-cleaning-sodertalje"],
+  ["/fonsterputs-sodertalje", "/en/window-cleaning-sodertalje"],
+  ["/kontorsstadning-sodertalje", "/en/office-cleaning-sodertalje"],
+  ["/hemstadning-stockholm", "/en/home-cleaning-stockholm"],
+  ["/flyttstadning-stockholm", "/en/move-out-cleaning-stockholm"],
+  ["/fonsterputs-stockholm", "/en/window-cleaning-stockholm"],
+  ["/kontorsstadning-stockholm", "/en/office-cleaning-stockholm"],
+  ["/om-oss", "/en/about"],
+  ["/jobba-hos-oss", "/en/jobs"],
+  ["/boka-utan-konto", "/en/boka-utan-konto"],
+  ["/kontakt", "/en/contact"],
+  ["/blogg", "/en/blog"],
+  ["/blogg/vad-kostar-hemstadning", "/en/blog/home-cleaning-prices"],
+  ["/blogg/rut-avdrag-stadning", "/en/blog/rut-deduction-cleaning"],
+  ["/blogg/checklista-infor-flytt", "/en/blog/move-out-checklist"],
+  ["/privacy", "/en/privacy"],
+  ["/terms", "/en/terms"],
+] as const;
 
-  return routes.map((route) => ({
-    url: `${baseUrl}${route.path}`,
-    lastModified: now,
-    changeFrequency: route.changeFrequency,
-    priority: route.priority
-  }));
+function alternatePathFor(path: string) {
+  const pair = languagePairs.find(([swedish, english]) => path === swedish || path === english);
+  if (!pair) return undefined;
+  return path === pair[0] ? pair[1] : pair[0];
+}
+
+export default function sitemap(): MetadataRoute.Sitemap {
+  return routes.map((route) => {
+    const url = `${baseUrl}${route.path}`;
+    const alternatePath = alternatePathFor(route.path);
+    const isEnglish = route.path === "/en" || route.path.startsWith("/en/");
+
+    return {
+      url,
+      changeFrequency: route.changeFrequency,
+      priority: route.priority,
+      ...(alternatePath !== undefined
+        ? {
+            alternates: {
+              languages: {
+                [isEnglish ? "en" : "sv"]: url,
+                [isEnglish ? "sv" : "en"]: `${baseUrl}${alternatePath}`,
+                "x-default": isEnglish ? `${baseUrl}${alternatePath}` : url,
+              },
+            },
+          }
+        : {}),
+    };
+  });
 }

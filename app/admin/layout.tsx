@@ -16,6 +16,7 @@ export const metadata: Metadata = {
   applicationName: "Iboren Admin",
   manifest: "/api/pwa-manifest?start=/admin",
   alternates: { canonical: "https://iboren.se/admin" },
+  robots: { index: false, follow: false, nocache: true },
   appleWebApp: {
     capable: true,
     title: "Iboren Admin",

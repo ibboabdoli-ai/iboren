@@ -1,3 +1,4 @@
+import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import EnglishInfoPage from "../../EnglishInfoPage";
 
@@ -245,21 +246,19 @@ function slugFromParams(params: { slug: string[] }) {
   return params.slug.join("/");
 }
 
-function getContent(slug: string): PageContent {
-  return allContent[slug] || {
-    title: "Iboren cleaning",
-    eyebrow: "Iboren",
-    urlPath: `/en/${slug}`,
-    description: "Send a clear cleaning request to Iboren. Choose service, area, address, preferred date and time.",
-    points: ["Clear booking request", "Availability checked before confirmation", "Price indication before work", "Services in Södertälje and Stockholm"],
-    priceText: "Final price is confirmed before work starts.",
-    rutText: "RUT deductions may apply according to Skatteverket rules when the conditions are fulfilled."
-  };
+function getContent(slug: string): PageContent | undefined {
+  return allContent[slug];
 }
 
 export function generateMetadata({ params }: { params: { slug: string[] } }): Metadata {
   const slug = slugFromParams(params);
   const content = getContent(slug);
+  if (!content) {
+    return {
+      title: "Page not found | Iboren",
+      robots: { index: false, follow: false },
+    };
+  }
   const canonical = `https://iboren.se/en/${slug}`;
   const swedishCounterparts: Record<string, string> = {
     "deep-cleaning": "https://iboren.se/tjanster/storstadning",
@@ -311,6 +310,7 @@ export function generateMetadata({ params }: { params: { slug: string[] } }): Me
 export default function Page({ params }: { params: { slug: string[] } }) {
   const slug = slugFromParams(params);
   const content = getContent(slug);
+  if (!content) notFound();
   const swedishHref = ({
     "deep-cleaning": "/tjanster/storstadning",
     "construction-cleaning": "/tjanster/byggstadning",

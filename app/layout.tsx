@@ -14,6 +14,7 @@ import AdminBookingNotesFormatter from "./AdminBookingNotesFormatter";
 import AdminOperationsQuickLink from "./AdminOperationsQuickLink";
 import ProfileAccessLinks from "./ProfileAccessLinks";
 import BookingNumberUiEnhancer from "./BookingNumberUiEnhancer";
+import DocumentLanguage from "./DocumentLanguage";
 import SiteAnalyticsTracker from "./components/analytics/SiteAnalyticsTracker";
 import ThemeProvider from "./components/theme/ThemeProvider";
 import "./globals.css";
@@ -82,6 +83,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="sv" suppressHydrationWarning>
       <head>
         <script
+          id="iboren-language-init"
+          dangerouslySetInnerHTML={{
+            __html: `(function(){var p=window.location.pathname;document.documentElement.lang=p==="/en"||p.indexOf("/en/")===0?"en":"sv";document.documentElement.dir="ltr";})();`
+          }}
+        />
+        <script
           id="iboren-theme-init"
           dangerouslySetInnerHTML={{
             __html: `(function(){try{var t=localStorage.getItem("iboren-theme");var m=t==="light"||t==="dark"||t==="system"?t:"system";var d=m==="system"?(window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"):m;document.documentElement.dataset.theme=d;}catch(e){document.documentElement.dataset.theme="dark";}})();`
@@ -95,6 +102,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body>
         <ThemeProvider>
+          <DocumentLanguage />
           <StructuredData />
           <SiteAnalyticsTracker />
           <GoogleAddressEnhancer />
