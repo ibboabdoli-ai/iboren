@@ -24,9 +24,23 @@ const faqs = [
   }
 ];
 
+const faqSchema = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: faqs.map((faq) => ({
+    "@type": "Question",
+    name: faq.question,
+    acceptedAnswer: {
+      "@type": "Answer",
+      text: faq.answer
+    }
+  }))
+};
+
 export default function HomeFaq() {
   return (
     <section id="faq" aria-labelledby="faq-heading" className="relative overflow-hidden bg-night py-24 text-porcelain md:py-32">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema).replace(/</g, "\\u003c") }} />
       <div aria-hidden="true" className="pointer-events-none absolute inset-y-0 right-0 hidden w-[58%] overflow-hidden lg:block">
         <div className="absolute -right-48 top-[-7rem] h-[28rem] w-[49rem] -rotate-12 border border-gold/10" />
         <div className="absolute -right-40 top-20 h-[22rem] w-[43rem] -rotate-12 border border-gold/10" />
