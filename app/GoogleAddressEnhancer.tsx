@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { usePathname } from "next/navigation";
 
 declare global {
   interface Window {
@@ -133,7 +134,11 @@ function attachAll() {
 }
 
 export default function GoogleAddressEnhancer() {
+  const pathname = usePathname();
+  const isBookingPage = pathname === "/boka-utan-konto" || pathname === "/en/boka-utan-konto";
+
   useEffect(() => {
+    if (!isBookingPage) return;
     const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
     if (!apiKey) return;
 
@@ -154,7 +159,7 @@ export default function GoogleAddressEnhancer() {
       observer?.disconnect();
       if (retryTimer) window.clearInterval(retryTimer);
     };
-  }, []);
+  }, [isBookingPage]);
 
   return null;
 }

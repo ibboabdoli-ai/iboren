@@ -69,33 +69,48 @@ function insertInlineCta(config: PublicCtaConfig) {
 
 export default function PublicBookingRequestLink() {
   const pathname = usePathname();
-  const [ready, setReady] = useState(false);
+  const [readyPath, setReadyPath] = useState<string | null>(null);
   const [loggedIn, setLoggedIn] = useState(false);
 
   useEffect(() => {
-    const supabase = getSupabase();
-    if (!supabase) {
-      setReady(true);
+    const config = getConfig(pathname);
+    if (!config) {
+      setLoggedIn(false);
+      setReadyPath(pathname);
       return;
     }
 
+    setReadyPath(null);
+    const supabase = getSupabase();
+    if (!supabase) {
+      setLoggedIn(false);
+      setReadyPath(pathname);
+      return;
+    }
+
+    let active = true;
     supabase.auth.getSession().then(({ data }) => {
+      if (!active) return;
       setLoggedIn(Boolean(data.session?.user));
-      setReady(true);
+      setReadyPath(pathname);
     });
 
     const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!active) return;
       setLoggedIn(Boolean(session?.user));
-      setReady(true);
+      setReadyPath(pathname);
     });
 
-    return () => listener.subscription.unsubscribe();
-  }, []);
+    return () => {
+      active = false;
+      listener.subscription.unsubscribe();
+    };
+  }, [pathname]);
 
   useEffect(() => {
     removeInlineCta();
     const config = getConfig(pathname);
-    if (!config || !ready || loggedIn) return;
+    if (!config || readyPath !== pathname || loggedIn) return;
 
     let attempts = 0;
     let intervalId: number | undefined;
@@ -113,7 +128,7 @@ export default function PublicBookingRequestLink() {
       if (intervalId !== undefined) window.clearInterval(intervalId);
       removeInlineCta();
     };
-  }, [pathname, ready, loggedIn]);
+  }, [pathname, readyPath, loggedIn]);
 
   return null;
 }

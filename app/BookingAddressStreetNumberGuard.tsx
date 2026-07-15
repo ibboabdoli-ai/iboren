@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { usePathname } from "next/navigation";
 
 function isEnglishPage() {
   return window.location.pathname.startsWith("/en");
@@ -59,7 +60,11 @@ function validateAddress(input: HTMLInputElement) {
 }
 
 export default function BookingAddressStreetNumberGuard() {
+  const pathname = usePathname();
+  const isBookingPage = pathname === "/boka-utan-konto" || pathname === "/en/boka-utan-konto";
+
   useEffect(() => {
+    if (!isBookingPage) return;
     const onSubmit = (event: SubmitEvent) => {
       const form = event.target as HTMLFormElement | null;
       if (!form) return;
@@ -84,7 +89,7 @@ export default function BookingAddressStreetNumberGuard() {
       document.removeEventListener("submit", onSubmit, true);
       document.removeEventListener("input", onInput, true);
     };
-  }, []);
+  }, [isBookingPage]);
 
   return null;
 }

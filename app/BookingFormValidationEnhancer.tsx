@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 import { createClient } from "@supabase/supabase-js";
 
 type FieldRule = {
@@ -254,17 +255,24 @@ function focusFirstInvalid(form: HTMLFormElement) {
 }
 
 export default function BookingFormValidationEnhancer() {
+  const pathname = usePathname();
+  const isBookingPage = pathname === "/boka-utan-konto" || pathname === "/en/boka-utan-konto";
   const [hasUser, setHasUser] = useState<boolean | null>(null);
 
   useEffect(() => {
+    if (!isBookingPage) {
+      setHasUser(null);
+      return;
+    }
     const supabase = getSupabase();
     if (!supabase) return;
     supabase.auth.getUser().then(({ data }) => setHasUser(Boolean(data.user)));
     const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => setHasUser(Boolean(session?.user)));
     return () => listener.subscription.unsubscribe();
-  }, []);
+  }, [isBookingPage]);
 
   useEffect(() => {
+    if (!isBookingPage) return;
     const attach = () => {
       const language = detectLanguage();
       for (const form of bookingForms()) {
@@ -318,7 +326,7 @@ export default function BookingFormValidationEnhancer() {
       observer.disconnect();
       document.removeEventListener("submit", submitHandler, true);
     };
-  }, [hasUser]);
+  }, [hasUser, isBookingPage]);
 
   return null;
 }
