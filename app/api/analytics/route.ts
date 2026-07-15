@@ -5,7 +5,13 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-const allowedEvents = new Set(["page_view", "quote_cta_click", "booking_cta_click"]);
+const allowedEvents = new Set([
+  "page_view",
+  "quote_cta_click",
+  "booking_cta_click",
+  "booking_form_started",
+  "booking_request_submitted"
+]);
 const noStoreHeaders = { "Cache-Control": "no-store, max-age=0" };
 
 function cleanPath(value: unknown) {

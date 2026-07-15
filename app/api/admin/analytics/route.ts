@@ -29,12 +29,14 @@ export async function GET(request: Request) {
   const { data, error } = await admin.supabase.from("site_events").select("event_name, path, language, created_at").gte("created_at", since).order("created_at", { ascending: false }).limit(5000);
   if (error) return NextResponse.json({ ok: false, message: "Kunde inte hämta statistik." }, { status: 500 });
   const events = data || [];
-  const totals = { pageViews: 0, quoteClicks: 0, bookingClicks: 0 };
+  const totals = { pageViews: 0, quoteClicks: 0, bookingClicks: 0, bookingStarts: 0, bookingSubmissions: 0 };
   const pages = new Map<string, number>();
   for (const event of events) {
     if (event.event_name === "page_view") { totals.pageViews += 1; pages.set(event.path, (pages.get(event.path) || 0) + 1); }
     if (event.event_name === "quote_cta_click") totals.quoteClicks += 1;
     if (event.event_name === "booking_cta_click") totals.bookingClicks += 1;
+    if (event.event_name === "booking_form_started") totals.bookingStarts += 1;
+    if (event.event_name === "booking_request_submitted") totals.bookingSubmissions += 1;
   }
   return NextResponse.json({ ok: true, totals, pages: Array.from(pages, ([path, count]) => ({ path, count })).sort((a, b) => b.count - a.count).slice(0, 10) });
 }

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { LocateFixed } from "lucide-react";
 import { createClient } from "@supabase/supabase-js";
 import { formatSek } from "./lib/pricingCalculator";
+import { trackSiteEvent } from "./lib/analytics";
 import {
   applyBookingServiceSideEffects,
   bookingFormVisibility,
@@ -329,6 +330,7 @@ export default function UnifiedBookingFormCore({ language, variant = "page" }: U
   const [draft, setDraft] = useState<Draft>(() => base(language));
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [message, setMessage] = useState("");
+  const bookingStartTracked = useRef(false);
   const isLoggedIn = Boolean(authToken);
   const visibility = useMemo(() => bookingFormVisibility(draft), [draft]);
   const summaryResult = useMemo(() => buildBookingSummary(draft, language), [draft, language]);
@@ -390,6 +392,12 @@ export default function UnifiedBookingFormCore({ language, variant = "page" }: U
 
   function toggleExtra(item: string) {
     setDraft((current) => ({ ...current, extras: current.extras.includes(item) ? current.extras.filter((extra) => extra !== item) : [...current.extras, item] }));
+  }
+
+  function trackBookingStart() {
+    if (bookingStartTracked.current) return;
+    bookingStartTracked.current = true;
+    trackSiteEvent("booking_form_started");
   }
 
   async function useCurrentLocationAddress() {
@@ -457,6 +465,7 @@ export default function UnifiedBookingFormCore({ language, variant = "page" }: U
       });
       const json = await response.json().catch(() => null) as { ok?: boolean; message?: string } | null;
       if (!response.ok || !json?.ok) throw new Error(json?.message || "Error");
+      trackSiteEvent("booking_request_submitted");
       setStatus("success");
       setMessage(json.message || t.success);
       setDraft((current) => ({ ...base(language), name: isLoggedIn ? current.name : "", email: isLoggedIn ? accountEmail : "" }));
@@ -468,7 +477,7 @@ export default function UnifiedBookingFormCore({ language, variant = "page" }: U
 
   const formAndSummary = (
         <section className={variant === "embedded" ? "grid w-full min-w-0 gap-5" : "grid gap-5 xl:grid-cols-[1fr_.75fr]"}>
-          <form onSubmit={submit} className="w-full min-w-0 rounded-[2rem] border border-white/10 bg-[#252420] p-5 shadow-luxe md:p-7">
+          <form onSubmit={submit} onFocusCapture={trackBookingStart} className="w-full min-w-0 rounded-[2rem] border border-white/10 bg-[#252420] p-5 shadow-luxe md:p-7">
             <input value={draft.website} onChange={(event) => setField("website", event.target.value)} name="website" tabIndex={-1} autoComplete="off" aria-hidden="true" className="hidden" />
             <div className="mb-7 flex items-start justify-between gap-4"><div><p className="text-xs font-black uppercase tracking-[.32em] text-gold">{t.section}</p><h2 className="display mt-2 text-3xl font-normal uppercase text-gold md:text-4xl">{t.formTitle}</h2></div><span className="rounded-full border border-gold/30 px-4 py-2 text-xs font-black uppercase tracking-[.18em] text-gold">{t.draftBadge}</span></div>
             <div className="grid gap-5">

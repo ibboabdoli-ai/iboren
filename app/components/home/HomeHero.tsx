@@ -4,7 +4,6 @@ import type { User } from "@supabase/supabase-js";
 import { ArrowUpRight } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
-import { trackSiteEvent } from "../../lib/analytics";
 
 const trustBadges = [
   {
@@ -72,7 +71,7 @@ export default function HomeHero({ user, image }: Props) {
             {activeTrustBadge.explanation}
           </div>
         )}
-        <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row md:mt-10 lg:items-start lg:justify-start"><Link href="/priser#pris-kalkylator" onClick={() => trackSiteEvent("quote_cta_click")} className="btn-primary">Få pris direkt <ArrowUpRight size={17} /></Link></div>
+        <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row md:mt-10 lg:items-start lg:justify-start"><Link href="/priser#pris-kalkylator" data-site-analytics-event="quote_cta_click" className="btn-primary">Få pris direkt <ArrowUpRight size={17} /></Link></div>
         <p className="mx-auto mt-5 max-w-xl text-sm font-bold leading-6 text-porcelain/75 lg:mx-0">Beräkna pris först. Du kan gå vidare till en ej bindande bokningsförfrågan när allt ser rätt ut.</p>
         <div className="mt-8 inline-flex items-center gap-4 text-[11px] font-bold uppercase tracking-[0.32em] text-gold/75 before:h-px before:w-10 before:bg-gold/40 after:h-px after:w-10 after:bg-gold/40 md:mt-10">Se före och efter</div>
       </div>
