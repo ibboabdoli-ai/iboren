@@ -14,7 +14,6 @@ import AdminBookingNotesFormatter from "./AdminBookingNotesFormatter";
 import AdminOperationsQuickLink from "./AdminOperationsQuickLink";
 import ProfileAccessLinks from "./ProfileAccessLinks";
 import BookingNumberUiEnhancer from "./BookingNumberUiEnhancer";
-import ChatWidgetPolish from "./ChatWidgetPolish";
 import DocumentLanguage from "./DocumentLanguage";
 import SiteAnalyticsTracker from "./components/analytics/SiteAnalyticsTracker";
 import ThemeProvider from "./components/theme/ThemeProvider";
@@ -120,7 +119,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <AdminOperationsQuickLink />
           <ProfileAccessLinks />
           <BookingNumberUiEnhancer />
-          <ChatWidgetPolish />
           {children}
           <script
             id="iboren-proffera-chat"

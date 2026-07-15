@@ -69,7 +69,7 @@ body {
   line-height: 1;
 }
 
-/* Keep the embedded chat fields readable. */
+/* Keep the embedded AI chat fields readable. */
 .saic2 .saic2-contact input,
 .saic2 .saic2-input {
   background: #fffdf8 !important;
@@ -500,89 +500,6 @@ main:has(#booking-address) form textarea::placeholder {
   color: var(--gold);
 }
 
-/* External chat widget: visual shell only; the chat service and its data stay untouched. */
-#service-ai-chat-root {
-  --saic-color: #d4a574 !important;
-  --saic-header: #141512 !important;
-  --saic-header-text: #fffdf8 !important;
-  --saic-agent-bg: #fffdf8 !important;
-  --saic-agent-text: #202020 !important;
-  --saic-user-bg: #d4a574 !important;
-  --saic-user-text: #141512 !important;
-}
-
-#service-ai-chat-root .saic-panel {
-  border: 1px solid rgba(212, 165, 116, .38) !important;
-  border-radius: 1rem !important;
-  box-shadow: 0 24px 70px rgba(2, 5, 4, .3) !important;
-  overflow: hidden;
-}
-
-#service-ai-chat-root .saic-header {
-  border-bottom: 1px solid rgba(212, 165, 116, .18) !important;
-}
-
-#service-ai-chat-root .saic-avatar,
-#service-ai-chat-root .saic-button-icon {
-  display: grid !important;
-  place-items: center;
-  background: #141512 !important;
-  color: var(--gold) !important;
-}
-
-#service-ai-chat-root .saic-avatar img,
-#service-ai-chat-root .saic-button-icon img {
-  display: none !important;
-}
-
-#service-ai-chat-root .saic-avatar::after,
-#service-ai-chat-root .saic-button-icon::after {
-  content: "I";
-  font-family: Georgia, serif;
-  font-size: 1rem;
-  font-weight: 700;
-}
-
-#service-ai-chat-root .saic-button {
-  border: 1px solid rgba(212, 165, 116, .54) !important;
-  box-shadow: 0 14px 38px rgba(2, 5, 4, .28) !important;
-  transition: transform .2s ease, box-shadow .2s ease !important;
-}
-
-#service-ai-chat-root .saic-button:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 18px 48px rgba(212, 165, 116, .2) !important;
-}
-
-#service-ai-chat-root .saic-button-label {
-  border: 1px solid rgba(212, 165, 116, .25);
-  border-radius: 999px;
-  background: rgba(20, 21, 18, .92);
-  color: #fffdf8;
-  font-weight: 700;
-  padding: .55rem .8rem;
-}
-
-#service-ai-chat-root .saic-input {
-  background: #fffdf8 !important;
-  color: #202020 !important;
-  -webkit-text-fill-color: #202020 !important;
-}
-
-#service-ai-chat-root .saic-input::placeholder {
-  color: #64748b !important;
-  opacity: 1;
-}
-
-#service-ai-chat-root .saic-prechat,
-#service-ai-chat-root .saic-badge {
-  display: none !important;
-}
-
-#service-ai-chat-root .saic-powered {
-  color: rgba(32, 32, 32, .62) !important;
-}
-
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
@@ -595,7 +512,4 @@ main:has(#booking-address) form textarea::placeholder {
     transition-duration: .01ms;
   }
 
-  #service-ai-chat-root .saic-button {
-    transition: none !important;
-  }
 }
