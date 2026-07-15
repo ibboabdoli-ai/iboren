@@ -26,8 +26,13 @@ const faqs = [
 
 export default function HomeFaq() {
   return (
-    <section id="faq" aria-labelledby="faq-heading" className="bg-night py-24 text-porcelain md:py-32">
-      <div className="luxe-container grid gap-10 lg:grid-cols-[.82fr_1.18fr] lg:gap-16">
+    <section id="faq" aria-labelledby="faq-heading" className="relative overflow-hidden bg-night py-24 text-porcelain md:py-32">
+      <div aria-hidden="true" className="pointer-events-none absolute inset-y-0 right-0 hidden w-[58%] overflow-hidden lg:block">
+        <div className="absolute -right-48 top-[-7rem] h-[28rem] w-[49rem] -rotate-12 border border-gold/10" />
+        <div className="absolute -right-40 top-20 h-[22rem] w-[43rem] -rotate-12 border border-gold/10" />
+        <div className="absolute -right-32 top-52 h-[16rem] w-[36rem] -rotate-12 border border-gold/10" />
+      </div>
+      <div className="luxe-container relative grid gap-10 lg:grid-cols-[.82fr_1.18fr] lg:gap-16">
         <div className="lg:sticky lg:top-28 lg:self-start">
           <p className="text-[11px] font-bold uppercase tracking-[.38em] text-gold">IV / Vanliga frågor</p>
           <h2 id="faq-heading" className="display mt-4 max-w-lg text-5xl font-normal uppercase leading-[.9] md:text-7xl">Tydliga svar innan du skickar.</h2>
