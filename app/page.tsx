@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { BadgeCheck, Building2, Calculator, CheckCircle2, Home, MapPin, ShieldCheck, Truck } from "lucide-react";
 import { createClient, User } from "@supabase/supabase-js";
@@ -81,6 +82,25 @@ const trustPoints = [
   }
 ];
 
+const processSteps = [
+  {
+    title: "Välj tjänst",
+    body: "Välj hemstädning, flyttstädning, kontorsstädning eller fönsterputs."
+  },
+  {
+    title: "Fyll i uppgifter",
+    body: "Lägg till område, storlek och de uppgifter som påverkar priset."
+  },
+  {
+    title: "Se prisindikation",
+    body: "Se en tydlig uppskattning med RUT-avdrag när villkoren är uppfyllda."
+  },
+  {
+    title: "Skicka förfrågan",
+    body: "Iboren bekräftar tid, omfattning och slutpris innan något bokas."
+  }
+];
+
 function getSupabase() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -91,8 +111,7 @@ function getSupabase() {
 export default function HomePage() {
   const [user, setUser] = useState<User | null>(null);
   const [activeFrame, setActiveFrame] = useState(0);
-  const wheelLock = useRef(false);
-  const touchStartY = useRef<number | null>(null);
+  const reduceMotion = useReducedMotion();
 
   useEffect(() => {
     const supabase = getSupabase();
@@ -112,45 +131,37 @@ export default function HomePage() {
     setActiveFrame((current) => Math.max(0, Math.min(frames.length - 1, current + direction)));
   }
 
-  function handleCinematicWheel(event: React.WheelEvent<HTMLElement>) {
-    const down = event.deltaY > 0;
-    const up = event.deltaY < 0;
-    const canGoNext = down && activeFrame < frames.length - 1;
-    const canGoPrev = up && activeFrame > 0;
-    if (!canGoNext && !canGoPrev) return;
-    event.preventDefault();
-    if (wheelLock.current) return;
-    wheelLock.current = true;
-    stepFrame(down ? 1 : -1);
-    window.setTimeout(() => { wheelLock.current = false; }, 520);
-  }
-
-  function handleTouchStart(event: React.TouchEvent<HTMLElement>) {
-    touchStartY.current = event.touches[0]?.clientY ?? null;
-  }
-
-  function handleTouchEnd(event: React.TouchEvent<HTMLElement>) {
-    if (touchStartY.current === null) return;
-    const endY = event.changedTouches[0]?.clientY ?? touchStartY.current;
-    const delta = touchStartY.current - endY;
-    touchStartY.current = null;
-    if (Math.abs(delta) < 40) return;
-    if (delta > 0 && activeFrame < frames.length - 1) stepFrame(1);
-    if (delta < 0 && activeFrame > 0) stepFrame(-1);
-  }
-
   return (
     <main className="min-h-screen overflow-x-hidden bg-night text-porcelain">
       <HomeHeader user={user} />
 
       <HomeHero user={user} image={frames[2].image} />
 
-      <section id="cinematic-scroll" onWheel={handleCinematicWheel} onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd} className="relative h-screen min-h-screen overflow-hidden bg-night">
-        <div className="relative h-screen min-h-screen overflow-hidden bg-night">
-          {frames.map((frame, index) => <img key={frame.counter} src={frame.image} alt={frame.title} loading={index === 0 ? "eager" : "lazy"} decoding="async" fetchPriority={index === 0 ? "auto" : "low"} sizes="100vw" style={{ opacity: activeFrame === index ? 1 : 0, transform: activeFrame === index ? "scale(1)" : "scale(1.04)", zIndex: activeFrame === index ? 2 : 1 }} className="absolute inset-0 h-full w-full object-cover transition-all duration-700 ease-out" />)}
+      <section id="cinematic-scroll" className="relative min-h-[34rem] overflow-hidden bg-night sm:min-h-[38rem] lg:min-h-[42rem]">
+        <div className="relative min-h-[34rem] overflow-hidden bg-night sm:min-h-[38rem] lg:min-h-[42rem]">
+          {frames.map((frame, index) => <img key={frame.counter} src={frame.image} alt={frame.title} loading={index === 0 ? "eager" : "lazy"} decoding="async" fetchPriority={index === 0 ? "auto" : "low"} sizes="100vw" style={{ opacity: activeFrame === index ? 1 : 0, transform: activeFrame === index ? "scale(1)" : "scale(1.025)", zIndex: activeFrame === index ? 2 : 1 }} className="absolute inset-0 h-full w-full object-cover transition-[opacity,transform] duration-500 ease-out motion-reduce:transition-none" />)}
           <div className="absolute inset-0 z-10 bg-[linear-gradient(90deg,rgba(2,5,4,.50),rgba(2,5,4,.06)_48%,rgba(2,5,4,.50)),radial-gradient(circle_at_52%_46%,transparent_0_42%,rgba(0,0,0,.34)_100%)]" />
           <div className="absolute left-5 right-5 top-24 z-20 flex items-start justify-between md:left-[8vw] md:right-[8vw] md:top-[12vh]"><div><p className="text-[10px] font-black uppercase tracking-[.34em] text-gold/85">{activeScene.kicker}</p><p className="display mt-1 text-4xl font-normal uppercase tracking-[.02em] text-porcelain md:text-6xl">{activeScene.counter}</p></div><div className="h-24 w-1 overflow-hidden rounded-full bg-porcelain/15"><div className="w-full rounded-full bg-gold transition-all" style={{ height: `${Math.round(progress * 100)}%` }} /></div></div>
-          <div className="absolute inset-x-0 bottom-12 z-20 px-5 md:bottom-20"><div className="luxe-container"><h2 className="display max-w-4xl text-[clamp(3rem,8vw,7rem)] font-normal uppercase leading-[.84] tracking-[.02em] text-porcelain">{activeScene.title}</h2><p className="mt-5 max-w-2xl text-base leading-8 text-porcelain/86 md:text-xl">{activeScene.body}</p><div className="mt-7 flex flex-wrap gap-3">{activeFrame > 0 && <button type="button" onClick={() => stepFrame(-1)} className="rounded-full border border-gold/40 px-5 py-3 text-[11px] font-bold uppercase tracking-[.22em] text-gold">Föregående</button>}{activeFrame < frames.length - 1 ? <button type="button" onClick={() => stepFrame(1)} className="rounded-full border border-gold/50 bg-gold/10 px-5 py-3 text-[11px] font-bold uppercase tracking-[.22em] text-gold backdrop-blur hover:bg-gold hover:text-night">Nästa bild</button> : <Link href="/boka-utan-konto" className="rounded-full border border-gold/50 bg-gold/10 px-5 py-3 text-[11px] font-bold uppercase tracking-[.22em] text-gold backdrop-blur hover:bg-gold hover:text-night">Skicka förfrågan</Link>}</div></div></div>
+          <div className="absolute inset-x-0 bottom-10 z-20 px-5 md:bottom-16">
+            <div className="luxe-container">
+              <AnimatePresence initial={false} mode="wait">
+                <motion.div
+                  key={activeScene.counter}
+                  initial={reduceMotion ? false : { opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={reduceMotion ? undefined : { opacity: 0, y: -8 }}
+                  transition={{ duration: reduceMotion ? 0 : 0.38, ease: [0.22, 1, 0.36, 1] }}
+                >
+                  <h2 className="display max-w-4xl text-[clamp(2.75rem,6vw,5.8rem)] font-normal uppercase leading-[.84] tracking-[.02em] text-porcelain">{activeScene.title}</h2>
+                  <p className="mt-5 max-w-2xl text-base leading-8 text-porcelain/86 md:text-xl">{activeScene.body}</p>
+                </motion.div>
+              </AnimatePresence>
+              <div className="mt-7 flex flex-wrap gap-3">
+                {activeFrame > 0 && <button type="button" onClick={() => stepFrame(-1)} className="rounded-full border border-gold/40 px-5 py-3 text-[11px] font-bold uppercase tracking-[.22em] text-gold transition hover:bg-gold/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold motion-reduce:transition-none">Föregående</button>}
+                {activeFrame < frames.length - 1 ? <button type="button" onClick={() => stepFrame(1)} className="rounded-full border border-gold/50 bg-gold/10 px-5 py-3 text-[11px] font-bold uppercase tracking-[.22em] text-gold backdrop-blur transition hover:bg-gold hover:text-night focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold motion-reduce:transition-none">Nästa bild</button> : <Link href="/boka-utan-konto" data-site-analytics-event="booking_cta_click" className="rounded-full border border-gold/50 bg-gold/10 px-5 py-3 text-[11px] font-bold uppercase tracking-[.22em] text-gold backdrop-blur transition hover:bg-gold hover:text-night focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold motion-reduce:transition-none">Skicka förfrågan</Link>}
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -240,11 +251,28 @@ export default function HomePage() {
 
       <ReviewShowcase language="sv" />
 
-      <section id="process" className="iboren-section-dark py-24 md:py-32"><div className="luxe-container"><p className="iboren-gold-accent text-[11px] font-bold uppercase tracking-[.38em]">III / Så fungerar det</p><h2 className="display mt-4 max-w-4xl text-5xl font-normal uppercase leading-[.9] text-porcelain md:text-7xl">Fyra steg. En tydlig förfrågan.</h2><div className="mt-12 grid gap-4 md:grid-cols-4">{["Välj tjänst", "Fyll i plats", "Se sammanfattning", "Skicka förfrågan"].map((item, i) => <article key={item} className="process-card iboren-card-glass iboren-card-glass-hover min-w-0 rounded-[2rem] p-6"><div className="mb-10 flex items-center justify-between"><span className="iboren-gold-accent display text-4xl">0{i + 1}</span><CheckCircle2 className="iboren-gold-accent" /></div><h3 className="display font-normal uppercase text-porcelain">{item}</h3><p className="iboren-text-muted-dark mt-4 text-sm leading-7">Ett enkelt steg som gör bokningsunderlaget tydligare och lättare att följa upp.</p></article>)}</div></div></section>
+      <section id="process" className="iboren-section-dark py-24 md:py-32">
+        <div className="luxe-container">
+          <p className="iboren-gold-accent text-[11px] font-bold uppercase tracking-[.38em]">III / Så fungerar det</p>
+          <h2 className="display mt-4 max-w-4xl text-5xl font-normal uppercase leading-[.9] text-porcelain md:text-7xl">Fyra steg. En tydlig förfrågan.</h2>
+          <div className="mt-12 grid gap-4 md:grid-cols-4">
+            {processSteps.map((step, index) => (
+              <article key={step.title} className="process-card iboren-card-glass min-w-0 rounded-[2rem] p-6">
+                <div className="mb-10 flex items-center justify-between">
+                  <span className="iboren-gold-accent display text-4xl">0{index + 1}</span>
+                  <CheckCircle2 className="iboren-gold-accent" />
+                </div>
+                <h3 className="display font-normal uppercase text-porcelain">{step.title}</h3>
+                <p className="iboren-text-muted-dark mt-4 text-sm leading-7">{step.body}</p>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
 
       <HomeBookingCta user={user} />
 
-      <footer className="border-t border-gold/10 bg-night py-10"><div className="luxe-container grid gap-8 md:grid-cols-[1.1fr_1fr_1fr]"><div><p className="display text-4xl font-normal uppercase text-gold">Iboren</p><p className="mt-2 max-w-sm text-sm leading-7 text-porcelain/65">Städning i Södertälje och Stockholm med tydlig prisbild, RUT-avdrag och ej bindande bokningsförfrågan.</p></div><div><p className="mb-3 text-xs font-black uppercase tracking-[.22em] text-gold">Tjänster</p><div className="grid gap-2 text-sm font-semibold text-porcelain/70"><Link href="/hemstadning" className="hover:text-gold">Hemstädning</Link><Link href="/flyttstadning" className="hover:text-gold">Flyttstädning</Link><Link href="/kontorsstadning" className="hover:text-gold">Kontorsstädning</Link><Link href="/fonsterputs" className="hover:text-gold">Fönsterputs</Link></div></div><div><p className="mb-3 text-xs font-black uppercase tracking-[.22em] text-gold">Iboren</p><div className="grid gap-2 text-sm font-semibold text-porcelain/70"><Link href="/priser" className="hover:text-gold">Priser</Link><Link href="/jobb" className="hover:text-gold">Jobba hos oss</Link><Link href="/om-iboren" className="hover:text-gold">Om oss</Link><Link href="/privacy" className="hover:text-gold">Privacy</Link><Link href="/terms" className="hover:text-gold">Terms</Link><a href="mailto:hej@iboren.se" className="hover:text-gold">hej@iboren.se</a><a href="tel:+46760354141" className="hover:text-gold">076 035 41 41</a></div></div></div></footer>
+      <footer className="border-t border-gold/10 bg-night py-10"><div className="luxe-container grid gap-8 md:grid-cols-[1.1fr_1fr_1fr]"><div><p className="display text-4xl font-normal uppercase text-gold">Iboren</p><p className="mt-2 max-w-sm text-sm leading-7 text-porcelain/65">Städning i Södertälje och Stockholm med tydlig prisbild, RUT-avdrag och ej bindande förfrågan.</p></div><div><p className="mb-3 text-xs font-black uppercase tracking-[.22em] text-gold">Tjänster</p><div className="grid gap-2 text-sm font-semibold text-porcelain/70"><Link href="/hemstadning" className="hover:text-gold">Hemstädning</Link><Link href="/flyttstadning" className="hover:text-gold">Flyttstädning</Link><Link href="/kontorsstadning" className="hover:text-gold">Kontorsstädning</Link><Link href="/fonsterputs" className="hover:text-gold">Fönsterputs</Link></div></div><div><p className="mb-3 text-xs font-black uppercase tracking-[.22em] text-gold">Iboren</p><div className="grid gap-2 text-sm font-semibold text-porcelain/70"><Link href="/priser" className="hover:text-gold">Priser</Link><Link href="/jobb" className="hover:text-gold">Jobba hos oss</Link><Link href="/om-iboren" className="hover:text-gold">Om oss</Link><Link href="/privacy" className="hover:text-gold">Integritet</Link><Link href="/terms" className="hover:text-gold">Villkor</Link><a href="mailto:hej@iboren.se" className="hover:text-gold">hej@iboren.se</a><a href="tel:+46760354141" className="hover:text-gold">076 035 41 41</a></div></div></div></footer>
     </main>
   );
 }
