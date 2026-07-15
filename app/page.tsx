@@ -13,12 +13,14 @@ import ReviewShowcase from "./components/reviews/ReviewShowcase";
 // UnifiedBookingFormCore removed from this page to avoid rendering the embedded form on the Swedish homepage
 
 const frames = [
-  { counter: "01 / 06", kicker: "HEM · FÖRE", title: "Före städningen", body: "Ett hem innan återställningen: rörigt, tungt och svårt att slappna av i.", image: "/cinematic/01-home-before.webp" },
-  { counter: "02 / 06", kicker: "STÄDNING · PÅGÅR", title: "Arbetet börjar", body: "Yta för yta återställs med metod, rytm och precision.", image: "/cinematic/02-home-cleaner.webp" },
-  { counter: "03 / 06", kicker: "HEM · EFTER", title: "Lugnet efteråt", body: "Ett rent, ljust och lugnt hem där allt känns lättare.", image: "/cinematic/03-home-after.webp" },
-  { counter: "04 / 06", kicker: "KONTOR · FÖRE", title: "När arbetsplatsen behöver lyftas", body: "Kontoret innan städning: ytor, detaljer och saker som tar fokus.", image: "/cinematic/04-office-before.webp" },
-  { counter: "05 / 06", kicker: "KONTOR · PÅGÅR", title: "Yta för yta", body: "Arbetsytor, mötesrum och entré återställs utan att störa verksamheten.", image: "/cinematic/05-office-cleaner.webp" },
-  { counter: "06 / 06", kicker: "KLART · EFTER", title: "Redo igen", body: "En renare arbetsplats, redo för fokus, kunder och nästa produktiva dag.", image: "/cinematic/06-office-after.webp" }
+  { counter: "01 / 08", kicker: "HEM · FÖRE", title: "Före städningen", body: "Ett hem innan återställningen: rörigt, tungt och svårt att slappna av i.", image: "/cinematic/01-home-before.webp" },
+  { counter: "02 / 08", kicker: "HEM · FÖRVANDLING", title: "Det börjar lätta", body: "Det som stör försvinner steg för steg och rummet får tillbaka sitt lugn.", image: "/cinematic/02-home-progress.webp" },
+  { counter: "03 / 08", kicker: "HEM · FÖRVANDLING", title: "Detaljerna faller på plats", body: "Ytorna blir fria och helheten blir tydligare för varje bild.", image: "/cinematic/03-home-progress.webp" },
+  { counter: "04 / 08", kicker: "HEM · EFTER", title: "Lugnet efteråt", body: "Ett rent, ljust och lugnt hem där allt känns lättare.", image: "/cinematic/03-home-after.webp" },
+  { counter: "05 / 08", kicker: "KONTOR · FÖRE", title: "När arbetsplatsen behöver lyftas", body: "Kontoret innan städning: ytor, detaljer och saker som tar fokus.", image: "/cinematic/04-office-before.webp" },
+  { counter: "06 / 08", kicker: "KONTOR · FÖRVANDLING", title: "Fokus kommer tillbaka", body: "Papper, ytor och arbetsplats blir tydligare i små, synliga steg.", image: "/cinematic/06-office-progress.webp" },
+  { counter: "07 / 08", kicker: "KONTOR · FÖRVANDLING", title: "Nästan redo", body: "Den rena strukturen tar form utan att känslan av arbetsplats försvinner.", image: "/cinematic/07-office-progress.webp" },
+  { counter: "08 / 08", kicker: "KLART · EFTER", title: "Redo igen", body: "En renare arbetsplats, redo för fokus, kunder och nästa produktiva dag.", image: "/cinematic/06-office-after.webp" }
 ];
 
 const services = [
@@ -140,7 +142,7 @@ export default function HomePage() {
     <main className="min-h-screen overflow-x-hidden bg-night text-porcelain">
       <HomeHeader user={user} />
 
-      <HomeHero user={user} image={frames[2].image} />
+      <HomeHero user={user} image={frames[3].image} />
 
       <section id="cinematic-scroll" className="relative min-h-[34rem] overflow-hidden bg-night sm:min-h-[38rem] lg:min-h-[42rem]">
         <div className="relative min-h-[34rem] overflow-hidden bg-night sm:min-h-[38rem] lg:min-h-[42rem]">

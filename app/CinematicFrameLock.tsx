@@ -2,18 +2,21 @@
 
 import { useEffect, useRef } from "react";
 
-const FRAME_COUNT = 6;
 const WHEEL_LOCK_MS = 320;
 const WHEEL_MIN_DELTA = 3;
 const TOUCH_THRESHOLD_PX = 34;
 
-function getCurrentFrameIndex(section: HTMLElement) {
+function getFrameCount(section: HTMLElement) {
+  return Math.max(1, section.querySelectorAll("img").length);
+}
+
+function getCurrentFrameIndex(section: HTMLElement, frameCount: number) {
   const counter = Array.from(section.querySelectorAll("p"))
     .map((node) => node.textContent?.trim() || "")
-    .find((text) => /^\d{2}\s\/\s06$/.test(text));
+    .find((text) => /^\d{2}\s\/\s\d{2}$/.test(text));
 
   const parsed = Number(counter?.slice(0, 2));
-  if (Number.isFinite(parsed) && parsed >= 1 && parsed <= FRAME_COUNT) return parsed - 1;
+  if (Number.isFinite(parsed) && parsed >= 1 && parsed <= frameCount) return parsed - 1;
 
   const images = Array.from(section.querySelectorAll<HTMLImageElement>("img"));
   const activeImageIndex = images.findIndex((image) => {
@@ -46,12 +49,13 @@ export default function CinematicFrameLock() {
     const section: HTMLElement = foundSection;
 
     function getBoundary(direction: 1 | -1) {
-      const index = getCurrentFrameIndex(section);
+      const frameCount = getFrameCount(section);
+      const index = getCurrentFrameIndex(section, frameCount);
       return {
         index,
         atFirst: index <= 0,
-        atLast: index >= FRAME_COUNT - 1,
-        canStep: direction === 1 ? index < FRAME_COUNT - 1 : index > 0
+        atLast: index >= frameCount - 1,
+        canStep: direction === 1 ? index < frameCount - 1 : index > 0
       };
     }
 
