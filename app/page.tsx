@@ -6,6 +6,7 @@ import Link from "next/link";
 import { BadgeCheck, Building2, Calculator, CheckCircle2, Home, MapPin, ShieldCheck, Truck } from "lucide-react";
 import { createClient, User } from "@supabase/supabase-js";
 import HomeBookingCta from "./components/home/HomeBookingCta";
+import HomeFaq from "./components/home/HomeFaq";
 import HomeHeader from "./components/home/HomeHeader";
 import HomeHero from "./components/home/HomeHero";
 import ReviewShowcase from "./components/reviews/ReviewShowcase";
@@ -250,6 +251,8 @@ export default function HomePage() {
       </section>
 
       <ReviewShowcase language="sv" />
+
+      <HomeFaq />
 
       <section id="process" className="iboren-section-dark py-24 md:py-32">
         <div className="luxe-container">
