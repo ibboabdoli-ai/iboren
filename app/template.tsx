@@ -3,6 +3,7 @@ import BookingRutEnhancer from "./BookingRutEnhancer";
 import BookingSnapshotValidationShield from "./BookingSnapshotValidationShield";
 import BookingSubmissionSnapshot from "./BookingSubmissionSnapshot";
 import BookingValueSanityGuard from "./BookingValueSanityGuard";
+import CinematicFrameLock from "./CinematicFrameLock";
 import EnglishHomeServicesEnhancer from "./EnglishHomeServicesEnhancer";
 import EnglishLinkNormalizer from "./EnglishLinkNormalizer";
 import EnglishProfileLinkNormalizer from "./EnglishProfileLinkNormalizer";
@@ -24,6 +25,7 @@ export default function Template({ children }: { children: React.ReactNode }) {
       <HeaderLogo />
       <HomeMobileLanguageButton />
       <EnglishHomeServicesEnhancer />
+      <CinematicFrameLock />
       <BookingAutofillSafetyGuard />
       <BookingRutEnhancer />
       <BookingSnapshotValidationShield />
