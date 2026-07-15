@@ -6,6 +6,7 @@ import Link from "next/link";
 import { BadgeCheck, Building2, Calculator, CheckCircle2, Home, MapPin, ShieldCheck, Truck } from "lucide-react";
 import { createClient, User } from "@supabase/supabase-js";
 import HomeBookingCta from "./components/home/HomeBookingCta";
+import HomeBeforeAfter from "./components/home/HomeBeforeAfter";
 import HomeFaq from "./components/home/HomeFaq";
 import HomeHeader from "./components/home/HomeHeader";
 import HomeHero from "./components/home/HomeHero";
@@ -223,10 +224,12 @@ export default function HomePage() {
         </div>
       </section>
 
+      <HomeBeforeAfter />
+
       <section aria-labelledby="trust-heading" className="relative overflow-hidden bg-[#111411] py-20 md:py-28">
         <div aria-hidden="true" className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_8%_20%,rgba(212,165,116,.12),transparent_28%),radial-gradient(circle_at_88%_78%,rgba(212,165,116,.08),transparent_26%)]" />
         <div className="luxe-container relative">
-          <p className="text-[11px] font-bold uppercase tracking-[.38em] text-gold">II / Varför Iboren</p>
+          <p className="text-[11px] font-bold uppercase tracking-[.38em] text-gold">III / Varför Iboren</p>
           <div className="mt-4 flex flex-col justify-between gap-5 lg:flex-row lg:items-end">
             <h2 id="trust-heading" className="display max-w-4xl text-5xl font-normal uppercase leading-[.9] text-porcelain md:text-7xl">Tydligt från första steget.</h2>
             <p className="max-w-md text-sm leading-7 text-porcelain/65">Du får en klar grund innan något blir bindande.</p>
@@ -256,7 +259,7 @@ export default function HomePage() {
 
       <section id="process" className="iboren-section-dark py-24 md:py-32">
         <div className="luxe-container">
-          <p className="iboren-gold-accent text-[11px] font-bold uppercase tracking-[.38em]">III / Så fungerar det</p>
+          <p className="iboren-gold-accent text-[11px] font-bold uppercase tracking-[.38em]">IV / Så fungerar det</p>
           <h2 className="display mt-4 max-w-4xl text-5xl font-normal uppercase leading-[.9] text-porcelain md:text-7xl">Fyra steg. En tydlig förfrågan.</h2>
           <div className="mt-12 grid gap-4 md:grid-cols-4">
             {processSteps.map((step, index) => (

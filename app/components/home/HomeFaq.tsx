@@ -34,7 +34,7 @@ export default function HomeFaq() {
       </div>
       <div className="luxe-container relative grid gap-10 lg:grid-cols-[.82fr_1.18fr] lg:gap-16">
         <div className="lg:sticky lg:top-28 lg:self-start">
-          <p className="text-[11px] font-bold uppercase tracking-[.38em] text-gold">IV / Vanliga frågor</p>
+          <p className="text-[11px] font-bold uppercase tracking-[.38em] text-gold">V / Vanliga frågor</p>
           <h2 id="faq-heading" className="display mt-4 max-w-lg text-5xl font-normal uppercase leading-[.9] md:text-7xl">Tydliga svar innan du skickar.</h2>
           <p className="mt-6 max-w-md leading-7 text-porcelain/65">Allt viktigt ska vara enkelt att förstå redan innan du går vidare.</p>
           <div className="mt-8 flex flex-wrap gap-3">
