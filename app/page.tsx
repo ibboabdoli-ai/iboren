@@ -112,6 +112,7 @@ function getSupabase() {
 export default function HomePage() {
   const [user, setUser] = useState<User | null>(null);
   const [activeFrame, setActiveFrame] = useState(0);
+  const [frameDirection, setFrameDirection] = useState<1 | -1>(1);
   const reduceMotion = useReducedMotion();
 
   useEffect(() => {
@@ -129,7 +130,10 @@ export default function HomePage() {
   const progress = (activeFrame + 1) / frames.length;
 
   function stepFrame(direction: 1 | -1) {
-    setActiveFrame((current) => Math.max(0, Math.min(frames.length - 1, current + direction)));
+    const nextFrame = Math.max(0, Math.min(frames.length - 1, activeFrame + direction));
+    if (nextFrame === activeFrame) return;
+    setFrameDirection(direction);
+    setActiveFrame(nextFrame);
   }
 
   return (
@@ -140,9 +144,10 @@ export default function HomePage() {
 
       <section id="cinematic-scroll" className="relative min-h-[34rem] overflow-hidden bg-night sm:min-h-[38rem] lg:min-h-[42rem]">
         <div className="relative min-h-[34rem] overflow-hidden bg-night sm:min-h-[38rem] lg:min-h-[42rem]">
-          {frames.map((frame, index) => <img key={frame.counter} src={frame.image} alt={frame.title} loading={index === 0 ? "eager" : "lazy"} decoding="async" fetchPriority={index === 0 ? "auto" : "low"} sizes="100vw" style={{ opacity: activeFrame === index ? 1 : 0, transform: activeFrame === index ? "scale(1)" : "scale(1.025)", zIndex: activeFrame === index ? 2 : 1 }} className="absolute inset-0 h-full w-full object-cover transition-[opacity,transform] duration-500 ease-out motion-reduce:transition-none" />)}
+          {frames.map((frame, index) => <motion.img key={frame.counter} src={frame.image} alt={frame.title} loading={index === 0 ? "eager" : "lazy"} decoding="async" fetchPriority={index === 0 ? "auto" : "low"} sizes="100vw" initial={false} animate={{ opacity: activeFrame === index ? 1 : 0, scale: activeFrame === index ? 1 : 1.035, x: activeFrame === index ? "0%" : `${frameDirection * -1.5}%` }} transition={{ duration: reduceMotion ? 0 : 0.72, ease: [0.22, 1, 0.36, 1] }} style={{ zIndex: activeFrame === index ? 2 : 1 }} className="absolute inset-0 h-full w-full object-cover will-change-transform motion-reduce:transform-none" />)}
           <div className="absolute inset-0 z-10 bg-[linear-gradient(90deg,rgba(2,5,4,.50),rgba(2,5,4,.06)_48%,rgba(2,5,4,.50)),radial-gradient(circle_at_52%_46%,transparent_0_42%,rgba(0,0,0,.34)_100%)]" />
-          <div className="absolute left-5 right-5 top-24 z-20 flex items-start justify-between md:left-[8vw] md:right-[8vw] md:top-[12vh]"><div><p className="text-[10px] font-black uppercase tracking-[.34em] text-gold/85">{activeScene.kicker}</p><p className="display mt-1 text-4xl font-normal uppercase tracking-[.02em] text-porcelain md:text-6xl">{activeScene.counter}</p></div><div className="h-24 w-1 overflow-hidden rounded-full bg-porcelain/15"><div className="w-full rounded-full bg-gold transition-all" style={{ height: `${Math.round(progress * 100)}%` }} /></div></div>
+          <motion.div key={activeScene.counter} aria-hidden="true" initial={reduceMotion ? false : { opacity: 0.2 }} animate={{ opacity: 0 }} transition={{ duration: reduceMotion ? 0 : 0.75, ease: "easeOut" }} className="pointer-events-none absolute inset-0 z-10 bg-[radial-gradient(circle_at_52%_46%,rgba(226,185,104,.22),transparent_32%)]" />
+          <div className="absolute left-5 right-5 top-24 z-20 flex items-start justify-between md:left-[8vw] md:right-[8vw] md:top-[12vh]"><div><p className="text-[10px] font-black uppercase tracking-[.34em] text-gold/85">{activeScene.kicker}</p><p className="display mt-1 text-4xl font-normal uppercase tracking-[.02em] text-porcelain md:text-6xl">{activeScene.counter}</p></div><div className="h-24 w-1 overflow-hidden rounded-full bg-porcelain/15"><motion.div initial={false} animate={{ height: `${Math.round(progress * 100)}%` }} transition={{ duration: reduceMotion ? 0 : 0.5, ease: [0.22, 1, 0.36, 1] }} className="w-full rounded-full bg-gold" /></div></div>
           <div className="absolute inset-x-0 bottom-10 z-20 px-5 md:bottom-16">
             <div className="luxe-container">
               <AnimatePresence initial={false} mode="wait">
