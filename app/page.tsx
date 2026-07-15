@@ -254,21 +254,32 @@ export default function HomePage() {
 
       <HomeFaq />
 
-      <section id="process" className="iboren-section-dark py-24 md:py-32">
+      <section id="process" aria-labelledby="process-heading" className="iboren-section-dark py-24 md:py-32">
         <div className="luxe-container">
           <p className="iboren-gold-accent text-[11px] font-bold uppercase tracking-[.38em]">III / Så fungerar det</p>
-          <h2 className="display mt-4 max-w-4xl text-5xl font-normal uppercase leading-[.9] text-porcelain md:text-7xl">Fyra steg. En tydlig förfrågan.</h2>
-          <div className="mt-12 grid gap-4 md:grid-cols-4">
-            {processSteps.map((step, index) => (
-              <article key={step.title} className="process-card iboren-card-glass min-w-0 rounded-[2rem] p-6">
-                <div className="mb-10 flex items-center justify-between">
-                  <span className="iboren-gold-accent display text-4xl">0{index + 1}</span>
-                  <CheckCircle2 className="iboren-gold-accent" />
-                </div>
-                <h3 className="display font-normal uppercase text-porcelain">{step.title}</h3>
-                <p className="iboren-text-muted-dark mt-4 text-sm leading-7">{step.body}</p>
-              </article>
-            ))}
+          <h2 id="process-heading" className="display mt-4 max-w-4xl text-5xl font-normal uppercase leading-[.9] text-porcelain md:text-7xl">Fyra steg. En tydlig förfrågan.</h2>
+          <div className="relative mt-12">
+            <div aria-hidden="true" className="absolute bottom-8 left-7 top-7 w-px bg-gold/25 md:bottom-auto md:left-[12.5%] md:right-[12.5%] md:top-7 md:h-px md:w-auto" />
+            <div className="relative grid gap-8 md:grid-cols-4 md:gap-5">
+              {processSteps.map((step, index) => (
+                <motion.article
+                  key={step.title}
+                  initial={reduceMotion ? false : { opacity: 0, y: 12 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, amount: 0.35 }}
+                  transition={{ duration: reduceMotion ? 0 : 0.34, delay: reduceMotion ? 0 : index * 0.06, ease: [0.22, 1, 0.36, 1] }}
+                  className="relative min-w-0 pl-20 md:px-3 md:pt-20"
+                >
+                  <div className="absolute left-0 top-0 grid h-14 w-14 place-items-center rounded-full border border-gold/40 bg-night text-gold shadow-[0_0_0_6px_rgba(2,5,4,1)] md:left-1/2 md:-translate-x-1/2">
+                    <span className="display text-2xl">0{index + 1}</span>
+                  </div>
+                  <div className="border-b border-gold/15 pb-7 md:border-b-0 md:pb-0">
+                    <h3 className="display font-normal uppercase text-porcelain">{step.title}</h3>
+                    <p className="iboren-text-muted-dark mt-4 text-sm leading-7">{step.body}</p>
+                  </div>
+                </motion.article>
+              ))}
+            </div>
           </div>
         </div>
       </section>
