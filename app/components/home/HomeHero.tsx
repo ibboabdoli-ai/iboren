@@ -3,6 +3,7 @@
 import type { User } from "@supabase/supabase-js";
 import { motion, useReducedMotion } from "framer-motion";
 import { ArrowUpRight } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 
@@ -36,7 +37,7 @@ export default function HomeHero({ user, image }: Props) {
 
   return (
     <section id="top" className="relative grid min-h-screen place-items-center overflow-hidden px-5 pt-28 text-center lg:justify-items-start lg:px-[8vw] lg:text-left">
-      <img src={image} alt="Rent hem" loading="eager" decoding="async" fetchPriority="high" sizes="100vw" className="absolute inset-0 h-full w-full object-cover" />
+      <Image src={image} alt="Rent hem" fill priority sizes="100vw" className="object-cover" />
       <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(2,5,4,.58),rgba(2,5,4,.16)_48%,rgba(2,5,4,.62)),radial-gradient(circle_at_center,transparent_0_38%,rgba(0,0,0,.34)_100%)]" />
       <motion.div
         className="relative z-10 mx-auto max-w-6xl lg:mx-0 lg:pr-16"
