@@ -518,7 +518,7 @@ export default function UnifiedBookingFormCore({ language, variant = "page" }: U
           <p className="mt-5 max-w-3xl text-base leading-8 text-porcelain/70">{isLoggedIn ? t.loggedInIntro : t.intro}</p>
           <p className="mt-5 max-w-3xl rounded-2xl border border-gold/25 bg-gold/10 px-4 py-3 text-sm font-bold text-gold">{t.binding}</p>
           <div className="mt-5 grid gap-2 text-sm text-porcelain/65">
-            {isLoggedIn ? <p>{t.loggedInAs} <b className="text-porcelain">{accountEmail}</b>. <Link href={language === "sv" ? "/profile" : "/en/profile"} className="font-bold text-gold underline">{t.profileLink}</Link>.</p> : <p>{t.login} <Link href="/login" className="font-bold text-gold underline">{t.loginLink}</Link>.</p>}
+            {isLoggedIn ? <p>{t.loggedInAs} <b className="text-porcelain">{accountEmail}</b>. <Link href={language === "sv" ? "/profile" : "/en/profile"} className="font-bold text-gold underline">{t.profileLink}</Link>.</p> : <p>{t.login} <Link href={language === "sv" ? "/login" : "/en/login"} className="font-bold text-gold underline">{t.loginLink}</Link>.</p>}
             <p>{isLoggedIn ? t.loggedInReview : t.review}</p>
           </div>
         </section>
