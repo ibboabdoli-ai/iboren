@@ -1,0 +1,5 @@
+# Project-local 21st.dev MCP server. Keep API_KEY_21ST outside the repository.
+[mcp_servers.21st]
+url = "https://21st.dev/api/mcp"
+bearer_token_env_var = "API_KEY_21ST"
+default_tools_approval_mode = "writes"
