@@ -144,20 +144,25 @@ export default function GoogleAddressEnhancer() {
 
     let observer: MutationObserver | null = null;
     let retryTimer: number | null = null;
+    let retryTimeout: number | null = null;
+    let cancelled = false;
 
     loadGooglePlaces(apiKey)
       .then(() => {
+        if (cancelled) return;
         attachAll();
         retryTimer = window.setInterval(attachAll, 1000);
-        window.setTimeout(() => { if (retryTimer) window.clearInterval(retryTimer); }, 15000);
+        retryTimeout = window.setTimeout(() => { if (retryTimer) window.clearInterval(retryTimer); }, 15000);
         observer = new MutationObserver(() => attachAll());
         observer.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ["placeholder", "value"] });
       })
       .catch((error) => console.warn("Iboren Google address autocomplete disabled:", error));
 
     return () => {
+      cancelled = true;
       observer?.disconnect();
       if (retryTimer) window.clearInterval(retryTimer);
+      if (retryTimeout) window.clearTimeout(retryTimeout);
     };
   }, [isBookingPage]);
 
