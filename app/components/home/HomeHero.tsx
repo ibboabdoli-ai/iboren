@@ -1,6 +1,7 @@
 "use client";
 
 import type { User } from "@supabase/supabase-js";
+import { motion, useReducedMotion } from "framer-motion";
 import { ArrowUpRight } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
@@ -30,15 +31,21 @@ type Props = {
 
 export default function HomeHero({ user, image }: Props) {
   const [activeBadge, setActiveBadge] = useState<string | null>(null);
+  const reduceMotion = useReducedMotion();
   const activeTrustBadge = trustBadges.find((badge) => badge.label === activeBadge);
 
   return (
     <section id="top" className="relative grid min-h-screen place-items-center overflow-hidden px-5 pt-28 text-center lg:justify-items-start lg:px-[8vw] lg:text-left">
       <img src={image} alt="Rent hem" loading="eager" decoding="async" fetchPriority="high" sizes="100vw" className="absolute inset-0 h-full w-full object-cover" />
       <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(2,5,4,.58),rgba(2,5,4,.16)_48%,rgba(2,5,4,.62)),radial-gradient(circle_at_center,transparent_0_38%,rgba(0,0,0,.34)_100%)]" />
-      <div className="relative z-10 mx-auto max-w-6xl lg:mx-0 lg:pr-16">
+      <motion.div
+        className="relative z-10 mx-auto max-w-6xl lg:mx-0 lg:pr-16"
+        initial={reduceMotion ? false : { opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: reduceMotion ? 0 : 0.45, ease: [0.22, 1, 0.36, 1] }}
+      >
         <p className="text-[11px] font-bold uppercase tracking-[0.36em] text-gold/90 md:tracking-[0.44em]">Södertälje · Stockholm · RUT-avdrag</p>
-        <h1 className="display mt-5 max-w-[12ch] text-[clamp(3.2rem,10vw,7.5rem)] font-normal uppercase leading-[.9] tracking-[.01em] text-porcelain md:mt-6 md:leading-[.86] lg:text-[clamp(4.75rem,7.4vw,7.35rem)]">Städning i Södertälje & Stockholm</h1>
+        <h1 className="display mx-auto mt-5 max-w-[11ch] text-[clamp(3.2rem,10vw,7.5rem)] font-normal uppercase leading-[.9] tracking-[.01em] text-porcelain md:mt-6 md:leading-[.86] lg:mx-0 lg:max-w-[15ch] lg:text-[clamp(4.25rem,6.6vw,6.5rem)]">Städning i Södertälje & Stockholm</h1>
         <p className="mx-auto mt-6 max-w-3xl text-base font-semibold leading-7 text-porcelain/88 md:mt-7 md:text-2xl md:leading-8 lg:mx-0 lg:max-w-2xl">Hemstädning, flyttstädning, kontorsstädning och fönsterputs. Beräkna pris online och skicka en ej bindande förfrågan.</p>
         {user && <p className="mt-5 inline-flex rounded-full border border-gold/25 bg-night/50 px-4 py-2 text-sm font-bold text-gold">Inloggad som {user.email}</p>}
         <div className="mt-7 flex flex-wrap items-center justify-center gap-2 md:mt-8 lg:justify-start">
@@ -71,10 +78,16 @@ export default function HomeHero({ user, image }: Props) {
             {activeTrustBadge.explanation}
           </div>
         )}
-        <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row md:mt-10 lg:items-start lg:justify-start"><Link href="/priser#pris-kalkylator" data-site-analytics-event="quote_cta_click" className="btn-primary">Få pris direkt <ArrowUpRight size={17} /></Link></div>
-        <p className="mx-auto mt-5 max-w-xl text-sm font-bold leading-6 text-porcelain/75 lg:mx-0">Beräkna pris först. Du kan gå vidare till en ej bindande bokningsförfrågan när allt ser rätt ut.</p>
+        <motion.div
+          className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row md:mt-10 lg:items-start lg:justify-start"
+          whileHover={reduceMotion ? undefined : { y: -2 }}
+          transition={{ duration: 0.2 }}
+        >
+          <Link href="/priser#pris-kalkylator" data-site-analytics-event="quote_cta_click" className="btn-primary">Få pris direkt <ArrowUpRight size={17} /></Link>
+        </motion.div>
+        <p className="mx-auto mt-5 max-w-xl text-sm font-bold leading-6 text-porcelain/75 lg:mx-0">Beräkna pris först. Du kan gå vidare till en ej bindande förfrågan när allt ser rätt ut.</p>
         <div className="mt-8 inline-flex items-center gap-4 text-[11px] font-bold uppercase tracking-[0.32em] text-gold/75 before:h-px before:w-10 before:bg-gold/40 after:h-px after:w-10 after:bg-gold/40 md:mt-10">Se före och efter</div>
-      </div>
+      </motion.div>
     </section>
   );
 }

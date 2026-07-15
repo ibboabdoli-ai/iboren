@@ -239,18 +239,18 @@ main:has(#booking-address) form textarea::placeholder {
   }
 }
 
-/* Cinematic is one viewport only. Frame changes are handled in React. */
+/* Keep the cinematic section immersive without trapping the page scroll. */
 #cinematic-scroll {
-  height: 100vh !important;
-  min-height: 100vh !important;
+  height: auto !important;
+  min-height: clamp(34rem, 72vh, 46rem) !important;
   overflow: hidden !important;
 }
 
 #cinematic-scroll > div {
   position: relative !important;
   top: auto !important;
-  height: 100vh !important;
-  min-height: 100vh !important;
+  height: auto !important;
+  min-height: inherit !important;
 }
 
 #cinematic-scroll img {
@@ -441,12 +441,12 @@ main:has(#booking-address) form textarea::placeholder {
     font-size: clamp(2.8rem, 13vw, 4.5rem) !important;
   }
   #cinematic-scroll {
-    height: 100svh !important;
-    min-height: 100svh !important;
+    height: auto !important;
+    min-height: 34rem !important;
   }
   #cinematic-scroll > div {
-    height: 100svh !important;
-    min-height: 100svh !important;
+    height: auto !important;
+    min-height: inherit !important;
   }
 }
 
@@ -511,4 +511,5 @@ main:has(#booking-address) form textarea::placeholder {
   .iboren-card-glass-hover {
     transition-duration: .01ms;
   }
+
 }
